@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0e12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>SDR-Kit</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#ffd400" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 18h3l2-9 3 13 3-17 3 11 2-4h4"/></svg>
+    SDR-Kit
+  </div>
+  <div class="chips">
+    <span id="chipRec" class="chip recchip hidden blink">● REC</span>
+    <span id="chipWarn" class="chip warn hidden">⚡ Bajo voltaje</span>
+    <span id="chipMode" class="chip"><span class="dot"></span>…</span>
+    <span id="chipNet" class="chip">…</span>
+    <span id="chipTemp" class="chip">…</span>
+  </div>
+</header>
+
+<main>
+<!-- ======================= ANALIZADOR ======================= -->
+<section id="tab-an" class="tab active" aria-label="Analizador de espectro">
+  <div class="an-grid">
+    <div>
+      <div class="readout">
+        <div><b>Inicio</b><span id="roStart">—</span></div>
+        <div><b>Centro</b><span id="roCenter">—</span></div>
+        <div><b>Fin</b><span id="roStop">—</span></div>
+        <div><b>Span</b><span id="roSpan">—</span></div>
+        <div><b>RBW</b><span id="roRbw">—</span></div>
+        <div><b>Barrido</b><span id="roSweep">—</span></div>
+        <div><b>Ganancia</b><span id="roGain">—</span></div>
+        <div><b>Pico</b><span id="roPeak">—</span></div>
+      </div>
+      <div class="scope" id="scope">
+        <canvas id="spec" aria-label="Espectro"></canvas>
+        <canvas id="wf" aria-label="Cascada"></canvas>
+        <div id="anBadge" class="anbadge hidden"></div>
+        <div id="anOverlay" class="overlay hidden">
+          <p id="anOverlayMsg">El dongle lo está usando otro modo.</p>
+          <button class="btn primary" id="btnUseAnalyzer">Usar el analizador</button>
+        </div>
+      </div>
+      <div id="statusLine" class="statusline">Conectando…</div>
+      <div class="legend">
+        <span style="--c:var(--accent)">En vivo</span>
+        <span id="lgMax" class="hidden" style="--c:var(--max)">Máx. retenido</span>
+        <span id="lgMin" class="hidden" style="--c:var(--ok)">Mín. retenido</span>
+        <span id="lgAvg" class="hidden" style="--c:var(--avg)">Promedio</span>
+        <span id="lgRef" class="hidden" style="--c:#b388ff">Referencia</span>
+        <span id="lgLim" class="hidden" style="--c:#ff5c5c">Límite</span>
+      </div>
+      <div class="card tuner" id="tuner">
+        <h3>Sintonizador <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· elige sin tocar el gráfico</span></h3>
+        <div class="tunrow">
+          <button class="btn tbtn" id="tnDown" aria-label="Bajar un paso">−</button>
+          <div class="tfreq"><input type="number" id="tnFreq" step="any" inputmode="decimal" aria-label="Frecuencia en MHz"><span>MHz</span></div>
+          <button class="btn tbtn" id="tnUp" aria-label="Subir un paso">+</button>
+        </div>
+        <input type="range" id="tnSlider" min="0" max="1000" value="500" aria-label="Deslizar por el espectro">
+        <div class="tunrow2">
+          <button class="btn sm" id="tnPrev" title="Señal activa anterior">⏮ Señal</button>
+          <div class="tinfo"><b id="tnLevel">—</b><small id="tnWhat">Desliza o usa los botones</small></div>
+          <button class="btn sm" id="tnNext" title="Señal activa siguiente">Señal ⏭</button>
+        </div>
+        <div class="tunrow3">
+          <label class="f">Paso<select id="tnStep">
+            <option value="1000">1 kHz</option><option value="5000">5 kHz</option><option value="6250">6.25 kHz</option>
+            <option value="8333.333">8.33 kHz (aviación)</option><option value="9000">9 kHz (AM Europa)</option><option value="10000">10 kHz</option>
+            <option value="12500" selected>12.5 kHz</option><option value="25000">25 kHz</option><option value="50000">50 kHz</option>
+            <option value="100000">100 kHz</option><option value="200000">200 kHz</option><option value="1000000">1 MHz</option>
+          </select></label>
+          <label class="f">Modo<select id="tnMod">
+            <option value="auto">Auto</option><option value="nfm">FM</option><option value="nfmw">FM ancha</option><option value="wfm">WFM</option>
+            <option value="am">AM</option><option value="usb">USB</option><option value="lsb">LSB</option><option value="dsd">Digital</option>
+          </select></label>
+          <label class="f">Señal activa si<select id="tnThr">
+            <option value="6">+6 dB</option><option value="10" selected>+10 dB</option><option value="15">+15 dB</option><option value="20">+20 dB</option><option value="30">+30 dB</option>
+          </select></label>
+        </div>
+        <button class="btn primary big" id="tnListen">🎧 Escuchar esta frecuencia</button>
+        <div class="sigchips" id="tnSigs"></div>
+      </div>
+      <div class="mkchips" id="mkChips"></div>
+      <div class="markerbar">
+        <div class="mk"><div id="mkText"><i>M1</i>Toca el espectro para poner un marcador</div><small id="mkBw"></small></div>
+        <button class="btn sm" id="btnPeak" title="Marcador al pico más alto">▲ Pico</button>
+        <button class="btn sm" id="btnPeakL" title="Pico a la izquierda">◀ Pico</button>
+        <button class="btn sm" id="btnPeakR" title="Pico a la derecha">Pico ▶</button>
+        <button class="btn sm" id="btnNextPeak" title="Siguiente pico más alto">Sig. pico</button>
+        <button class="btn sm" id="btnTrack" title="El marcador sigue a la señal">⟳ Seguir</button>
+        <button class="btn sm" id="btnDelta" title="Diferencia contra M1">Δ</button>
+        <button class="btn sm" id="mkZspan" title="Ver esta frecuencia en el tiempo">⏱ Span cero</button>
+        <button class="btn sm" id="btnSaveMarker" title="Guardar en memorias">★</button>
+        <button class="btn sm primary" id="btnListen" title="Escuchar en el radio">🎧 Escuchar</button>
+      </div>
+      <div id="measOut" class="card measout hidden"></div>
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn sm" id="btnLeft" title="Mover a la izquierda">◀</button>
+        <button class="btn sm" id="btnZoomOut" title="Alejar">－ Zoom</button>
+        <button class="btn sm" id="btnCenter" title="Centrar en el marcador">⊙ Centrar</button>
+        <button class="btn sm" id="btnZoomIn" title="Acercar">＋ Zoom</button>
+        <button class="btn sm" id="btnRight" title="Mover a la derecha">▶</button>
+      </div>
+    </div>
+    <div class="an-side">
+      <div class="card">
+        <div class="seg" id="anMode" style="margin-bottom:10px">
+          <button data-m="sweep" class="active">📊 Barrido</button><button data-m="zspan">⏱ Span cero</button>
+        </div>
+        <div id="sweepBox">
+          <label class="f" style="margin-bottom:8px">Banda rápida
+            <select id="preset"><option value="">— Elige una banda —</option></select>
+          </label>
+          <div class="grid2">
+            <label class="f">Inicio (MHz)<input type="number" id="inStart" step="any" inputmode="decimal"></label>
+            <label class="f">Fin (MHz)<input type="number" id="inStop" step="any" inputmode="decimal"></label>
+            <label class="f">Centro (MHz)<input type="number" id="inCenter" step="any" inputmode="decimal"></label>
+            <label class="f">Span (MHz)<input type="number" id="inSpan" step="any" inputmode="decimal"></label>
+          </div>
+          <button class="btn primary" id="btnApply" style="width:100%;margin-top:10px">Aplicar</button>
+        </div>
+        <div id="zBox" class="hidden">
+          <p class="muted small" style="margin-bottom:8px">Potencia de UNA frecuencia en el tiempo, como un osciloscopio de RF: pulsos de controles remotos, ráfagas de datos, radares.</p>
+          <div class="grid2">
+            <label class="f">Frecuencia (MHz)<input type="number" id="zF" step="any" inputmode="decimal"></label>
+            <label class="f">RBW
+              <select id="zRbw"><option value="1000">1 kHz</option><option value="3000">3 kHz</option><option value="10000">10 kHz</option><option value="30000">30 kHz</option><option value="100000">100 kHz</option><option value="200000">200 kHz</option></select>
+            </label>
+            <label class="f">Tiempo en pantalla
+              <select id="zT"><option value="0.002">2 ms</option><option value="0.005">5 ms</option><option value="0.01">10 ms</option><option value="0.02">20 ms</option><option value="0.05">50 ms</option><option value="0.1">100 ms</option><option value="0.2">200 ms</option><option value="0.5">500 ms</option><option value="1">1 s</option><option value="2">2 s</option></select>
+            </label>
+            <label class="f">Disparo
+              <select id="zTrig"><option value="free">Libre</option><option value="level">Por nivel</option></select>
+            </label>
+            <label class="f">Nivel de disparo<input type="number" id="zLvl" step="1" inputmode="decimal"></label>
+            <label class="f">&nbsp;<button class="btn primary" id="btnZApply">Aplicar</button></label>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Receptor de barrido</h3>
+        <div class="grid2">
+          <label class="f">Ganancia<select id="inGain"></select></label>
+          <label class="f">Detalle
+            <select id="inAvg"><option value="fast">Rápido</option><option value="normal">Normal</option><option value="slow">Fino</option></select>
+          </label>
+          <label class="f">Puntos
+            <select id="inPoints"><option>400</option><option>800</option><option>1200</option><option>1600</option><option>2400</option></select>
+          </label>
+          <label class="f">Detector
+            <select id="inDet"><option value="peak">Pico (+Peak)</option><option value="avg">Promedio (RMS)</option><option value="sample">Muestra</option></select>
+          </label>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Trazas y escala</h3>
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn sm" id="tgMax">Máx.</button>
+          <button class="btn sm" id="tgMin">Mín.</button>
+          <button class="btn sm" id="tgAvg">Promedio</button>
+          <button class="btn sm" id="tgPersist">Persistencia</button>
+          <button class="btn sm on" id="tgPeaks">Picos</button>
+        </div>
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn sm" id="btnRefSave">Guardar ref.</button>
+          <button class="btn sm" id="tgRef">Ver ref.</button>
+          <button class="btn sm" id="tgNorm">Normalizar</button>
+          <button class="btn sm" id="btnClear">Limpiar</button>
+        </div>
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn sm on" id="tgAuto">Escala auto</button>
+          <button class="btn sm" id="btnHold">⏸ Pausa</button>
+          <button class="btn sm" id="btnSingle">Barrido único</button>
+        </div>
+        <div class="grid2">
+          <label class="f">Nivel máx.<input type="number" id="inRefMax" step="5" inputmode="decimal"></label>
+          <label class="f">Nivel mín.<input type="number" id="inRefMin" step="5" inputmode="decimal"></label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn sm" id="btnPng">📷 Imagen</button>
+          <button class="btn sm" id="btnCsv">⬇ CSV</button>
+        </div>
+      </div>
+      <details class="card" id="measCard">
+        <summary>Mediciones</summary>
+        <label class="f">Medición<select id="inMeas"></select></label>
+        <div id="chBox" class="hidden" style="margin-top:8px">
+          <div class="grid2">
+            <label class="f">Ancho de canal (kHz)<input type="number" id="inChBw" step="any" inputmode="decimal"></label>
+            <label class="f">Separación (kHz)<input type="number" id="inSpacing" step="any" inputmode="decimal"></label>
+          </div>
+          <div class="chiprow" id="chPresets">
+            <button data-ch="12500,12500">FM 12.5 kHz</button><button data-ch="25000,25000">FM 25 kHz</button>
+            <button data-ch="200000,200000">FM comercial</button><button data-ch="6000000,6000000">TV 6 MHz</button>
+            <button data-ch="1080000,1250000">LoRa/LTE 1.4</button><button data-ch="20000000,20000000">WiFi 20 MHz</button>
+          </div>
+        </div>
+        <p class="muted small" style="margin:8px 0 0">Usa el marcador activo (o el pico más alto). Para potencias exactas elige el detector «Promedio». El resultado aparece debajo del espectro.</p>
+      </details>
+      <details class="card">
+        <summary>Unidades, calibración y convertidor</summary>
+        <div class="grid2">
+          <label class="f">Unidades
+            <select id="inUnit"><option value="dBFS">dBFS (relativo)</option><option value="dBm">dBm</option><option value="dBuV">dBµV (50 Ω)</option><option value="dBmV">dBmV (50 Ω)</option></select>
+          </label>
+          <label class="f">Convertidor (MHz)<input type="number" id="inOffset" step="any" inputmode="decimal" placeholder="0"></label>
+        </div>
+        <p class="muted small" id="calState" style="margin:8px 0">—</p>
+        <div class="inrow">
+          <input type="number" id="calLevel" step="any" inputmode="decimal" placeholder="Nivel real en el marcador (dBm)">
+          <button class="btn" id="btnCal">Calibrar</button>
+        </div>
+        <button class="btn sm" id="btnCalClear">Borrar calibración</button>
+        <p class="muted small" style="margin:8px 0 0">Calibrar: conecta una señal de nivel conocido (generador, o el tinySA de un amigo), pon el marcador encima y escribe su nivel. Vale para esa ganancia. El convertidor suma su frecuencia: up-converter HF «-125», LNB de 10 GHz «9750».</p>
+      </details>
+      <details class="card">
+        <summary>Línea límite (pasa / falla)</summary>
+        <div class="grid2">
+          <label class="f">Límite superior<input type="number" id="limUp" step="1" inputmode="decimal" placeholder="apagado"></label>
+          <label class="f">Límite inferior<input type="number" id="limLo" step="1" inputmode="decimal" placeholder="apagado"></label>
+        </div>
+        <label class="switch"><span>Pitido cuando falla</span><input type="checkbox" id="limBeep"></label>
+        <div class="row">
+          <button class="btn sm" id="limFromMarker">Límite = marcador + 3 dB</button>
+          <button class="btn sm" id="limToServer">Vigilar en la Raspberry</button>
+        </div>
+        <p class="muted small" style="margin:8px 0 0">Ideal para revisar que un transmisor no se pase de nivel o detectar cuando aparece una señal.</p>
+      </details>
+      <details class="card" id="monCard">
+        <summary>Vigilancia 24/7 y ocupación</summary>
+        <label class="switch"><span>Vigilar aunque cierre el panel<br><span class="muted small">La Raspberry sigue barriendo, registra la ocupación y anota alarmas.</span></span><input type="checkbox" id="monOn"></label>
+        <div class="grid2">
+          <label class="f">Alarma si supera<input type="number" id="monLimit" step="1" inputmode="decimal" placeholder="sin alarma"></label>
+          <label class="f">Registro cada
+            <select id="monEvery"><option value="10">10 s</option><option value="30">30 s</option><option value="60">1 min</option><option value="300">5 min</option><option value="900">15 min</option></select>
+          </label>
+          <label class="f">Sólo desde (MHz)<input type="number" id="monFmin" step="any" inputmode="decimal" placeholder="todo"></label>
+          <label class="f">Hasta (MHz)<input type="number" id="monFmax" step="any" inputmode="decimal" placeholder="todo"></label>
+        </div>
+        <label class="switch"><span>Aviso al celular (ntfy)</span><input type="checkbox" id="monNotify"></label>
+        <p class="muted small hidden" id="monNtfyNote">Para recibir avisos en el celular configura NTFY_TOPIC en sdrkit.conf e instala la app gratuita «ntfy».</p>
+        <div class="row" style="margin:6px 0 10px"><button class="btn sm primary" id="monSave">Guardar</button><a class="btn sm" href="/api/monitor.csv">⬇ CSV</a><button class="btn sm danger" id="monClear">Borrar</button></div>
+        <div class="inrow"><span class="muted small" id="monRows" style="flex:1">—</span>
+          <select id="heatMode" style="max-width:150px"><option value="occ">Ocupación %</option><option value="max">Nivel máx.</option></select></div>
+        <canvas id="heat" class="heat" aria-label="Ocupación en el tiempo"></canvas>
+        <div class="muted small" id="heatAxis"></div>
+        <h3 style="margin-top:12px">Alarmas</h3>
+        <ul class="list small" id="monAlarms"><li class="muted">—</li></ul>
+      </details>
+      <details class="card">
+        <summary>Configuraciones guardadas</summary>
+        <button class="btn sm" id="stSave" style="width:100%;margin-bottom:6px">💾 Guardar la configuración actual</button>
+        <ul class="list" id="stList"></ul>
+      </details>
+      <div class="card peaks" id="peaksCard">
+        <h3>Picos detectados</h3>
+        <table><thead><tr><th>#</th><th>Frecuencia</th><th>Nivel</th><th></th></tr></thead><tbody id="peakRows"></tbody></table>
+        <p class="muted small" style="margin:8px 0 0">Sin calibrar, los niveles son relativos (dBFS): sirven para comparar, no son dBm de laboratorio.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= RADIO ======================= -->
+<section id="tab-radio" class="tab" aria-label="Radio">
+  <div class="cols">
+    <div>
+      <div class="card freqbox" id="radioMain">
+        <div id="rxOverlay" class="overlay hidden">
+          <p id="rxOverlayMsg">El dongle lo está usando el analizador.</p>
+          <button class="btn primary" id="btnUseRadio">Usar el radio</button>
+        </div>
+        <div class="freqname" id="rName">&nbsp;</div>
+        <div class="freq" id="rFreq" title="Toca para escribir la frecuencia">—</div>
+        <div class="stepper">
+          <button class="btn" id="rDown" aria-label="Bajar frecuencia">−</button>
+          <select id="rStep" aria-label="Paso">
+            <option value="1000">Paso 1 kHz</option><option value="5000">Paso 5 kHz</option><option value="6250">Paso 6.25 kHz</option>
+            <option value="12500" selected>Paso 12.5 kHz</option><option value="25000">Paso 25 kHz</option><option value="100000">Paso 100 kHz</option>
+            <option value="1000000">Paso 1 MHz</option>
+          </select>
+          <button class="btn" id="rUp" aria-label="Subir frecuencia">+</button>
+        </div>
+        <div class="seg" id="rModes"></div>
+        <div class="seekrow">
+          <button class="btn" id="rSeekDown" title="Buscar hacia abajo la próxima señal">⏮ Buscar señal</button>
+          <button class="btn" id="rSeekUp" title="Buscar hacia arriba la próxima señal">Buscar señal ⏭</button>
+        </div>
+        <div id="digBanner" class="digbanner hidden"></div>
+        <button class="btn primary big" id="rPlay" style="margin-top:12px">▶ Escuchar en este celular</button>
+        <div class="inrow" style="margin:10px 0 0">
+          <span class="muted small">🔈</span>
+          <input type="range" id="rVol" min="0" max="200" value="100" aria-label="Volumen">
+          <span class="muted small">🔊</span>
+        </div>
+        <canvas id="audioViz" aria-label="Audio"></canvas>
+      </div>
+
+      <div class="card">
+        <h3>Señal y silenciador (squelch)</h3>
+        <div class="meter" id="rMeter"><div class="bar" id="rBar"></div><div class="sqm" id="rSqm"></div>
+          <div class="lbl"><span><span class="sqled" id="rLed"></span><span id="rDb">— dB</span></span><span id="rNoise" class="muted">ruido —</span></div></div>
+        <div class="row" style="margin-top:10px">
+          <input type="range" id="rSq" min="-100" max="0" step="1" value="-45" aria-label="Squelch" style="flex:1 1 100%">
+        </div>
+        <div class="row">
+          <span class="muted small" id="rSqTxt" style="flex:1 1 auto">Squelch −45 dB</span>
+          <button class="btn sm" id="rSqAuto" style="flex:0 0 auto">Auto</button>
+          <button class="btn sm" id="rSqOff" style="flex:0 0 auto">Abrir</button>
+        </div>
+        <div class="grid2" style="margin-top:8px">
+          <label class="f">Ganancia<select id="rGain"></select></label>
+          <label class="f">&nbsp;<button class="btn" id="rHunt">🎯 Modo cazador</button></label>
+        </div>
+      </div>
+
+      <div class="card hidden" id="dsdCard" data-help="dsd">
+        <h3>Voz digital (DSD-FME)</h3>
+        <div class="chiprow" id="dsdModes"></div>
+        <div class="dec dsdinfo">
+          <div><b>Sistema</b><span id="dsdSync">—</span><small id="dsdSyncSub">esperando señal</small></div>
+          <div><b>Destino / grupo</b><span id="dsdTg">—</span><small id="dsdCc">&nbsp;</small></div>
+          <div><b>Origen</b><span id="dsdSrc">—</span><small id="dsdAlias">&nbsp;</small></div>
+        </div>
+        <p class="small" id="dsdNote" style="margin:10px 0 0"></p>
+        <pre class="logs dsdlog" id="dsdLog"></pre>
+      </div>
+
+      <div class="card">
+        <h3>Panorama <span id="panSpan">±96 kHz</span> <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· toca para sintonizar</span></h3>
+        <canvas id="pan" aria-label="Panorama"></canvas>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3>Decodificación</h3>
+        <div class="dec">
+          <div><b>Subtono CTCSS</b><span id="dCtcss">—</span><small id="dCtcssSub">sin tono</small></div>
+          <div><b>Código DCS</b><span id="dDcs">—</span><small id="dDcsSub">sin código</small></div>
+          <div class="dtmf"><b>DTMF</b><span id="dDtmf">—</span><small id="dDtmfSub">teclas marcadas</small></div>
+        </div>
+        <p class="muted small" style="margin:10px 0 0">Funciona en FM (walkie-talkies, repetidoras). El subtono aparece ~2 s después de que empiezan a hablar: es lo que debes configurar en tu radio para hablar con ese grupo.</p>
+      </div>
+
+      <div class="card">
+        <h3>Datos digitales en esta frecuencia</h3>
+        <div class="chiprow" id="rData"></div>
+        <ul class="declist" id="rDecoded"><li class="muted">Activa un decodificador: los mensajes aparecen aquí y en Decodificar → Mensajes.</li></ul>
+        <p class="muted small" id="rDataInfo" style="margin:6px 0 0">Funciona aunque nadie escuche y con el squelch cerrado.</p>
+      </div>
+
+      <div class="card">
+        <h3>Grabar</h3>
+        <button class="btn big" id="rRec">⏺ Grabar ahora</button>
+        <label class="switch"><span>Grabar automáticamente cada transmisión<br><span class="muted small">Un archivo por transmisión, aunque cierres el celular.</span></span><input type="checkbox" id="rAuto"></label>
+        <p class="muted small" id="rRecInfo" style="margin:6px 0 0">Se guardan en carpetas por fecha. Míralas en la pestaña Grabaciones.</p>
+      </div>
+
+      <div class="card">
+        <h3>Escáner</h3>
+        <div class="seg" id="scanSrc" style="margin-bottom:8px">
+          <button data-src="group" class="active">Memorias</button><button data-src="svc">Servicio</button><button data-src="range">Rango</button>
+        </div>
+        <div id="scanGroupBox"><select id="scanGroup"></select></div>
+        <div id="scanSvcBox" class="hidden"><select id="scanSvc"></select></div>
+        <div id="scanRangeBox" class="hidden">
+          <div class="grid3">
+            <label class="f">Desde (MHz)<input type="number" id="scA" step="any" inputmode="decimal" value="144"></label>
+            <label class="f">Hasta (MHz)<input type="number" id="scB" step="any" inputmode="decimal" value="148"></label>
+            <label class="f">Paso (kHz)<input type="number" id="scS" step="any" inputmode="decimal" value="12.5"></label>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary" id="scStart">▶ Escanear</button>
+          <button class="btn" id="scSkip">⏭ Saltar</button>
+          <button class="btn" id="scLock" title="No volver a parar en este canal por 10 min">🚫 10 min</button>
+          <button class="btn danger" id="scStop">■ Detener</button>
+        </div>
+        <p class="muted small" id="scStatus" style="margin:8px 0 0">Mide varios canales a la vez: un grupo de 22 canales se revisa en ~40 ms.</p>
+      </div>
+
+      <div class="card">
+        <h3>Memorias</h3>
+        <div class="inrow">
+          <select id="memGroup"></select>
+          <button class="btn" id="memAdd">★ Guardar actual</button>
+        </div>
+        <ul class="memlist" id="memList"></ul>
+        <div class="row" style="margin-top:8px">
+          <button class="btn sm" id="memExport">⬇ Exportar</button>
+          <button class="btn sm" id="memImport">⬆ Importar</button>
+          <button class="btn sm" id="rAnalyze">📈 Ver en analizador</button>
+          <input type="file" id="memFile" accept=".json,application/json" class="hidden">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= DECODIFICAR ======================= -->
+<section id="tab-dec" class="tab" aria-label="Decodificar">
+  <div class="seg" id="decNav" style="margin-bottom:12px">
+    <button data-dsub="msg" class="active">✉ Mensajes</button>
+    <button data-dsub="ism">🌡 Sensores</button>
+    <button data-dsub="air">✈ Aviones</button>
+    <button data-dsub="all">🧩 Todos los modos</button>
+  </div>
+
+  <div id="dec-msg" class="dsub">
+    <div class="cols">
+      <div>
+        <div class="card">
+          <h3>Mensajes digitales (multimon-ng)</h3>
+          <label class="f" style="margin-bottom:8px">Qué escuchar
+            <select id="dmPreset"></select>
+          </label>
+          <div class="inrow">
+            <input type="number" id="dmFreq" step="any" inputmode="decimal" placeholder="Frecuencia (MHz)">
+            <select id="dmMod" style="max-width:120px"><option value="nfm">FM</option><option value="nfmw">FM ancha</option><option value="am">AM</option><option value="usb">USB</option></select>
+          </div>
+          <div class="chiprow" id="dmKinds"></div>
+          <div class="row">
+            <button class="btn primary" id="dmStart">▶ Decodificar</button>
+            <button class="btn" id="dmListen">🎧 Escuchar</button>
+            <button class="btn danger" id="dmStop">■ Detener</button>
+          </div>
+          <p class="muted small" id="dmState" style="margin:8px 0 0">—</p>
+        </div>
+        <div class="card">
+          <h3>Qué puedes leer aquí</h3>
+          <ul class="tips small">
+            <li><b>POCSAG / FLEX:</b> buscapersonas de hospitales, bomberos, servicios técnicos y alarmas (152–159 MHz, 929–931 MHz en América).</li>
+            <li><b>APRS:</b> posiciones, clima y mensajes de radioaficionados (144.390 MHz en América, 144.800 en Europa, 145.825 la ISS). Las estaciones con posición aparecen en el radar de Aviones.</li>
+            <li><b>EAS:</b> alertas de emergencia de NOAA Weather Radio (162.400–162.550 MHz, EE. UU.).</li>
+            <li><b>Selcall / FMS / Morse:</b> llamadas selectivas de flotas, servicios de emergencia europeos y telegrafía.</li>
+          </ul>
+          <p class="muted small" style="margin:0">Ley: escuchar suele ser legal, pero divulgar o usar el contenido de mensajes privados (p. ej. buscapersonas médicos) puede no serlo. Infórmate en tu país.</p>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h3>Recibidos</h3>
+          <div class="inrow">
+            <input type="search" id="dmSearch" placeholder="Buscar texto, RIC, indicativo…">
+            <select id="dmFilter" style="max-width:130px"><option value="">Todos</option><option value="POCSAG">POCSAG</option><option value="FLEX">FLEX</option><option value="APRS">APRS</option><option value="EAS">EAS</option><option value="other">Otros</option></select>
+          </div>
+          <div class="row" style="margin-bottom:8px">
+            <a class="btn sm" href="/api/decoded.csv">⬇ CSV (Excel)</a>
+            <button class="btn sm danger" id="dmClear">Borrar</button>
+          </div>
+          <ul class="declist big" id="dmList"><li class="muted">Todavía no hay mensajes.</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dec-ism" class="dsub hidden">
+    <div class="card">
+      <h3>Sensores inalámbricos (rtl_433 · +200 modelos)</h3>
+      <p class="muted small">Estaciones meteorológicas, termómetros, sensores de presión de llantas (TPMS), timbres, sensores de puertas, medidores de consumo… todo lo que transmite en las bandas ISM.</p>
+      <div class="grid3">
+        <label class="f">Banda<select id="snPreset"></select></label>
+        <label class="f">Cambiar banda cada<select id="snHop"><option value="15">15 s</option><option value="30">30 s</option><option value="60">60 s</option><option value="120">2 min</option></select></label>
+        <label class="f">Ganancia<select id="snGain"></select></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="snStart">▶ Buscar sensores</button>
+        <button class="btn danger" id="snStop">■ Detener</button>
+        <button class="btn" id="snClear">Borrar lista</button>
+      </div>
+      <p class="muted small" id="snState" style="margin:8px 0 0">—</p>
+    </div>
+    <div class="sngrid" id="snDevices"></div>
+    <div class="card">
+      <h3>Últimas lecturas</h3>
+      <div style="overflow-x:auto"><table class="tbl" id="snEvents"></table></div>
+    </div>
+  </div>
+
+  <div id="dec-air" class="dsub hidden">
+    <div class="cols">
+      <div>
+        <div class="card">
+          <h3>Radar de aviones (ADS-B 1090 MHz) · sin internet</h3>
+          <div class="row" style="margin-bottom:8px">
+            <button class="btn primary" id="adStart">▶ Encender radar</button>
+            <button class="btn danger" id="adStop">■ Detener</button>
+            <select id="adRange" style="max-width:130px" aria-label="Alcance"><option value="50">50 km</option><option value="100">100 km</option><option value="200" selected>200 km</option><option value="400">400 km</option></select>
+          </div>
+          <canvas id="radar" aria-label="Radar"></canvas>
+          <label class="check" style="margin-top:8px"><input type="checkbox" id="adAprs" checked> Mostrar estaciones APRS decodificadas</label>
+          <p class="muted small" id="adState" style="margin:8px 0 0">—</p>
+        </div>
+        <div class="card">
+          <h3>Tu ubicación (centro del radar)</h3>
+          <div class="grid2">
+            <label class="f">Latitud<input type="number" id="adLat" step="any" inputmode="decimal" placeholder="18.4861"></label>
+            <label class="f">Longitud<input type="number" id="adLon" step="any" inputmode="decimal" placeholder="-69.9312"></label>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" id="adSaveLoc">Guardar</button>
+            <button class="btn" id="adGeo">📍 GPS del celular</button>
+          </div>
+          <p class="muted small" id="adLocNote" style="margin:8px 0 0">Sin ubicación, el radar usa el centro de los aviones recibidos.</p>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h3>Aviones</h3>
+          <div class="row" style="margin-bottom:8px"><label class="f">Ganancia<select id="adGain"></select></label></div>
+          <div style="overflow-x:auto"><table class="tbl" id="adTable"></table></div>
+          <p class="muted small" style="margin:8px 0 0">Antena: vertical de 6.9 cm (¼ de onda a 1090 MHz) lo más alta posible; con el dipolo del kit, abre cada brazo a 6.5 cm. Alcance típico 100–250 km con vista despejada. Squawk 7700 = emergencia, 7600 = sin radio, 7500 = interferencia ilícita.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dec-all" class="dsub hidden">
+    <div class="card">
+      <h3>Todo lo que este equipo puede decodificar</h3>
+      <p class="muted small" id="allNote">—</p>
+      <div id="allList"></div>
+    </div>
+    <div class="card">
+      <h3>Voz digital: DMR, D-Star, YSF (Fusion), NXDN, P25</h3>
+      <p class="small" id="ambeState">—</p>
+      <ul class="tips small">
+        <li>Estas radios usan el códec de voz <b>AMBE/IMBE</b>, que está patentado: OpenWebRX+ decodifica la señal, pero para convertirla en voz necesita un «servidor de códec».</li>
+        <li><b>Camino legal y fácil:</b> una llave USB con chip <b>AMBE3000</b> (ThumbDV, DVstick 30, ~US$ 100–130). Conéctala, escribe <code>AMBE_TTY="/dev/ttyUSB0"</code> en sdrkit.conf y reinstala: queda configurada sola.</li>
+        <li><b>M17</b> (códec abierto Codec2) y <b>FreeDV</b> funcionan sin llave.</li>
+        <li><b>Imposible</b> (con cualquier equipo): voz <b>cifrada</b> (policía/militar con AES/ARC4/TETRA TEA), celulares 2G/3G/4G/5G, WiFi o Bluetooth cifrados.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= GRABACIONES ======================= -->
+<section id="tab-recs" class="tab" aria-label="Grabaciones">
+  <div class="cols">
+    <div>
+      <div class="card">
+        <h3>Grabaciones</h3>
+        <div id="recUsage" class="muted small">—</div>
+        <div class="usage"><div id="recUsageBar"></div></div>
+        <div class="inrow" style="margin-top:10px">
+          <input type="search" id="recSearch" placeholder="Buscar frecuencia, nombre, tono…">
+          <button class="btn" id="recRefresh" aria-label="Actualizar">↻</button>
+        </div>
+        <div class="row">
+          <button class="btn sm" id="recSelAll">Seleccionar todo</button>
+          <button class="btn sm" id="recZip">⬇ ZIP</button>
+          <button class="btn sm danger" id="recDel">🗑 Borrar</button>
+        </div>
+      </div>
+      <div id="recList"></div>
+    </div>
+    <div>
+      <div class="card">
+        <h3>Registro de actividad</h3>
+        <p class="muted small">Cada vez que alguien transmite (en el radio o el escáner) queda anotado: hora, frecuencia, duración, nivel y tonos.</p>
+        <div class="row" style="margin-bottom:8px">
+          <a class="btn sm" href="/api/activity.csv">⬇ CSV (Excel)</a>
+          <button class="btn sm danger" id="actClear">Borrar registro</button>
+        </div>
+        <div style="overflow-x:auto"><table class="tbl" id="actTable"></table></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= MÁS ======================= -->
+<section id="tab-more" class="tab" aria-label="Más">
+  <div class="seg" id="moreNav" style="margin-bottom:12px">
+    <button data-sub="canales" class="active">📻 Canales</button>
+    <button data-sub="ref">📖 Frecuencias</button>
+    <button data-sub="ant">📶 Antenas</button>
+    <button data-sub="rx">📡 Receptor avanzado</button>
+    <button data-sub="wifi">🛜 WiFi</button>
+    <button data-sub="sys">⚙ Sistema</button>
+  </div>
+
+  <div id="more-canales" class="sub">
+    <div class="card" data-help="canales">
+      <h3>Escuchar todo: servicios y canales</h3>
+      <p class="small">Todos los canales de cada servicio (walkie-talkies PMR/FRS, marina, aviación, CB, radioaficionados, satélites…). Toca uno para escucharlo o escanea el servicio completo.</p>
+      <div class="svcgrid" id="chServices"></div>
+    </div>
+    <div class="card" id="chDetail"></div>
+  </div>
+
+  <div id="more-ref" class="sub hidden">
+    <div class="card">
+      <h3>Guía de frecuencias</h3>
+      <div class="inrow"><input type="search" id="refSearch" placeholder="Buscar: aviación, marina, 446, satélite…"></div>
+      <div class="chiprow" id="refCats"></div>
+      <div style="overflow-x:auto"><table class="tbl" id="refTable"></table></div>
+      <p class="muted small" style="margin:8px 0 0">🎧 abre el radio en esa frecuencia · 📈 la muestra en el analizador. Las frecuencias varían por país: confírmalas localmente.</p>
+    </div>
+    <div class="cols">
+      <div class="card"><h3>Subtonos CTCSS (50 estándar)</h3><div class="tonegrid" id="ctcssGrid"></div></div>
+      <div class="card"><h3>Códigos DCS (104) y su equivalente invertido</h3><div class="tonegrid" id="dcsGrid"></div></div>
+    </div>
+  </div>
+
+  <div id="more-ant" class="sub hidden">
+  <div class="card">
+    <h3>Calculadora de antenas</h3>
+    <div class="grid2">
+      <label class="f">Frecuencia (MHz)<input type="number" id="antF" step="any" inputmode="decimal" value="146"></label>
+      <label class="f">Material
+        <select id="antK">
+          <option value="0.95">Alambre / varilla delgada (×0.95)</option>
+          <option value="0.97">Tubo grueso (×0.97)</option>
+        </select>
+      </label>
+    </div>
+    <div class="chiprow" id="antChips"></div>
+    <p class="muted small" style="margin:0">λ (longitud de onda) = <b id="antLambda">—</b>. Corta siempre un poco más largo y recorta probando con el analizador.</p>
+  </div>
+  <div class="antgrid" id="antCards"></div>
+  <div class="cols" style="margin-top:12px">
+    <div class="card">
+      <h3>Pérdida del cable coaxial</h3>
+      <div class="grid3">
+        <label class="f">Cable<select id="cabT"></select></label>
+        <label class="f">Largo (m)<input type="number" id="cabL" step="any" value="10" inputmode="decimal"></label>
+        <label class="f">Frecuencia (MHz)<input type="number" id="cabF" step="any" value="433" inputmode="decimal"></label>
+      </div>
+      <div id="cabOut" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h3>¿Qué antena para qué?</h3>
+      <div style="overflow-x:auto"><table class="tbl" id="antUse"></table></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Consejos que hacen la diferencia</h3>
+    <ul class="tips small">
+      <li><b>Altura antes que ganancia:</b> subir la antena 5 m vale más que cualquier antena «mágica». Afuera y sin obstáculos.</li>
+      <li><b>Polarización:</b> walkie-talkies, repetidoras, aviación y marina usan antena <b>vertical</b>. TV y algunos satélites, horizontal o circular.</li>
+      <li><b>Cable corto:</b> en UHF (400 MHz+) el cable delgado pierde mucho. Lleva el dongle cerca de la antena con una extensión USB.</li>
+      <li><b>Conector:</b> el RTL-SDR Blog V3/V4 usa <b>SMA hembra</b>: la antena debe tener SMA macho (o usa un adaptador).</li>
+      <li><b>Filtro FM:</b> si vives cerca de emisoras, un filtro rechaza-FM (88–108 MHz) evita «fantasmas» en todo el espectro.</li>
+      <li><b>Bias-tee:</b> el V4 puede alimentar un LNA por el coaxial (BIAS_TEE="si"). Nunca lo actives con una antena en cortocircuito DC.</li>
+      <li><b>Ajuste fino:</b> usa el analizador con «Máx. retenido» mientras recortas: la mejor longitud es la que deja la señal más alta.</li>
+    </ul>
+  </div>
+  </div>
+
+  <div id="more-rx" class="sub hidden">
+    <div class="card">
+      <h3>Receptor avanzado (OpenWebRX+)</h3>
+      <p>Cascada grande, más modos y decodificadores: RDS de emisoras FM, aviones ADS-B en mapa, APRS, buscapersonas, sensores de 433 MHz, ACARS, radiosondas…</p>
+      <p class="muted" id="owrxState">—</p>
+      <button class="btn primary big" id="btnRxOpen">📡 Abrir receptor avanzado</button>
+      <p class="muted small" style="margin-top:10px">El dongle sólo puede usarlo un modo a la vez: al abrirlo se pausan el analizador y el radio.</p>
+      <p class="small"><a id="rxSettings" href="#">Ajustes de OpenWebRX+ (usuario admin)</a></p>
+    </div>
+  </div>
+
+  <div id="more-wifi" class="sub hidden">
+    <div class="card">
+      <div class="netstate">
+        <div class="ico" id="netIco">📶</div>
+        <div class="grow">
+          <div id="netTitle" style="font-weight:700">—</div>
+          <div id="netSub" class="muted small">—</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="btnHotspot">📡 Usar hotspot propio</button>
+        <button class="btn" id="btnAuto">🏠 Buscar WiFi conocida</button>
+      </div>
+      <p class="muted small" style="margin:10px 0 0">Al cambiar de red tu celular perderá la conexión con la Raspberry. Reconéctate a la red nueva y vuelve a abrir el panel.</p>
+    </div>
+    <div class="card">
+      <h3>Redes guardadas</h3>
+      <ul class="list" id="savedList"><li class="muted">Cargando…</li></ul>
+    </div>
+    <div class="card">
+      <h3>Agregar red WiFi</h3>
+      <p class="muted small">Ej.: el WiFi de tu casa o el hotspot de tu celular (así tendrás internet y acceso remoto en la calle).</p>
+      <div class="inrow">
+        <input type="text" id="wfSsid" placeholder="Nombre de la red (SSID)" autocomplete="off" list="ssidList">
+        <datalist id="ssidList"></datalist>
+        <button class="btn" id="btnScan">Buscar</button>
+      </div>
+      <div class="inrow">
+        <input type="password" id="wfPass" placeholder="Clave (vacío si es abierta)" autocomplete="new-password">
+        <button class="btn" id="btnShowPass" aria-label="Mostrar clave">👁</button>
+      </div>
+      <label class="check" style="margin-bottom:10px"><input type="checkbox" id="wfHidden"> Red oculta</label>
+      <div class="row">
+        <button class="btn" id="btnWifiSave">Guardar</button>
+        <button class="btn primary" id="btnWifiConnect">Guardar y conectar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="more-sys" class="sub hidden">
+    <div class="tiles" id="tiles"></div>
+    <div class="card urls" style="margin-top:12px">
+      <h3>Direcciones para entrar</h3>
+      <ul class="list" id="urlList"></ul>
+    </div>
+    <div class="card" id="updCard">
+      <h3>Actualizaciones</h3>
+      <p class="small" id="updVer">—</p>
+      <div class="row">
+        <button class="btn" id="btnUpdCheck">🔎 Buscar actualizaciones</button>
+        <button class="btn primary hidden" id="btnUpdApply">⬇ Actualizar ahora</button>
+      </div>
+      <div id="updInfo" class="small" style="margin-top:10px"></div>
+      <pre class="logs hidden" id="updLog"></pre>
+      <p class="muted small" style="margin:10px 0 0">Necesita internet (WiFi de casa o hotspot del celular). Tu configuración, grabaciones y memorias no se tocan. Si la versión nueva falla, vuelve sola a la anterior.</p>
+    </div>
+    <div class="card">
+      <h3>Mantenimiento</h3>
+      <div class="row">
+        <button class="btn" id="btnLogs">📄 Ver registros</button>
+        <button class="btn" id="btnReboot">🔄 Reiniciar</button>
+        <button class="btn danger" id="btnOff">⏻ Apagar</button>
+        <a class="btn" id="btnLogout" href="/logout">Cerrar sesión</a>
+      </div>
+      <p class="muted small" style="margin:10px 0 0">Apaga desde aquí antes de desconectar la batería: así cuidas la tarjeta microSD. Espera a que la luz verde deje de parpadear.</p>
+      <pre class="logs hidden" id="logs"></pre>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav class="tabbar" aria-label="Secciones">
+  <button class="active" data-tab="an"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h3l2-9 3 13 3-17 3 11 2-4h4"/></svg>Analizador</button>
+  <button data-tab="radio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg>Radio</button>
+  <button data-tab="dec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h2M11 10h6M7 14h6M15 14h2"/></svg>Decodificar</button>
+  <button data-tab="recs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg>Grabaciones<span class="recdot" id="tabRecDot"></span></button>
+  <button data-tab="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Más</button>
+</nav>
+
+<div id="hunter" class="hunter hidden" role="dialog" aria-label="Modo cazador">
+  <div class="muted">🎯 Modo cazador · <span id="hFreq"></span></div>
+  <div class="hv" id="hVal">—</div>
+  <div class="hb"><div id="hBar"></div></div>
+  <div class="muted small" id="hPeak">máximo —</div>
+  <p class="muted small" style="max-width:420px">Camina y gira la antena: el pitido sube de tono y se acelera al acercarte al transmisor. Si el valor se queda pegado arriba, baja la ganancia.</p>
+  <div class="row" style="width:min(420px,90vw)">
+    <button class="btn on" id="hBeep">🔊 Pitido</button>
+    <button class="btn" id="hReset">Reiniciar máximo</button>
+    <button class="btn danger" id="hClose">Cerrar</button>
+  </div>
+</div>
+
+<div id="helpSheet" class="sheet hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="sheet-card">
+    <div class="sheet-head"><h2 id="helpTitle">Ayuda</h2><button class="btn sm" id="helpClose" aria-label="Cerrar">✕</button></div>
+    <div class="sheet-body" id="helpBody"></div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="busy" class="busy hidden"><div class="spinner"></div><div id="busyText">Un momento…</div><button class="btn sm" id="busyCancel">Cancelar</button></div>
+
+<script src="/app.js"></script>
+<script src="/analyzer.js"></script>
+<script src="/radio.js"></script>
+<script src="/decode.js"></script>
+<script src="/canales.js"></script>
+<script src="/help.js"></script>
+<script src="/recs.js"></script>
+<script src="/antenas.js"></script>
+<script src="/guia.js"></script>
+<script>SDR.init();</script>
+</body>
+</html>

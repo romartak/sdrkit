@@ -1,0 +1,13 @@
+[Unit]
+Description=SDR-Kit: WiFi conocida o hotspot automático
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /opt/sdrkit/sdrkit-netwatch.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

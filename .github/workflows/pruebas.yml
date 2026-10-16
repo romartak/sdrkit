@@ -1,0 +1,57 @@
+# Se ejecuta en GitHub cada vez que subes un cambio: si algo se rompió, lo ves en rojo ANTES de actualizar la Pi.
+name: Pruebas
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Dependencias
+        run: |
+          pip install numpy
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq multimon-ng shellcheck
+
+      - name: Python compila
+        run: python -m py_compile files/*.py
+
+      - name: JavaScript sin errores de sintaxis
+        run: for f in files/web/*.js; do node --check "$f"; done
+
+      - name: Scripts de shell
+        run: |
+          bash -n install.sh get.sh files/*.sh
+          shellcheck -S warning -x install.sh get.sh files/*.sh
+
+      - name: El panel arranca en modo demo y responde
+        run: |
+          export SDRKIT_STATE="$RUNNER_TEMP/estado"
+          python files/sdrkit_server.py --demo --port 8080 --conf /nonexistent > "$RUNNER_TEMP/panel.log" 2>&1 &
+          for i in $(seq 30); do curl -fs localhost:8080/api/status > /dev/null && break; sleep 1; done
+          curl -fs localhost:8080/ | grep -q "SDR-Kit"
+          curl -fs localhost:8080/api/status | python -c "import json,sys; d=json.load(sys.stdin); assert d['demo'], d; print('versión', d['version'])"
+          curl -fs localhost:8080/api/decoders > /dev/null
+
+      - name: Decodifica un buscapersonas POCSAG de punta a punta (demo)
+        run: |
+          curl -fs -H 'Content-Type: application/json' \
+            -d '{"freq":152840000,"mod":"nfm","data":["pocsag"],"activate":true}' localhost:8080/api/radio > /dev/null
+          for i in $(seq 40); do
+            n=$(curl -fs localhost:8080/api/decoded | python -c "import json,sys; print(len(json.load(sys.stdin)['items']))")
+            [ "$n" -gt 0 ] && { echo "mensajes decodificados: $n"; exit 0; }
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/panel.log"; exit 1
+
+      - name: Registro del panel
+        if: always()
+        run: cat "$RUNNER_TEMP/panel.log" || true
