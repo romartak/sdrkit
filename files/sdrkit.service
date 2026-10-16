@@ -1,0 +1,15 @@
+[Unit]
+Description=SDR-Kit: panel web y analizador de espectro
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/sdrkit/sdrkit_server.py
+Restart=always
+RestartSec=3
+Nice=-2
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
