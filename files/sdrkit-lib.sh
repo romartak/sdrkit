@@ -55,7 +55,7 @@ sdrkit_merge_conf() {
 }
 
 # Repositorio de GitHub de donde se instala y actualiza (se puede cambiar con SDRKIT_REPO en sdrkit.conf)
-export SDRKIT_DEFAULT_REPO="https://github.com/TU_USUARIO/sdrkit.git"
+export SDRKIT_DEFAULT_REPO="https://github.com/romartak/sdrkit.git"
 
 # Crea o actualiza la conexión hotspot de NetworkManager (no la activa ni la corta si ya está activa).
 sdrkit_setup_hotspot() {
