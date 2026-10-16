@@ -1,6 +1,6 @@
 # SDR-Kit
 
-![Pruebas](https://github.com/TU_USUARIO/sdrkit/actions/workflows/pruebas.yml/badge.svg)
+![Pruebas](https://github.com/romartak/sdrkit/actions/workflows/pruebas.yml/badge.svg)
 
 Analizador de espectro estilo **tinySA**, radio y decodificador portátil con **Raspberry Pi Zero 2 W + RTL-SDR**, manejado desde el celular por WiFi.
 
@@ -28,7 +28,7 @@ Analizador de espectro estilo **tinySA**, radio y decodificador portátil con **
 2. Conéctate por SSH y ejecuta:
 
 ```
-curl -fsSL https://raw.githubusercontent.com/TU_USUARIO/sdrkit/main/get.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/romartak/sdrkit/main/get.sh | sudo bash
 ```
 
 El instalador pide la clave del hotspot y la del panel, instala todo (20–45 min) y reinicia. Luego abre `http://sdrpi.local` (en casa) o conéctate a la WiFi **SDR-Pi** y abre `http://192.168.4.1` (en el campo).

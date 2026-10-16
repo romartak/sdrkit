@@ -2,13 +2,13 @@
 # =====================================================================
 #  SDR-Kit · instalación desde GitHub (un solo comando, en la Raspberry):
 #
-#     curl -fsSL https://raw.githubusercontent.com/TU_USUARIO/sdrkit/main/get.sh | sudo bash
+#     curl -fsSL https://raw.githubusercontent.com/romartak/sdrkit/main/get.sh | sudo bash
 #
 #  Descarga el proyecto en /opt/sdrkit-src y ejecuta el instalador.
 #  Para actualizar después:  sudo sdrkit actualizar
 # =====================================================================
 set -o pipefail
-REPO="${SDRKIT_REPO:-https://github.com/TU_USUARIO/sdrkit.git}"
+REPO="${SDRKIT_REPO:-https://github.com/romartak/sdrkit.git}"
 BRANCH="${SDRKIT_BRANCH:-main}"
 SRC=/opt/sdrkit-src
 

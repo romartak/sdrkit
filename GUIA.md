@@ -154,7 +154,7 @@ Cada parte del panel tiene un botón **ⓘ** que explica para qué sirve y cómo
 ## 6. Paso 3 · Primer encendido y SSH
 
 1. Enciende la Pi con el dongle conectado y espera **2–3 minutos**.
-2. Conéctate desde la PC con `ssh TU_USUARIO@sdrpi.local`, o desde el celular con la app **Termius**.
+2. Conéctate desde la PC con `ssh romartak@sdrpi.local`, o desde el celular con la app **Termius**.
 
 ---
 
@@ -162,7 +162,7 @@ Cada parte del panel tiene un botón **ⓘ** que explica para qué sirve y cómo
 
 **Desde GitHub (recomendado; necesita internet en la Pi):**
 ```
-curl -fsSL https://raw.githubusercontent.com/TU_USUARIO/sdrkit/main/get.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/romartak/sdrkit/main/get.sh | sudo bash
 ```
 
 **Desde la microSD (si copiaste el kit en el paso 2):**
