@@ -148,6 +148,7 @@ rollback() {
     rm -rf "$OPT" && mv "$OPT.prev" "$OPT"
     [ -f "$OPT/sdrkit-cli.sh" ] && install -m 755 "$OPT/sdrkit-cli.sh" /usr/local/bin/sdrkit
     [ -n "$OLD" ] && "${GIT[@]}" reset -q --hard "$OLD" 2>/dev/null
+    [ -n "$OLD" ] && echo "$OLD" > "$STATE/commit"
     systemctl restart sdrkit
     echo "↩ Volví a la versión anterior ($(current_version)): todo sigue como antes."
   fi
