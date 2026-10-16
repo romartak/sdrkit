@@ -27,7 +27,7 @@ else
 fi
 echo "==> Versión $(cat "$SRC/VERSION" 2>/dev/null) descargada. Iniciando el instalador…"
 # el instalador hace preguntas: se le conecta el teclado aunque este script llegue por «curl | bash»
-if [ -r /dev/tty ] && : </dev/tty 2>/dev/null; then
+if { true </dev/tty; } 2>/dev/null; then
   exec bash "$SRC/install.sh" </dev/tty
 else
   exec bash "$SRC/install.sh"
