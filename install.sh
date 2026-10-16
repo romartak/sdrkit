@@ -97,8 +97,7 @@ if [ "$STAGE" = "--panel" ]; then
   sdrkit_load_conf "$CONF"
   install_panel
   systemctl restart sdrkit && ok "Panel reiniciado con la versión $(cat "$KIT/VERSION" 2>/dev/null)."
-  record_version
-  exit 0
+  exit 0   # la versión (commit) la anota el actualizador sólo cuando comprueba que el panel nuevo responde
 fi
 
 # =====================================================================
