@@ -103,3 +103,41 @@ def test_unknown_paths_404(server):
         except urllib.error.HTTPError as e:
             code = e.code
         assert code == 404, path
+
+
+def _start(tmp_path, *extra, conf_text=None):
+    port = _free_port()
+    conf = tmp_path / "sdrkit.conf"
+    conf.write_text(conf_text or "")
+    env = dict(os.environ, SDRKIT_STATE=str(tmp_path))
+    p = subprocess.Popen([sys.executable, "sdrkit_server.py", "--port", str(port), "--bind", "127.0.0.1",
+                          "--conf", str(conf), *extra], cwd=FILES, env=env,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    return p, "http://127.0.0.1:%d" % port
+
+
+def test_refuses_to_start_without_password(tmp_path):
+    p, _ = _start(tmp_path)
+    assert p.wait(timeout=15) == 1
+    assert b"ADMIN_PASSWORD" in p.stderr.read()
+
+
+def test_login_lockout_after_repeated_failures(tmp_path):
+    p, base = _start(tmp_path, "--demo", conf_text='ADMIN_PASSWORD="correct-horse"\n')
+    try:
+        for _ in range(100):
+            try:
+                urllib.request.urlopen(base + "/login", timeout=1)
+                break
+            except OSError:
+                time.sleep(0.2)
+        codes = []
+        for _ in range(7):
+            req = urllib.request.Request(base + "/login", data=b"password=wrong", method="POST")
+            try:
+                codes.append(urllib.request.urlopen(req, timeout=5).status)
+            except urllib.error.HTTPError as e:
+                codes.append(e.code)
+        assert codes[:5] == [200] * 5 and codes[5:] == [429, 429]
+    finally:
+        p.terminate()

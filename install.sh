@@ -240,7 +240,7 @@ if [ "$STAGE" != "--stage2" ]; then
     if [ -z "$ADMIN_PASSWORD" ]; then
       say "Password of the web panel and of the OpenWebRX+ \"admin\" user" \
           "Clave del panel web y del usuario «admin» de OpenWebRX+"
-      ask_pass ADMIN_PASSWORD "Administrator password" "Clave de administrador" 4
+      ask_pass ADMIN_PASSWORD "Administrator password (8+ characters)" "Clave de administrador (8+ caracteres)" 8
     fi
   else
     gen() { tr -dc 'A-HJ-NP-Za-km-z2-9' < /dev/urandom | head -c 10; }
@@ -406,9 +406,11 @@ udevadm control --reload-rules 2>/dev/null; udevadm trigger 2>/dev/null || true
 # ---------------------------------------------------------------------
 step "Installing OpenWebRX+ (web receiver)" "Instalando OpenWebRX+ (receptor web)"
 ppa="https://luarvique.github.io/ppa"
-curl -fsSL "$ppa/openwebrx-plus.gpg" | gpg --yes --dearmor -o /etc/apt/trusted.gpg.d/openwebrx-plus.gpg \
+install -d -m 755 /etc/apt/keyrings
+curl -fsSL "$ppa/openwebrx-plus.gpg" | gpg --yes --dearmor -o /etc/apt/keyrings/openwebrx-plus.gpg \
   || fail "could not download the OpenWebRX+ repository key" "no se pudo descargar la llave del repositorio de OpenWebRX+"
-echo "deb [signed-by=/etc/apt/trusted.gpg.d/openwebrx-plus.gpg] $ppa/$CODENAME ./" > /etc/apt/sources.list.d/openwebrx-plus.list
+echo "deb [signed-by=/etc/apt/keyrings/openwebrx-plus.gpg] $ppa/$CODENAME ./" > /etc/apt/sources.list.d/openwebrx-plus.list
+rm -f /etc/apt/trusted.gpg.d/openwebrx-plus.gpg   # old global key · llave global antigua
 rm -f /etc/apt/sources.list.d/openwebrx.list   # the original repo clashes with OpenWebRX+ · el original choca con OpenWebRX+
 "${APT[@]}" update || fail "apt update with the OpenWebRX+ repository" "apt update con el repositorio de OpenWebRX+"
 echo "openwebrx openwebrx/admin_user_password password $ADMIN_PASSWORD" | debconf-set-selections

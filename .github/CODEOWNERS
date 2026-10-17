@@ -1,0 +1,6 @@
+# Every change needs a review from the maintainer
+* @romartak
+/install.sh @romartak
+/get.sh @romartak
+/files/sdrkit-update.sh @romartak
+/.github/ @romartak
