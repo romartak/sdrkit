@@ -237,9 +237,11 @@ const Radio = (() => {
 
   function renderDecoder(d, now) {
     const ago = (t) => { const s = Math.round((now - t) / 1000); return s < 60 ? _t("hace {n} s", {n: s}) : _t("hace {n} min", {n: Math.round(s / 60)}); };
+    // código de privacidad de walkie FRS/PMR (1–38) que corresponde al subtono
+    const walkieCode = (t) => { const n = typeof Paises !== "undefined" && Paises.code(t); return n ? _t("código walkie {n}", {n}) + " · " : ""; };
     const c = $("#dCtcss"), cs = $("#dCtcssSub");
-    if (d.ctcss) { c.textContent = d.ctcss.tone.toFixed(1) + " Hz"; c.className = "live"; cs.textContent = _t("medido {m} Hz · desviación {d} Hz", {m: d.ctcss.measured, d: d.ctcss.dev}); }
-    else if (R.lastCtcss) { c.textContent = R.lastCtcss.v.tone.toFixed(1) + " Hz"; c.className = "last"; cs.textContent = _t("último, {ago}", {ago: ago(R.lastCtcss.t)}); }
+    if (d.ctcss) { c.textContent = d.ctcss.tone.toFixed(1) + " Hz"; c.className = "live"; cs.textContent = walkieCode(d.ctcss.tone) + _t("medido {m} Hz · desviación {d} Hz", {m: d.ctcss.measured, d: d.ctcss.dev}); }
+    else if (R.lastCtcss) { c.textContent = R.lastCtcss.v.tone.toFixed(1) + " Hz"; c.className = "last"; cs.textContent = walkieCode(R.lastCtcss.v.tone) + _t("último, {ago}", {ago: ago(R.lastCtcss.t)}); }
     else { c.textContent = "—"; c.className = ""; cs.textContent = d.mod === "nfm" || d.mod === "nfmw" ? _t("sin tono") : _t("sólo en FM"); }
     const k = $("#dDcs"), ks = $("#dDcsSub");
     if (d.dcs) { k.textContent = d.dcs.text.split(" ≡ ")[0]; k.className = "live"; ks.textContent = (d.dcs.text.includes("≡") ? "≡ " + d.dcs.text.split(" ≡ ")[1] + " · " : "") + _t("calidad {q}%", {q: Math.round(d.dcs.quality * 100)}); }
@@ -349,13 +351,20 @@ const Radio = (() => {
       renderMemories();
     } catch (e) {}
   }
+  // subtono y desplazamiento de repetidora guardados en la memoria (Más → Canales → Tu país)
+  function memExtra(m) {
+    let t = "";
+    if (m.offset) t += " · " + (m.offset > 0 ? "+" : "−") + (Math.abs(m.offset) / 1000) + " MHz";
+    if (m.tone) t += " · " + SDR.esc(typeof Paises !== "undefined" ? Paises.toneText(m.tone) : m.tone);
+    return t;
+  }
   function renderMemories() {
     const g = $("#memGroup").value; R.group = g;
     const items = R.mems.filter(m => !g || m.group === g);
     const names = Object.fromEntries(MODES);
     $("#memList").innerHTML = items.length ? items.map(m =>
       `<li data-id="${SDR.esc(m.id)}" data-freq="${m.freq}"><div class="grow"><div><b>${SDR.esc(_t(m.name))}</b></div>` +
-      `<div class="muted small mono">${(m.freq / 1e6).toFixed(4)} MHz · ${names[m.mod] ? _t(names[m.mod]) : m.mod}${g ? "" : " · " + SDR.esc(_t(m.group))}</div></div>` +
+      `<div class="muted small mono">${(m.freq / 1e6).toFixed(4)} MHz · ${names[m.mod] ? _t(names[m.mod]) : m.mod}${memExtra(m)}${g ? "" : " · " + SDR.esc(_t(m.group))}</div></div>` +
       `<button class="btn sm" data-del="${SDR.esc(m.id)}" aria-label="${SDR.esc(_t("Borrar"))}">✕</button></li>`).join("")
       : `<li class="muted" style="cursor:default">${SDR.esc(_t("No hay memorias en este grupo."))}</li>`;
     renderFreq();
@@ -561,7 +570,7 @@ const Radio = (() => {
     } catch (e) {}
   }
   return {
-    init, loadMemories, tune,
+    init, loadMemories, tune, mems: () => R.mems,
     onShow() { renderOverlay(); updateStream(); loadRadio(); loadMemories(); },
     onHide() { updateStream(); },
     onStatus(s) { renderOverlay(); updateStream(); if (s.mode !== "radio") SDR.setRecIndicator(false); },

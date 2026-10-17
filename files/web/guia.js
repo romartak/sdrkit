@@ -75,7 +75,11 @@ const Ref = (() => {
   const EN = () => (I18N.lang === "en" && I18N.data.guia) || null;
   const tr = (s) => { const e = EN(); return (e && e[s] != null) ? e[s] : _t(s); };
 
-  function region() { const r = (SDR.status && SDR.status.region) || "americas"; return String(r).toLowerCase().startsWith("eu") ? "E" : "A"; }
+  function region() {
+    const p = typeof Paises !== "undefined" && Paises.region();  // el país elegido en Más → Canales manda sobre la región del equipo
+    if (p) return p;
+    const r = (SDR.status && SDR.status.region) || "americas"; return String(r).toLowerCase().startsWith("eu") ? "E" : "A";
+  }
   function render() {
     const q = $("#refSearch").value.trim().toLowerCase(), reg = region();
     const rows = F.filter(x => (x[4] === "*" || x[4] === reg) && (cat === "Todas" || x[0] === cat) &&

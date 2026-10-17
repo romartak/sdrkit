@@ -17,6 +17,7 @@
 <script src="/lang-en-radio.js"></script>
 <script src="/lang-en-help.js"></script>
 <script src="/lang-en-server.js"></script>
+<script src="/lang-en-paises.js"></script>
 </head>
 <body>
 <header class="top">
@@ -599,6 +600,11 @@
   </div>
 
   <div id="more-canales" class="sub">
+    <div class="card" data-help="paises">
+      <h3>🌎 Tu país</h3>
+      <label class="f">País<select id="paisSel"></select></label>
+      <div id="paisInfo"></div>
+    </div>
     <div class="card" data-help="canales">
       <h3>Escuchar todo: servicios y canales</h3>
       <p class="small">Todos los canales de cada servicio (walkie-talkies PMR/FRS, marina, aviación, CB, radioaficionados, satélites…). Toca uno para escucharlo o escanea el servicio completo.</p>
@@ -789,6 +795,7 @@
 <script src="/radio.js"></script>
 <script src="/decode.js"></script>
 <script src="/canales.js"></script>
+<script src="/paises.js"></script>
 <script src="/help.js"></script>
 <script src="/recs.js"></script>
 <script src="/antenas.js"></script>

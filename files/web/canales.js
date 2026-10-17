@@ -38,6 +38,15 @@ const Canales = (() => {
     {id: "lpd", ico: "📻", name: "LPD433 (69 canales de 433 MHz)", reg: "E", mod: "nfm",
       info: "Walkies de muy baja potencia en la banda de 433 MHz (Europa). Comparten espacio con controles remotos y sensores, que suenan como ráfagas cortas.",
       ch: r(433.075, 69, 0.025, "LPD ")},
+    {id: "uhfcb", ico: "📻", name: "UHF CB 477 MHz (Australia y Nueva Zelanda)", reg: "O", where: "Australia y Nueva Zelanda", mod: "nfm",
+      info: "La radio sin licencia de Australia y Nueva Zelanda: 80 canales en 476–477 MHz. Canales 5 y 35 = emergencias, 40 = carreteras (camiones), 1–8 = salidas de repetidoras (entran por el 31–38). Mucho uso en el campo, caravanas y 4×4.",
+      ch: Array.from({length: 80}, (_, k) => {
+        const n = k + 1, f = +(476.425 + (n <= 40 ? (n - 1) * 0.025 : (n - 41) * 0.025 + 0.0125)).toFixed(4);
+        return {n, f, name: "UHF CB " + n + (n === 5 || n === 35 ? " · emergencias" : n === 40 ? " · carreteras" : n <= 8 ? " · repetidora" : "")};
+      })},
+    {id: "cn409", ico: "📻", name: "Walkies públicos 409 MHz (China)", reg: "O", where: "China", mod: "nfm",
+      info: "Los walkie-talkies sin licencia de China (公众对讲机): 20 canales de 12.5 kHz en 409.7500–409.9875 MHz.",
+      ch: r(409.75, 20, 0.0125, "409 · ")},
     {id: "cb", ico: "🚚", name: "Banda ciudadana CB 27 MHz (40 canales)", reg: "*", mod: "am",
       info: "Camioneros, taxis, aficionados. En América se usa AM (canal 19 = carreteras, 9 = emergencias); en Europa también FM. Necesita el RTL-SDR Blog V4 (o modo directo del V3) y una antena larga (≈2.6 m).",
       ch: CB.map((f, k) => ({n: k + 1, f, name: "CB " + (k + 1) + (k + 1 === 9 ? " · emergencias" : k + 1 === 19 ? " · carreteras" : "")}))},
@@ -107,21 +116,29 @@ const Canales = (() => {
   ];
   const C = {sel: null};
 
-  function region() { return (SDR.status && String(SDR.status.region || "").startsWith("eu")) ? "E" : "A"; }
+  function region() {
+    const p = typeof Paises !== "undefined" && Paises.region();
+    return p || ((SDR.status && String(SDR.status.region || "").startsWith("eu")) ? "E" : "A");
+  }
+  // ¿el servicio corresponde al país elegido (Más → Canales → Tu país) o, sin país, a la región del equipo?
+  function native(s) {
+    const n = typeof Paises !== "undefined" ? Paises.native(s) : null;
+    return n === null ? s.reg === "*" || s.reg === region() : n;
+  }
   function chans(s) {
     if (s.ch) return s.ch.map(c => ({freq: Math.round(c.f * 1e6), mod: c.mod || s.mod, name: c.name, dsd: c.dsd || s.dsd}));
     return [];
   }
   function render() {
-    const reg = region();
-    const order = S.slice().sort((a, b) => (a.reg !== "*" && a.reg !== reg) - (b.reg !== "*" && b.reg !== reg));
+    if (typeof Paises !== "undefined") Paises.render();
+    const order = S.slice().sort((a, b) => !native(a) - !native(b));
     $("#chServices").innerHTML = order.map(s =>
-      `<button data-svc="${s.id}" class="${C.sel === s.id ? "active" : ""}${s.reg !== "*" && s.reg !== reg ? " other" : ""}">${s.ico} ${SDR.esc(_t(s.name))}</button>`).join("");
+      `<button data-svc="${s.id}" class="${C.sel === s.id ? "active" : ""}${native(s) ? "" : " other"}">${s.ico} ${SDR.esc(_t(s.name))}</button>`).join("");
     const s = S.find(x => x.id === C.sel);
     const box = $("#chDetail");
     if (!s) { box.innerHTML = `<p class="muted">${SDR.esc(_t("Elige un servicio para ver todos sus canales, escucharlos o escanearlos completos."))}</p>`; return; }
     const cs = chans(s), modName = _t({nfm: "FM", nfmw: "FM ancha", wfm: "WFM", am: "AM", usb: "USB", lsb: "LSB", dsd: "Digital"}[s.mod]);
-    const regTxt = s.reg === "A" ? _t("América") : s.reg === "E" ? _t("Europa / otros países") : _t("todo el mundo");
+    const regTxt = s.reg === "A" ? _t("América") : s.reg === "E" ? _t("Europa / otros países") : s.reg === "O" ? _t(s.where) : _t("todo el mundo");
     const label = s.range ? _t(s.range.label) : "";
     const facts = [_t("Región: {r}", {r: regTxt}), _t("modo {m}", {m: modName})]
       .concat(cs.length ? [_tn(cs.length, "{n} canal", "{n} canales")] : [], s.range ? [_t("rango: {r}", {r: label})] : []);
@@ -156,8 +173,11 @@ const Canales = (() => {
       }
     } catch (e) { SDR.toast(e.message, true); }
   }
+  function select(id) {
+    C.sel = id; render(); $("#chDetail").scrollIntoView({behavior: "smooth", block: "start"});
+  }
   function init() {
-    $("#chServices").addEventListener("click", ev => { const b = ev.target.closest("[data-svc]"); if (b) { C.sel = b.dataset.svc; render(); $("#chDetail").scrollIntoView({behavior: "smooth", block: "start"}); } });
+    $("#chServices").addEventListener("click", ev => { const b = ev.target.closest("[data-svc]"); if (b) select(b.dataset.svc); });
     $("#chDetail").addEventListener("click", ev => {
       const a = ev.target.closest("[data-act]"), k = ev.target.closest("[data-k]");
       if (a) act(a.dataset.act);
@@ -167,6 +187,6 @@ const Canales = (() => {
       }
     });
   }
-  return {init, onShow() { render(); }, services: S, chans};
+  return {init, select, onShow() { render(); }, services: S, chans};
 })();
 SDR.modules.canales = Canales;

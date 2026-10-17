@@ -710,6 +710,19 @@ def default_memories(region, lang="es"):
     return m
 
 
+def clean_tone(v):
+    """Subtono de una memoria: CTCSS en Hz ("100.0") o DCS ("D023N"); cualquier otra cosa se descarta."""
+    v = str(v or "").strip().upper()
+    m = re.match(r"^D([0-7]{3})([NI]?)$", v)
+    if m:
+        return "D%s%s" % (m.group(1), m.group(2) or "N")
+    try:
+        hz = float(v)
+    except ValueError:
+        return None
+    return "%.1f" % hz if 60 <= hz <= 260 else None
+
+
 class MemoryStore:
     def __init__(self, path, region, lang="es"):
         self.path = path
@@ -744,6 +757,16 @@ class MemoryStore:
         clean = {"id": str(item.get("id") or uuid.uuid4().hex[:8])[:12], "freq": int(round(freq)), "mod": mod,
                  "name": str(item.get("name", ""))[:40] or "%.4f MHz" % (freq / 1e6),
                  "group": str(item.get("group", ""))[:30] or "Favoritos"}
+        # repetidoras: subtono para abrirla y desplazamiento de su entrada (kHz)
+        tone = clean_tone(item.get("tone"))
+        if tone:
+            clean["tone"] = tone
+        try:
+            offset = int(round(float(item.get("offset") or 0)))
+        except (TypeError, ValueError):
+            offset = 0
+        if offset and abs(offset) <= 50000:
+            clean["offset"] = offset
         with self.lock:
             for i, it in enumerate(self.items):
                 if it.get("id") == clean["id"]:

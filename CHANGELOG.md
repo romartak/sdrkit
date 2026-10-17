@@ -8,6 +8,12 @@ Update an installed kit with `sudo sdrkit update`.
 
 ### Added
 - Animated demo GIFs in the README (analyzer, radio, aircraft radar, pagers), recorded with `tools/gifs.mjs` + `tools/make_gifs.py`.
+- **More → Channels → Your country**: pick any of 244 countries and see its license-free walkie-talkie services, ham bands,
+  repeater output segments with their usual offset and tones, regulator, call-sign prefixes and national association.
+  "Search" scans the repeater outputs; "My repeaters" saves repeaters with their CTCSS/DCS tone and offset (memories now keep
+  `tone` and `offset`). The country also orders the service list and filters the frequency guide.
+- Walkie-talkie tone codes 1–38: the Radio shows the code that matches the detected CTCSS tone, and the tone field accepts a code.
+- Channel plans for UHF CB 477 MHz (Australia / New Zealand) and China's 409 MHz public walkie-talkies.
 - The Release workflow can be run by hand from the Actions tab; it publishes a SHA-256 checksum next to the tarball.
 
 ## [3.3.1] - 2026-10-17
