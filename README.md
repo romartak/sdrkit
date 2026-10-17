@@ -237,6 +237,11 @@ Tip: use your browser's **Add to Home screen** to install it like an app.
 
 ### 🩺 If something goes wrong
 
+```bash
+sdrkit doctor                  # full check-up: ✔/✖ and what to do about each failure
+sudo sdrkit backup             # save your settings and memories (restore with: sudo sdrkit restore FILE)
+```
+
 <details>
 <summary><b>The panel doesn't open</b></summary>
 

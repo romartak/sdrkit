@@ -15,6 +15,9 @@ usage() {
     cat <<EOF
 sdrkit — atajos de SDR-Kit
   sdrkit status                   resumen: servicios, red, IPs, SDR, energía
+  sdrkit doctor                   diagnóstico completo con ✔/✖ y qué hacer si algo falla
+  sudo sdrkit backup [archivo]    copia tu configuración y memorias (sin las grabaciones)
+  sudo sdrkit restore archivo     restaura una copia hecha con backup
   sudo sdrkit hotspot             fuerza el hotspot propio (${HOTSPOT_SSID:-SDR-Pi})
   sudo sdrkit auto                vuelve al modo automático (WiFi conocida o hotspot)
   sudo sdrkit wifi "Red" "clave"  guarda una red WiFi (ej. el hotspot del celular)
@@ -34,7 +37,7 @@ sdrkit — atajos de SDR-Kit
   sudo sdrkit language en|es      idioma de estos mensajes y del instalador
   sdrkit logs                     registros en vivo (Ctrl+C para salir)
   sudo sdrkit restart             reinicia los servicios de SDR-Kit
-Los comandos en español también valen, en el mismo orden: estado, redes, clave, clave-hotspot,
+Los comandos en español también valen, en el mismo orden: estado, diagnóstico, copia, restaurar, redes, clave, clave-hotspot,
   perfiles, probar-sdr, grabaciones, decodificadores, actualizar (--buscar), volver, versión,
   configurar, instalar-dsd, idioma, reiniciar, ayuda.
 EOF
@@ -42,6 +45,9 @@ EOF
     cat <<EOF
 sdrkit — SDR-Kit shortcuts
   sdrkit status                   summary: services, network, IPs, SDR, power
+  sdrkit doctor                   full check-up with ✔/✖ and what to do if something fails
+  sudo sdrkit backup [file]       save your settings and memories (not the recordings)
+  sudo sdrkit restore file        restore a backup made with backup
   sudo sdrkit hotspot             force the built-in hotspot (${HOTSPOT_SSID:-SDR-Pi})
   sudo sdrkit auto                back to automatic mode (known WiFi or hotspot)
   sudo sdrkit wifi "Name" "pass"  save a WiFi network (e.g. your phone's hotspot)
@@ -61,7 +67,7 @@ sdrkit — SDR-Kit shortcuts
   sudo sdrkit language en|es      language of these messages and of the installer
   sdrkit logs                     live logs (Ctrl+C to quit)
   sudo sdrkit restart             restart the SDR-Kit services
-Spanish aliases work too, in the same order: estado, redes, clave, clave-hotspot, perfiles,
+Spanish aliases work too, in the same order: estado, diagnóstico, copia, restaurar, redes, clave, clave-hotspot, perfiles,
   probar-sdr, grabaciones, decodificadores, actualizar (--buscar), volver, versión, configurar,
   instalar-dsd, idioma, reiniciar, ayuda.
 EOF
@@ -87,6 +93,54 @@ case "${1:-help}" in
     L "== Power and temperature" "== Energía y temperatura"
     command -v vcgencmd >/dev/null && echo "  $(vcgencmd get_throttled)  $(L "(0x0 = all good; 0x50005 = undervoltage)" "(0x0 = todo bien; 0x50005 = bajo voltaje)")"
     command -v vcgencmd >/dev/null && echo "  $(vcgencmd measure_temp)"
+    ;;
+  doctor|diagnóstico|diagnostico)
+    bad=0
+    chk() {  # chk ok|bad|warn "English" "Español" [how to fix EN] [how to fix ES]
+      case "$1" in
+        ok)   printf '  \033[32m✔\033[0m %s\n' "$(L "$2" "$3")" ;;
+        warn) printf '  \033[33m!\033[0m %s\n' "$(L "$2" "$3")"; [ -n "$4" ] && printf '      → %s\n' "$(L "$4" "$5")" ;;
+        *)    printf '  \033[31m✖\033[0m %s\n' "$(L "$2" "$3")"; bad=$((bad + 1)); [ -n "$4" ] && printf '      → %s\n' "$(L "$4" "$5")" ;;
+      esac
+    }
+    echo "SDR-Kit $(cat /opt/sdrkit/VERSION 2>/dev/null || echo '?')"
+    systemctl is-active --quiet sdrkit 2>/dev/null && chk ok "Panel service is running" "El servicio del panel está activo" \
+      || chk bad "Panel service is not running" "El servicio del panel no está activo" "sudo sdrkit restart  ·  sdrkit logs" "sudo sdrkit reiniciar  ·  sdrkit logs"
+    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "http://127.0.0.1:${PANEL_PORT:-80}/api/status" 2>/dev/null)"
+    case "$code" in 200|401) chk ok "The panel answers (HTTP $code)" "El panel responde (HTTP $code)" ;;
+      *) chk bad "The panel does not answer" "El panel no responde" "sdrkit logs" "sdrkit logs" ;; esac
+    if lsusb 2>/dev/null | grep -qiE '0bda:28(38|32)'; then chk ok "RTL-SDR detected" "RTL-SDR detectado"
+    elif lsusb 2>/dev/null | grep -qi '1d50:6089'; then chk warn "Only a HackRF found (analyzer only)" "Sólo hay un HackRF (sólo analizador)"
+    else chk bad "No RTL-SDR found" "No encuentro el RTL-SDR" "Check the OTG adapter and cable; try another USB cable or power bank" "Revisa el adaptador OTG y el cable; prueba otro cable o power bank"; fi
+    if command -v vcgencmd >/dev/null; then
+      thr="$(vcgencmd get_throttled 2>/dev/null | cut -d= -f2)"
+      [ "${thr:-0x0}" = 0x0 ] && chk ok "Power supply is fine" "La alimentación está bien" \
+        || chk warn "Under-voltage or throttling seen ($thr)" "Se detectó bajo voltaje o limitación ($thr)" "Use a stronger power bank and a short, thick cable" "Usa un power bank más fuerte y un cable corto y grueso"
+      t="$(vcgencmd measure_temp 2>/dev/null | tr -dc '0-9.')"
+      [ "${t%.*}" -lt 75 ] 2>/dev/null && chk ok "Temperature ${t}°C" "Temperatura ${t}°C" || chk warn "Temperature ${t}°C is high" "Temperatura ${t}°C alta" "Give it some air or a heatsink" "Dale ventilación o un disipador"
+    fi
+    free_mb="$(df -Pm "${REC_DIR:-/var/lib/sdrkit}" 2>/dev/null | awk 'NR==2{print $4}')"
+    [ "${free_mb:-0}" -gt 500 ] 2>/dev/null && chk ok "Free space: ${free_mb} MB" "Espacio libre: ${free_mb} MB" \
+      || chk warn "Low free space (${free_mb:-?} MB)" "Poco espacio libre (${free_mb:-?} MB)" "Delete old recordings (Recordings tab)" "Borra grabaciones viejas (pestaña Grabaciones)"
+    ip -4 -o addr show 2>/dev/null | awk '$2!="lo"' | grep -q . && chk ok "Network up: $(ip -4 -o addr show | awk '$2!="lo"{split($4,a,"/"); printf "%s ", a[1]}')" "Red activa: $(ip -4 -o addr show | awk '$2!="lo"{split($4,a,"/"); printf "%s ", a[1]}')" \
+      || chk bad "No network address" "Sin dirección de red" "sudo sdrkit hotspot" "sudo sdrkit hotspot"
+    command -v hackrf_sweep >/dev/null || ! lsusb 2>/dev/null | grep -qi '1d50:6089' || chk warn "HackRF found but hackrf_sweep is missing" "Hay un HackRF pero falta hackrf_sweep" "sudo apt install hackrf" "sudo apt install hackrf"
+    echo
+    if [ "$bad" -eq 0 ]; then L "All good." "Todo en orden."; else L "$bad problem(s) found." "$bad problema(s) encontrado(s)."; exit 1; fi
+    ;;
+  backup|copia)
+    need_root "$@"
+    out="${2:-$HOME/sdrkit-backup-$(date +%F).tar.gz}"
+    tar -czf "$out" --exclude='grabaciones' --exclude='*.wav' /etc/sdrkit /var/lib/sdrkit 2>/dev/null \
+      && L "Backup saved: $out (settings and memories; recordings are not included)" \
+           "Copia guardada: $out (configuración y memorias; las grabaciones no se incluyen)"
+    ;;
+  restore|restaurar)
+    need_root "$@"
+    [ -f "${2:-}" ] || { L "Usage: sudo sdrkit restore FILE.tar.gz" "Uso: sudo sdrkit restaurar ARCHIVO.tar.gz"; exit 1; }
+    tar -tzf "$2" >/dev/null 2>&1 || { L "That is not a valid backup." "Ese archivo no es una copia válida."; exit 1; }
+    tar -tzf "$2" | grep -qvE '^(etc/sdrkit|var/lib/sdrkit)(/|$)' && { L "Refusing: the file has paths outside SDR-Kit." "Rechazado: el archivo tiene rutas ajenas a SDR-Kit."; exit 1; }
+    tar -xzf "$2" -C / && systemctl restart sdrkit-netwatch sdrkit && L "Backup restored." "Copia restaurada."
     ;;
   hotspot)
     need_root "$@"

@@ -243,6 +243,11 @@ Consejo: usa **Añadir a pantalla de inicio** del navegador para tenerlo como un
 
 ### 🩺 Si algo sale mal
 
+```bash
+sdrkit diagnóstico             # revisión completa: ✔/✖ y qué hacer si algo falla
+sudo sdrkit copia              # guarda tu configuración y memorias (restaurar: sudo sdrkit restaurar ARCHIVO)
+```
+
 <details>
 <summary><b>El panel no abre</b></summary>
 

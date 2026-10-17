@@ -4,6 +4,7 @@ Find the symptom, check the likely cause, apply the fix. Two commands answer mos
 
 ```sh
 sdrkit status     # services, network, IPs, SDR on USB, power and temperature
+sdrkit doctor     # full check-up: ✔/✖ per item and what to do about each failure
 sdrkit logs       # live logs of the panel, the network watchdog and OpenWebRX+
 ```
 
