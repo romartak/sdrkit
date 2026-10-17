@@ -21,7 +21,7 @@ jobs:
       matrix:
         python: ["3.11", "3.13"]   # Raspberry Pi OS Bookworm / Trixie
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
@@ -41,7 +41,7 @@ jobs:
     name: Web panel · syntax & translations
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -54,7 +54,7 @@ jobs:
     name: Shell · installer, updater, CLI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: bash -n and shellcheck
         run: |
           bash -n install.sh get.sh files/*.sh
@@ -64,7 +64,7 @@ jobs:
     name: End to end · demo panel decodes real signals
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
