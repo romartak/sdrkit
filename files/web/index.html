@@ -10,6 +10,13 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/app.css">
+<script src="/i18n.js"></script>
+<script src="/lang-en-html.js"></script>
+<script src="/lang-en-app.js"></script>
+<script src="/lang-en-analyzer.js"></script>
+<script src="/lang-en-radio.js"></script>
+<script src="/lang-en-help.js"></script>
+<script src="/lang-en-server.js"></script>
 </head>
 <body>
 <header class="top">
@@ -24,6 +31,7 @@
     <span id="chipNet" class="chip">…</span>
     <span id="chipTemp" class="chip">…</span>
   </div>
+  <button type="button" class="chip langchip" data-lang-switch translate="no">ES</button>
 </header>
 
 <main>
@@ -726,6 +734,10 @@
       <p class="muted small" style="margin:10px 0 0">Necesita internet (WiFi de casa o hotspot del celular). Tu configuración, grabaciones y memorias no se tocan. Si la versión nueva falla, vuelve sola a la anterior.</p>
     </div>
     <div class="card">
+      <h3>Idioma · Language</h3>
+      <label class="f" translate="no">🌐 <select id="langSel" data-lang-select aria-label="Idioma · Language"></select></label>
+    </div>
+    <div class="card">
       <h3>Mantenimiento</h3>
       <div class="row">
         <button class="btn" id="btnLogs">📄 Ver registros</button>
@@ -771,6 +783,7 @@
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="busy" class="busy hidden"><div class="spinner"></div><div id="busyText">Un momento…</div><button class="btn sm" id="busyCancel">Cancelar</button></div>
 
+<script>I18N.start();</script>
 <script src="/app.js"></script>
 <script src="/analyzer.js"></script>
 <script src="/radio.js"></script>

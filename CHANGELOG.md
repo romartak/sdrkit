@@ -1,21 +1,75 @@
-# Historial de versiones
+# Changelog
 
-## 3.1.0
-- Instalación desde GitHub con un solo comando (`get.sh`).
-- `sudo sdrkit actualizar`: trae la última versión, muestra los cambios, guarda una copia y **vuelve sola a la anterior** si la nueva no arranca. `sudo sdrkit volver` para regresar a mano.
-- Botón **Actualizar** en Más → Sistema.
-- La configuración se conserva en cada actualización y recibe las opciones nuevas automáticamente.
-- Pruebas automáticas en GitHub en cada cambio.
+All notable changes to SDR-Kit are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
+Update an installed kit with `sudo sdrkit update`.
+
+## [3.2.0] - 2026-10-16
+
+### Added
+- **English and Spanish everywhere.** The web panel, help sheets, frequency guide, antenna tools, login page,
+  installer, updater and CLI speak both languages. The panel follows the browser language and can be switched
+  from the header (`EN`/`ES`) or *More → System*; the installer asks first and stores `SDRKIT_LANG`.
+- English CLI commands alongside the Spanish ones: `update`, `rollback`, `status`, `networks`, `password`,
+  `hotspot-password`, `profiles`, `test-sdr`, `decoders`, `install-dsd`, `help`…
+- Test suite (`tests/`): CTCSS/DCS/DTMF detection, POCSAG BCH codewords, POCSAG and APRS round trips through
+  multimon-ng, the digital-signal classifier, demo-server API, configuration merging, translation catalogs and
+  a browser smoke test in both languages.
+- CI on Python 3.11 and 3.13, end-to-end POCSAG **and** APRS decoding in demo mode, and a release workflow that
+  publishes tagged versions.
+- Complete English documentation in [`docs/`](docs/README.md) (hardware, installation, user guide, digital
+  voice, antennas, updating, troubleshooting, architecture, HTTP API, configuration, development, FAQ, legal);
+  the Spanish guide moved to [`docs/es/`](docs/es/README.md).
+- Community files (contributing guide, code of conduct,
+  security policy, issue and pull-request templates) and the MIT license.
+
+### Fixed
+- `sudo sdrkit update` on a full update (new packages) now runs the same panel health check as a quick update and
+  **rolls back by itself** if the panel does not answer; the Pi only reboots once it does.
+- `sdrkit update --check` works without `sudo`.
+- The installer installs the `hackrf` tools, so a HackRF is detected without a manual `apt install`.
+- Recordings made in Digital mode got names like `Digital(DMR,P25,…)`; they are now `…_Digital.wav`.
+- The railway AAR service has 91 channels, not 97.
+
+### Changed
+- Digital-signal classifier: a steady tone (test tone, warbling beacon, DTMF) is no longer reported as a
+  digital mode, 2-level signals with heavy filtering (GMSK/D-Star, AIS) are no longer mistaken for 4FSK, and
+  weak NXDN/dPMR signals are still recognized with about 2.5× more noise than before. Levels are now measured at
+  the symbol centres instead of on a raw histogram.
+
+## [3.1.0] - 2026-10-16
+
+### Added
+- One-command install from GitHub (`get.sh`).
+- `sudo sdrkit update` fetches the latest version, shows what changed, keeps a backup and **rolls back
+  automatically** if the new version does not start; `sudo sdrkit rollback` goes back by hand.
+- *Update* button in *More → System*.
+- The configuration is preserved on every update and receives new options automatically.
+- Automated checks on GitHub for every change.
 
 ## 3.0.0
-- Analizador profesional: sintonizador sin tocar el gráfico (−/+, deslizador, salto a la siguiente señal), 4 marcadores con delta y seguimiento, mediciones (potencia de canal, OBW, ACPR, ancho a −3/−6/−20/−26 dB, SNR, contador, armónicos, pulsos), span cero con disparo, trazas máx./mín./promedio/persistencia/referencia, unidades calibradas, convertidor, línea límite, vigilancia 24/7 con mapa de ocupación y avisos al celular.
-- Voz digital en el panel con DSD-FME (DMR, P25, D-Star, Fusion, NXDN, dPMR, M17) e identificador automático de señales digitales.
-- Pestaña Decodificar: mensajes POCSAG/FLEX/APRS/EAS, sensores de 433 MHz (rtl_433) y radar de aviones (dump1090).
-- Servicios y canales completos (PMR, FRS, marina, aviación, CB…) para escuchar o escanear todo.
-- Ayuda ⓘ en cada parte del panel.
+
+### Added
+- Professional analyzer: tuner without touching the graph (−/+, slider, jump to the next signal), 4 markers
+  with delta and tracking, measurements (channel power, OBW, ACPR, −3/−6/−20/−26 dB bandwidth, SNR, counter,
+  harmonics, pulses), triggered zero span, max/min/average/persistence/reference traces, calibrated units,
+  converter offset, limit line, 24/7 monitor with occupancy map and phone alerts.
+- Digital voice in the panel with DSD-FME (DMR, P25, D-Star, Fusion, NXDN, dPMR, M17) and automatic
+  recognition of digital signals.
+- *Decode* tab: POCSAG/FLEX/APRS/EAS messages, 433 MHz sensors (rtl_433) and an offline aircraft radar (dump1090).
+- Complete services and channel lists (PMR446, FRS/GMRS, marine, airband, CB…) to listen to or scan.
+- ⓘ help on every part of the panel.
 
 ## 2.0.0
-- Radio en el celular con subtonos CTCSS/DCS y DTMF, grabación por transmisión, escáner, memorias, modo cazador, antenas y guía de frecuencias.
+
+### Added
+- Radio on the phone with CTCSS/DCS tones and DTMF, per-transmission recording, scanner, memories, fox-hunt
+  mode, antenna tools and a frequency guide.
 
 ## 1.0.0
-- Analizador de espectro estilo tinySA, hotspot automático, OpenWebRX+ y Tailscale.
+
+### Added
+- tinySA-style spectrum analyzer, automatic hotspot, OpenWebRX+ and Tailscale.
+
+[3.2.0]: https://github.com/romartak/sdrkit/releases/tag/v3.2.0
+[3.1.0]: https://github.com/romartak/sdrkit/tree/v3.1.0

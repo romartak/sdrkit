@@ -71,23 +71,27 @@ const Ref = (() => {
   }
   function rotations(w) { const s = new Set(); for (let r = 0; r < 23; r++) s.add((((w >>> r) | (w << (23 - r))) & 0x7FFFFF) >>> 0); return s; }
   let cat = "Todas", built = false;
+  // English names/notes live in lang-en-help.js (I18N.data.guia, keyed by the Spanish text)
+  const EN = () => (I18N.lang === "en" && I18N.data.guia) || null;
+  const tr = (s) => { const e = EN(); return (e && e[s] != null) ? e[s] : _t(s); };
 
   function region() { const r = (SDR.status && SDR.status.region) || "americas"; return String(r).toLowerCase().startsWith("eu") ? "E" : "A"; }
   function render() {
     const q = $("#refSearch").value.trim().toLowerCase(), reg = region();
     const rows = F.filter(x => (x[4] === "*" || x[4] === reg) && (cat === "Todas" || x[0] === cat) &&
-      (!q || (x[0] + " " + x[1] + " " + x[2] + " " + x[5]).toLowerCase().includes(q)));
+      (!q || (x[0] + " " + x[1] + " " + x[2] + " " + x[5] + (EN() ? " " + tr(x[0]) + " " + tr(x[1]) + " " + (x[5] ? tr(x[5]) : "") : ""))
+        .toLowerCase().includes(q)));
     const MOD = {nfm: "FM", wfm: "WFM", am: "AM", usb: "USB", lsb: "LSB"};
-    $("#refTable").innerHTML = "<thead><tr><th>Qué</th><th>MHz</th><th></th></tr></thead><tbody>" + (rows.length ? rows.map(x =>
-      `<tr><td><b>${SDR.esc(x[1])}</b><div class="muted small">${SDR.esc(x[0])} · ${MOD[x[3]]}${x[5] ? " · " + SDR.esc(x[5]) : ""}</div></td>` +
-      `<td class="mono">${x[2].toFixed(x[2] < 30 ? 3 : 4)}</td><td class="r"><button class="btn sm" data-l="${x[2]}" data-m="${x[3]}" aria-label="Escuchar">🎧</button> ` +
-      `<button class="btn sm" data-a="${x[2]}" aria-label="Analizador">📈</button></td></tr>`).join("") :
-      '<tr><td class="muted" colspan="3">Nada coincide.</td></tr>') + "</tbody>";
+    $("#refTable").innerHTML = `<thead><tr><th>${_t("Qué")}</th><th>MHz</th><th></th></tr></thead><tbody>` + (rows.length ? rows.map(x =>
+      `<tr><td><b>${SDR.esc(tr(x[1]))}</b><div class="muted small">${SDR.esc(tr(x[0]))} · ${MOD[x[3]]}${x[5] ? " · " + SDR.esc(tr(x[5])) : ""}</div></td>` +
+      `<td class="mono">${x[2].toFixed(x[2] < 30 ? 3 : 4)}</td><td class="r"><button class="btn sm" data-l="${x[2]}" data-m="${x[3]}" aria-label="${_t("Escuchar")}">🎧</button> ` +
+      `<button class="btn sm" data-a="${x[2]}" aria-label="${_t("Analizador")}">📈</button></td></tr>`).join("") :
+      `<tr><td class="muted" colspan="3">${_t("Nada coincide.")}</td></tr>`) + "</tbody>";
   }
   function build() {
     if (built) return; built = true;
     const cats = ["Todas", ...new Set(F.map(x => x[0]))];
-    $("#refCats").innerHTML = cats.map(c => `<button data-c="${c}" class="${c === cat ? "active" : ""}">${c}</button>`).join("");
+    $("#refCats").innerHTML = cats.map(c => `<button data-c="${c}" class="${c === cat ? "active" : ""}">${c === "Todas" ? _t("Todas") : tr(c)}</button>`).join("");
     $("#refCats").addEventListener("click", ev => {
       const b = ev.target.closest("[data-c]"); if (!b) return;
       cat = b.dataset.c; $$("#refCats button").forEach(x => x.classList.toggle("active", x === b)); render();

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://github.com/romartak/sdrkit/tree/main/docs
+    about: Installation, user guide, troubleshooting and FAQ.
+  - name: 🔒 Report a security problem
+    url: https://github.com/romartak/sdrkit/security/advisories/new
+    about: Please report vulnerabilities privately.

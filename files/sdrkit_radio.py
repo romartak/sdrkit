@@ -55,6 +55,8 @@ DTMF_KEYS = ["123A", "456B", "789C", "*0#D"]
 MODES = ("nfm", "nfmw", "wfm", "am", "usb", "lsb", "dsd")
 MODE_NAMES = {"nfm": "FM", "nfmw": "FM ancha", "wfm": "WFM", "am": "AM", "usb": "USB", "lsb": "LSB",
               "dsd": "Digital (DMR, P25, D-Star, YSF, NXDN, dPMR, M17)"}
+# short names for recording files (no spaces, commas or parentheses) · nombres cortos para los archivos de grabación
+FILE_MODE_NAMES = {"nfmw": "FM-ancha", "dsd": "Digital"}
 
 
 # ----------------------------------------------------------------------------
@@ -407,7 +409,7 @@ class Recorder:
         now = time.localtime()
         day = os.path.join(self.folder, time.strftime("%Y-%m-%d", now))
         os.makedirs(day, exist_ok=True)
-        parts = [time.strftime("%H-%M-%S", now), "%.4fMHz" % (info["freq"] / 1e6), MODE_NAMES.get(info["mod"], info["mod"])]
+        parts = [time.strftime("%H-%M-%S", now), "%.4fMHz" % (info["freq"] / 1e6), FILE_MODE_NAMES.get(info["mod"]) or MODE_NAMES.get(info["mod"], info["mod"])]
         if info.get("name"):
             parts.append(safe_name(info["name"]))
         base = os.path.join(day, "_".join(parts).replace(" ", ""))
@@ -652,9 +654,21 @@ class ActivityLog:
                 pass
 
 
-def default_memories(region):
+def ui_lang(conf=None):
+    """Idioma de los textos que crea el servidor (memorias de ejemplo): SDRKIT_LANG o el idioma del sistema."""
+    v = str((conf or {}).get("SDRKIT_LANG") or os.environ.get("SDRKIT_LANG") or "").lower()
+    if v in ("es", "en"):
+        return v
+    return "es" if os.environ.get("LANG", "").lower().startswith("es") else "en"
+
+
+def default_memories(region, lang="es"):
     eu = str(region).lower().startswith("eu")
+    en = lang == "en"
     m = []
+
+    def L(es, english):
+        return english if en else es
 
     def add(group, name, mhz, mod="nfm"):
         m.append({"id": uuid.uuid4().hex[:8], "group": group, "name": name, "freq": int(round(mhz * 1e6)), "mod": mod})
@@ -667,34 +681,37 @@ def default_memories(region):
                467.6375, 467.6625, 467.6875, 467.7125, 462.5500, 462.5750, 462.6000, 462.6250, 462.6500, 462.6750,
                462.7000, 462.7250]
         for i, f in enumerate(frs):
-            add("FRS/GMRS", "Canal %d" % (i + 1), f)
-    for ch, f in [("16 socorro", 156.800), ("06 seguridad", 156.300), ("09 llamada", 156.450), ("13 puente", 156.650),
+            add("FRS/GMRS", L("Canal %d", "Channel %d") % (i + 1), f)
+    for ch, f in [(L("16 socorro", "16 distress"), 156.800), (L("06 seguridad", "06 safety"), 156.300),
+                  (L("09 llamada", "09 calling"), 156.450), (L("13 puente", "13 bridge-to-bridge"), 156.650),
                   ("22A", 157.100), ("68", 156.425), ("69", 156.475), ("71", 156.575), ("72", 156.625), ("77", 156.875)]:
-        add("Marina VHF", "Canal " + ch, f)
-    add("Aviación", "Emergencia 121.5", 121.5, "am")
-    add("Aviación", "Aire-aire 123.45", 123.45, "am")
-    add("Aviación", "Planeadores/ultraligeros 122.75", 122.75, "am")
+        add(L("Marina VHF", "Marine VHF"), L("Canal ", "Channel ") + ch, f)
+    air = L("Aviación", "Airband")
+    add(air, L("Emergencia 121.5", "Emergency 121.5"), 121.5, "am")
+    add(air, L("Aire-aire 123.45", "Air-to-air 123.45"), 123.45, "am")
+    add(air, L("Planeadores/ultraligeros 122.75", "Gliders/ultralights 122.75"), 122.75, "am")
+    ham = L("Radioaficionados", "Ham radio")
     if eu:
-        add("Radioaficionados", "2 m llamada 145.500", 145.5)
-        add("Radioaficionados", "70 cm llamada 433.500", 433.5)
-        add("Radioaficionados", "APRS 144.800", 144.8)
+        add(ham, L("2 m llamada 145.500", "2 m calling 145.500"), 145.5)
+        add(ham, L("70 cm llamada 433.500", "70 cm calling 433.500"), 433.5)
+        add(ham, "APRS 144.800", 144.8)
     else:
-        add("Radioaficionados", "2 m llamada 146.520", 146.52)
-        add("Radioaficionados", "2 m simplex 146.550", 146.55)
-        add("Radioaficionados", "70 cm llamada 446.000", 446.0)
-        add("Radioaficionados", "APRS 144.390", 144.39)
-    add("Radioaficionados", "Estación Espacial ISS (voz)", 145.8)
-    add("CB 27 MHz", "Canal 9 emergencia", 27.065, "am")
-    add("CB 27 MHz", "Canal 19 carretera", 27.185, "am")
+        add(ham, L("2 m llamada 146.520", "2 m calling 146.520"), 146.52)
+        add(ham, "2 m simplex 146.550", 146.55)
+        add(ham, L("70 cm llamada 446.000", "70 cm calling 446.000"), 446.0)
+        add(ham, "APRS 144.390", 144.39)
+    add(ham, L("Estación Espacial ISS (voz)", "International Space Station (voice)"), 145.8)
+    add("CB 27 MHz", L("Canal 9 emergencia", "Channel 9 emergency"), 27.065, "am")
+    add("CB 27 MHz", L("Canal 19 carretera", "Channel 19 highway"), 27.185, "am")
     if not eu:
         for i, f in enumerate([162.400, 162.425, 162.450, 162.475, 162.500, 162.525, 162.550]):
-            add("Clima NOAA (EE. UU./Canadá)", "WX%d" % (i + 1), f)
-    add("Radio FM", "Ejemplo FM 98.1", 98.1, "wfm")
+            add(L("Clima NOAA (EE. UU./Canadá)", "NOAA Weather (US/Canada)"), "WX%d" % (i + 1), f)
+    add(L("Radio FM", "FM radio"), L("Ejemplo FM 98.1", "Example FM 98.1"), 98.1, "wfm")
     return m
 
 
 class MemoryStore:
-    def __init__(self, path, region):
+    def __init__(self, path, region, lang="es"):
         self.path = path
         self.lock = threading.Lock()
         try:
@@ -703,7 +720,7 @@ class MemoryStore:
             if not isinstance(self.items, list):
                 raise ValueError
         except (OSError, ValueError):
-            self.items = default_memories(region)
+            self.items = default_memories(region, lang)
             self._save()
 
     def _save(self):
@@ -820,7 +837,7 @@ class RadioManager:
         self._cls_buf = []
         self._dec_seq = 0
         self._dec_recent = collections.deque(maxlen=8)
-        self.memories = MemoryStore(os.path.join(folder, "memorias.json"), self.region)
+        self.memories = MemoryStore(os.path.join(folder, "memorias.json"), self.region, ui_lang(conf))
         p = {"freq": 462.5625e6 if not str(self.region).lower().startswith("eu") else 446.00625e6,
              "mod": "nfm", "squelch": -45.0, "gain": 29.7, "autorec": False, "name": "", "data": [], "dsd": "auto"}
         p.update(state.get("radio") or {})

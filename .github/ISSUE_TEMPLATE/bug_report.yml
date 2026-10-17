@@ -1,0 +1,50 @@
+name: 🐞 Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report this! Spanish is welcome too · También puedes escribir en español.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Radio, tune 446.00625 MHz NFM
+        2. Tap Record
+        3. …
+  - type: input
+    id: version
+    attributes:
+      label: SDR-Kit version
+      description: Output of `sdrkit version` (or "demo mode").
+    validations:
+      required: true
+  - type: dropdown
+    id: hw
+    attributes:
+      label: Hardware
+      options: [Raspberry Pi Zero 2 W, Raspberry Pi 3, Raspberry Pi 4, Raspberry Pi 5, Demo mode (no hardware), Other]
+  - type: input
+    id: sdr
+    attributes:
+      label: SDR dongle
+      placeholder: RTL-SDR Blog V4
+  - type: input
+    id: client
+    attributes:
+      label: Phone / browser
+      placeholder: iPhone 15, Safari 18
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "`sdrkit status` and `journalctl -u sdrkit -n 100 --no-pager`. Remove passwords and locations you do not want to share."
+      render: shell

@@ -26,7 +26,7 @@ const Radio = (() => {
     ensureCtx();
     if (P.playing) return;
     P.playing = true; P.nextT = 0;
-    $("#rPlay").textContent = "■ Dejar de escuchar"; $("#rPlay").classList.remove("primary");
+    $("#rPlay").textContent = _t("■ Dejar de escuchar"); $("#rPlay").classList.remove("primary");
     updateStream();
     drawViz();
     while (P.playing) {
@@ -68,7 +68,7 @@ const Radio = (() => {
   function stop() {
     P.playing = false;
     if (P.ctrl) P.ctrl.abort();
-    $("#rPlay").textContent = "▶ Escuchar en este celular"; $("#rPlay").classList.add("primary");
+    $("#rPlay").textContent = _t("▶ Escuchar en este celular"); $("#rPlay").classList.add("primary");
     updateStream();
   }
   function drawViz() {
@@ -107,7 +107,7 @@ const Radio = (() => {
         R.es.addEventListener("radio", ev => onLive(JSON.parse(ev.data)));
         R.es.addEventListener("radio_error", ev => { const d = JSON.parse(ev.data); SDR.toast(d.error, true); });
         R.es.addEventListener("radio_note", ev => { const d = JSON.parse(ev.data); SDR.toast(d.msg); });
-        R.es.addEventListener("radio_saved", ev => { const d = JSON.parse(ev.data); if (d.saved && d.saved.kind === "manual") SDR.toast("Grabación guardada (" + d.saved.duration + " s)."); });
+        R.es.addEventListener("radio_saved", ev => { const d = JSON.parse(ev.data); if (d.saved && d.saved.kind === "manual") SDR.toast(_t("Grabación guardada ({d} s).", {d: d.saved.duration})); });
       }
     } else if (R.es) { R.es.close(); R.es = null; }
   }
@@ -123,7 +123,7 @@ const Radio = (() => {
     const pct = (db) => SDR.clamp((db + 100) / 100 * 100, 0, 100);
     $("#rBar").style.width = pct(d.db) + "%";
     $("#rDb").textContent = d.db.toFixed(1) + " dB";
-    $("#rNoise").textContent = "ruido " + d.noise.toFixed(0);
+    $("#rNoise").textContent = _t("ruido {n}", {n: d.noise.toFixed(0)});
     $("#rLed").classList.toggle("on", !!d.sq);
     // decodificación
     const now = Date.now();
@@ -134,18 +134,19 @@ const Radio = (() => {
     const rec = d.rec;
     SDR.setRecIndicator(!!rec);
     const manual = rec && rec.kind === "manual";
-    $("#rRec").textContent = manual ? "■ Detener grabación · " + SDR.fmtDur(rec.secs) : "⏺ Grabar ahora";
+    $("#rRec").textContent = manual ? _t("■ Detener grabación · {t}", {t: SDR.fmtDur(rec.secs)}) : _t("⏺ Grabar ahora");
     $("#rRec").classList.toggle("recon", !!manual);
     $("#rAuto").checked = !!d.autorec;
-    $("#rRecInfo").textContent = rec ? (rec.kind === "auto" ? "● Grabando esta transmisión… " : "● Grabando… ") + rec.file
-      : d.autorec ? "Esperando transmisiones para grabarlas (se activa cuando se abre el squelch)." : "Se guardan en carpetas por fecha. Míralas en la pestaña Grabaciones.";
+    $("#rRecInfo").textContent = rec ? (rec.kind === "auto" ? _t("● Grabando esta transmisión… {f}", {f: rec.file}) : _t("● Grabando… {f}", {f: rec.file}))
+      : d.autorec ? _t("Esperando transmisiones para grabarlas (se activa cuando se abre el squelch).") : _t("Se guardan en carpetas por fecha. Míralas en la pestaña Grabaciones.");
     // escáner
     const sc = d.scan;
     if (sc) {
+      const hits = _tn(sc.hits, "{n} hallazgo", "{n} hallazgos");
       $("#scStatus").innerHTML = sc.state === "listen" && sc.lock
-        ? `<b style="color:var(--ok)">● Detenido en ${SDR.esc(sc.lock.name || (sc.lock.freq / 1e6).toFixed(4) + " MHz")}</b> · ${sc.hits} hallazgos`
-        : `Buscando ${sc.range ? (sc.range[0] / 1e6).toFixed(4) + "–" + (sc.range[1] / 1e6).toFixed(4) + " MHz" : ""} · ${sc.channels} canales` +
-          (sc.cycle_ms != null ? ` · vuelta completa ${sc.cycle_ms} ms` : "") + ` · ${sc.hits} hallazgos`;
+        ? `<b style="color:var(--ok)">${SDR.esc(_t("● Detenido en {name}", {name: sc.lock.name ? _t(sc.lock.name) : (sc.lock.freq / 1e6).toFixed(4) + " MHz"}))}</b> · ${hits}`
+        : [_t("Buscando {r}", {r: sc.range ? (sc.range[0] / 1e6).toFixed(4) + "–" + (sc.range[1] / 1e6).toFixed(4) + " MHz" : ""}),
+          _tn(sc.channels, "{n} canal", "{n} canales")].concat(sc.cycle_ms != null ? [_t("vuelta completa {ms} ms", {ms: sc.cycle_ms})] : [], [hits]).join(" · ");
       $("#scStart").classList.add("on");
     } else {
       $("#scStart").classList.remove("on");
@@ -159,13 +160,13 @@ const Radio = (() => {
   // ------------------------------------------------------------ voz digital y detector de modo
   function digitalSuggestion(g) {
     const k = g.kind;
-    if (k === "4fsk4800") return [["auto", "🔊 Decodificar voz (DMR/P25/YSF)"], ["m17", "Probar M17"]];
-    if (k === "4fsk2400") return [["nxdn48", "🔊 Decodificar NXDN"], ["dpmr", "Probar dPMR"]];
-    if (k === "2fsk4800") return [["dstar", "🔊 Decodificar D-Star"]];
-    if (k === "4fsk6000") return [["p25", "P25 fase 2 (sólo con canal de control)"]];
-    if (k === "2fsk1200" || k === "2fsk2400" || k === "2fsk512") return [["data:pocsag", "✉ Leer mensajes POCSAG"]];
-    if (k === "2fsk1600" || k === "4fsk1600") return [["data:flex", "✉ Leer mensajes FLEX"]];
-    if (k === "afsk1200") return [["data:aprs", "✉ Leer APRS / packet"]];
+    if (k === "4fsk4800") return [["auto", _t("🔊 Decodificar voz (DMR/P25/YSF)")], ["m17", _t("Probar M17")]];
+    if (k === "4fsk2400") return [["nxdn48", _t("🔊 Decodificar NXDN")], ["dpmr", _t("Probar dPMR")]];
+    if (k === "2fsk4800") return [["dstar", _t("🔊 Decodificar D-Star")]];
+    if (k === "4fsk6000") return [["p25", _t("P25 fase 2 (sólo con canal de control)")]];
+    if (k === "2fsk1200" || k === "2fsk2400" || k === "2fsk512") return [["data:pocsag", _t("✉ Leer mensajes POCSAG")]];
+    if (k === "2fsk1600" || k === "4fsk1600") return [["data:flex", _t("✉ Leer mensajes FLEX")]];
+    if (k === "afsk1200") return [["data:aprs", _t("✉ Leer APRS / packet")]];
     return [];
   }
   function renderDigital(d) {
@@ -173,7 +174,8 @@ const Radio = (() => {
     const isD = d.mod === "dsd";
     if (fresh && !isD) {
       const sug = digitalSuggestion(g);
-      ban.innerHTML = `📡 <b>Señal digital detectada:</b> ${SDR.esc(g.guess)}` + (g.dev ? ` <span class="muted small">· desviación ≈ ${g.dev} Hz</span>` : "") +
+      ban.innerHTML = _t("📡 <b>Señal digital detectada:</b> {g}", {g: SDR.esc(_t(g.guess))}) +
+        (g.dev ? ` <span class="muted small">· ${SDR.esc(_t("desviación ≈ {d} Hz", {d: g.dev}))}</span>` : "") +
         (sug.length ? '<div class="row">' + sug.map(([k, t]) => `<button class="btn sm" data-dig="${k}">${SDR.esc(t)}</button>`).join("") + "</div>" : "");
       ban.classList.remove("hidden");
     } else if (!isD) ban.classList.add("hidden");
@@ -187,16 +189,16 @@ const Radio = (() => {
     }
     const st = d.dsd || {}, m = st.meta || {}, recent = m.t && Date.now() / 1000 - m.t < 4;
     $("#dsdSync").textContent = m.sync || "—"; $("#dsdSync").className = recent ? "live" : m.sync ? "last" : "";
-    $("#dsdSyncSub").textContent = recent ? "recibiendo" : m.sync ? "último detectado" : (g && fresh ? g.guess.split(":")[0] : "esperando señal");
+    $("#dsdSyncSub").textContent = recent ? _t("recibiendo") : m.sync ? _t("último detectado") : (g && fresh ? _t(g.guess).split(":")[0] : _t("esperando señal"));
     $("#dsdTg").textContent = m.tg || "—"; $("#dsdSrc").textContent = m.src || "—";
     $("#dsdCc").textContent = m.cc ? "Color code " + m.cc : m.nac ? "NAC " + m.nac : " ";
     $("#dsdAlias").textContent = m.alias || " ";
     let note = "";
-    if (st.error) note = "⚠ " + st.error;
-    else if (m.enc) note = "🔒 Llamada cifrada: la voz no se puede escuchar (con ningún receptor) sin la clave del sistema.";
-    else if (recent) note = "✅ Decodificando " + m.sync + ": la voz sale por el audio y se puede grabar.";
-    else if (fresh && g) note = "Tipo detectado por la forma de la señal: " + g.guess + ". Si no aparece voz, prueba otro sistema arriba.";
-    else note = "Sintoniza un canal digital (repetidora DMR, radio de empresa, D-Star, Fusion, M17…). La voz aparece sola cuando hay una llamada sin cifrar.";
+    if (st.error) note = "⚠ " + _t(st.error);
+    else if (m.enc) note = _t("🔒 Llamada cifrada: la voz no se puede escuchar (con ningún receptor) sin la clave del sistema.");
+    else if (recent) note = _t("✅ Decodificando {sync}: la voz sale por el audio y se puede grabar.", {sync: m.sync});
+    else if (fresh && g) note = _t("Tipo detectado por la forma de la señal: {g}. Si no aparece voz, prueba otro sistema arriba.", {g: _t(g.guess)});
+    else note = _t("Sintoniza un canal digital (repetidora DMR, radio de empresa, D-Star, Fusion, M17…). La voz aparece sola cuando hay una llamada sin cifrar.");
     $("#dsdNote").textContent = note;
     $("#dsdLog").textContent = (st.lines || []).join("\n");
   }
@@ -207,7 +209,7 @@ const Radio = (() => {
       : {start: Math.max(0.5e6, f - span), stop: f - st, step: st, mod: R.params.mod === "dsd" ? "nfm" : R.params.mod};
     try {
       await SDR.api("/api/radio/scan", {range, once: true, down: dir < 0});
-      SDR.toast(dir > 0 ? "Buscando la próxima señal hacia arriba…" : "Buscando la próxima señal hacia abajo…");
+      SDR.toast(dir > 0 ? _t("Buscando la próxima señal hacia arriba…") : _t("Buscando la próxima señal hacia abajo…"));
     } catch (e) { SDR.toast(e.message, true); }
   }
 
@@ -222,8 +224,8 @@ const Radio = (() => {
   function renderData(d) {
     const on = d.data || [];
     if (R.params && JSON.stringify(R.params.data || []) !== JSON.stringify(on)) { R.params.data = on; renderDataChips(); }
-    $("#rDataInfo").textContent = d.data_error ? "⚠ " + d.data_error
-      : on.length ? "Decodificando " + on.map(k => DATA_KINDS[k]).join(", ") + " · funciona con el squelch cerrado." : "Funciona aunque nadie escuche y con el squelch cerrado.";
+    $("#rDataInfo").textContent = d.data_error ? "⚠ " + _t(d.data_error)
+      : on.length ? _t("Decodificando {k} · funciona con el squelch cerrado.", {k: on.map(k => DATA_KINDS[k]).join(", ")}) : _t("Funciona aunque nadie escuche y con el squelch cerrado.");
     const items = d.decoded || [];
     const top = items.length ? items[items.length - 1].id : null;
     if (top === lastDecId) return;
@@ -234,15 +236,15 @@ const Radio = (() => {
   }
 
   function renderDecoder(d, now) {
-    const ago = (t) => { const s = Math.round((now - t) / 1000); return s < 60 ? "hace " + s + " s" : "hace " + Math.round(s / 60) + " min"; };
+    const ago = (t) => { const s = Math.round((now - t) / 1000); return s < 60 ? _t("hace {n} s", {n: s}) : _t("hace {n} min", {n: Math.round(s / 60)}); };
     const c = $("#dCtcss"), cs = $("#dCtcssSub");
-    if (d.ctcss) { c.textContent = d.ctcss.tone.toFixed(1) + " Hz"; c.className = "live"; cs.textContent = "medido " + d.ctcss.measured + " Hz · desviación " + d.ctcss.dev + " Hz"; }
-    else if (R.lastCtcss) { c.textContent = R.lastCtcss.v.tone.toFixed(1) + " Hz"; c.className = "last"; cs.textContent = "último, " + ago(R.lastCtcss.t); }
-    else { c.textContent = "—"; c.className = ""; cs.textContent = d.mod === "nfm" || d.mod === "nfmw" ? "sin tono" : "sólo en FM"; }
+    if (d.ctcss) { c.textContent = d.ctcss.tone.toFixed(1) + " Hz"; c.className = "live"; cs.textContent = _t("medido {m} Hz · desviación {d} Hz", {m: d.ctcss.measured, d: d.ctcss.dev}); }
+    else if (R.lastCtcss) { c.textContent = R.lastCtcss.v.tone.toFixed(1) + " Hz"; c.className = "last"; cs.textContent = _t("último, {ago}", {ago: ago(R.lastCtcss.t)}); }
+    else { c.textContent = "—"; c.className = ""; cs.textContent = d.mod === "nfm" || d.mod === "nfmw" ? _t("sin tono") : _t("sólo en FM"); }
     const k = $("#dDcs"), ks = $("#dDcsSub");
-    if (d.dcs) { k.textContent = d.dcs.text.split(" ≡ ")[0]; k.className = "live"; ks.textContent = (d.dcs.text.includes("≡") ? "≡ " + d.dcs.text.split(" ≡ ")[1] + " · " : "") + "calidad " + Math.round(d.dcs.quality * 100) + "%"; }
-    else if (R.lastDcs) { k.textContent = R.lastDcs.v.text.split(" ≡ ")[0]; k.className = "last"; ks.textContent = "último, " + ago(R.lastDcs.t); }
-    else { k.textContent = "—"; k.className = ""; ks.textContent = "sin código"; }
+    if (d.dcs) { k.textContent = d.dcs.text.split(" ≡ ")[0]; k.className = "live"; ks.textContent = (d.dcs.text.includes("≡") ? "≡ " + d.dcs.text.split(" ≡ ")[1] + " · " : "") + _t("calidad {q}%", {q: Math.round(d.dcs.quality * 100)}); }
+    else if (R.lastDcs) { k.textContent = R.lastDcs.v.text.split(" ≡ ")[0]; k.className = "last"; ks.textContent = _t("último, {ago}", {ago: ago(R.lastDcs.t)}); }
+    else { k.textContent = "—"; k.className = ""; ks.textContent = _t("sin código"); }
     const t = $("#dDtmf");
     t.textContent = d.dtmf || "—"; t.className = d.dtmf ? (d.sq ? "live" : "last") : "";
   }
@@ -292,7 +294,7 @@ const Radio = (() => {
     const s = (p.freq / 1e6).toFixed(5);
     const [a, b] = s.split(".");
     $("#rFreq").innerHTML = `${a}.${b.slice(0, 3)}<span style="opacity:.75">${b.slice(3)}</span><small>MHz</small>`;
-    $("#rName").textContent = p.name || " ";
+    $("#rName").textContent = p.name ? _t(p.name) : " ";
     $$("#rModes button").forEach(x => x.classList.toggle("active", x.dataset.mod === p.mod));
     $("#hFreq").textContent = (p.freq / 1e6).toFixed(4) + " MHz";
     $$("#memList li").forEach(li => li.classList.toggle("cur", +li.dataset.freq === p.freq));
@@ -300,7 +302,7 @@ const Radio = (() => {
   function renderSq() {
     const sq = R.params.squelch;
     $("#rSq").value = sq == null ? -100 : sq;
-    $("#rSqTxt").textContent = sq == null ? "Squelch abierto (se oye todo, incluso el ruido)" : "Squelch " + Math.round(sq) + " dB";
+    $("#rSqTxt").textContent = sq == null ? _t("Squelch abierto (se oye todo, incluso el ruido)") : "Squelch " + Math.round(sq) + " dB";
     $("#rSqm").style.left = (sq == null ? 0 : SDR.clamp((sq + 100), 0, 100)) + "%";
   }
   async function setParams(p, quiet) {
@@ -319,16 +321,16 @@ const Radio = (() => {
   function renderOverlay() {
     const s = SDR.status; if (!s) return;
     const ov = $("#rxOverlay");
-    if (s.switching) { ov.classList.remove("hidden"); $("#rxOverlayMsg").textContent = s.mode_msg || "Cambiando de modo…"; $("#btnUseRadio").classList.add("hidden"); return; }
+    if (s.switching) { ov.classList.remove("hidden"); $("#rxOverlayMsg").textContent = s.mode_msg ? _t(s.mode_msg) : _t("Cambiando de modo…"); $("#btnUseRadio").classList.add("hidden"); return; }
     $("#btnUseRadio").classList.remove("hidden");
     if (s.mode === "radio") {
-      if (s.radio && s.radio.error) { ov.classList.remove("hidden"); $("#rxOverlayMsg").textContent = "⚠ " + s.radio.error; $("#btnUseRadio").classList.add("hidden"); }
+      if (s.radio && s.radio.error) { ov.classList.remove("hidden"); $("#rxOverlayMsg").textContent = "⚠ " + _t(s.radio.error); $("#btnUseRadio").classList.add("hidden"); }
       else ov.classList.add("hidden");
       return;
     }
     ov.classList.remove("hidden");
-    $("#rxOverlayMsg").textContent = s.mode === "sweep" ? "El dongle lo está usando el analizador." :
-      s.mode === "receiver" ? "El dongle lo está usando el receptor avanzado (OpenWebRX+)." : "El SDR está en reposo.";
+    $("#rxOverlayMsg").textContent = s.mode === "sweep" ? _t("El dongle lo está usando el analizador.") :
+      s.mode === "receiver" ? _t("El dongle lo está usando el receptor avanzado (OpenWebRX+).") : _t("El SDR está en reposo.");
   }
 
   // ------------------------------------------------------------ memorias
@@ -338,10 +340,11 @@ const Radio = (() => {
       R.mems = r.items;
       const groups = [...new Set(R.mems.map(m => m.group))];
       const sel = $("#memGroup"), cur = R.group;
-      sel.innerHTML = '<option value="">Todas las memorias</option>' + groups.map(g => `<option>${SDR.esc(g)}</option>`).join("");
+      const opt = (g) => `<option value="${SDR.esc(g)}">${SDR.esc(_t(g))}</option>`;  // valor = grupo real; texto traducido
+      sel.innerHTML = `<option value="">${SDR.esc(_t("Todas las memorias"))}</option>` + groups.map(opt).join("");
       sel.value = groups.includes(cur) ? cur : "";
       const sg = $("#scanGroup"), scur = sg.value;
-      sg.innerHTML = groups.map(g => `<option>${SDR.esc(g)}</option>`).join("");
+      sg.innerHTML = groups.map(opt).join("");
       if (groups.includes(scur)) sg.value = scur;
       renderMemories();
     } catch (e) {}
@@ -351,10 +354,10 @@ const Radio = (() => {
     const items = R.mems.filter(m => !g || m.group === g);
     const names = Object.fromEntries(MODES);
     $("#memList").innerHTML = items.length ? items.map(m =>
-      `<li data-id="${SDR.esc(m.id)}" data-freq="${m.freq}"><div class="grow"><div><b>${SDR.esc(m.name)}</b></div>` +
-      `<div class="muted small mono">${(m.freq / 1e6).toFixed(4)} MHz · ${names[m.mod] || m.mod}${g ? "" : " · " + SDR.esc(m.group)}</div></div>` +
-      `<button class="btn sm" data-del="${SDR.esc(m.id)}" aria-label="Borrar">✕</button></li>`).join("")
-      : '<li class="muted" style="cursor:default">No hay memorias en este grupo.</li>';
+      `<li data-id="${SDR.esc(m.id)}" data-freq="${m.freq}"><div class="grow"><div><b>${SDR.esc(_t(m.name))}</b></div>` +
+      `<div class="muted small mono">${(m.freq / 1e6).toFixed(4)} MHz · ${names[m.mod] ? _t(names[m.mod]) : m.mod}${g ? "" : " · " + SDR.esc(_t(m.group))}</div></div>` +
+      `<button class="btn sm" data-del="${SDR.esc(m.id)}" aria-label="${SDR.esc(_t("Borrar"))}">✕</button></li>`).join("")
+      : `<li class="muted" style="cursor:default">${SDR.esc(_t("No hay memorias en este grupo."))}</li>`;
     renderFreq();
   }
 
@@ -377,7 +380,7 @@ const Radio = (() => {
       $("#hVal").textContent = d.db.toFixed(0);
       $("#hVal").style.color = `hsl(${120 - Hunter.level * 120},90%,55%)`;
       $("#hBar").style.width = (Hunter.level * 100) + "%";
-      $("#hPeak").textContent = "máximo " + Hunter.peak.toFixed(1) + " dB · " + (rel > 3 ? "señal " + rel.toFixed(0) + " dB sobre el ruido" : "sólo ruido");
+      $("#hPeak").textContent = _t("máximo {p} dB", {p: Hunter.peak.toFixed(1)}) + " · " + (rel > 3 ? _t("señal {r} dB sobre el ruido", {r: rel.toFixed(0)}) : _t("sólo ruido"));
     },
     loop() {
       if (!Hunter.open) return;
@@ -396,13 +399,13 @@ const Radio = (() => {
 
   // ------------------------------------------------------------ inicio
   function init() {
-    $("#rModes").innerHTML = MODES.map(([k, n]) => `<button data-mod="${k}">${n}</button>`).join("");
+    $("#rModes").innerHTML = MODES.map(([k, n]) => `<button data-mod="${k}">${SDR.esc(_t(n))}</button>`).join("");
     $("#rModes").addEventListener("click", ev => { const b = ev.target.closest("[data-mod]"); if (b) tune(R.params.freq, {mod: b.dataset.mod}); });
     $("#rFreq").addEventListener("click", () => {
-      const v = prompt("Frecuencia en MHz (ej. 462.5625):", R.params ? (R.params.freq / 1e6).toFixed(5) : "");
+      const v = prompt(_t("Frecuencia en MHz (ej. 462.5625):"), R.params ? (R.params.freq / 1e6).toFixed(5) : "");
       if (v === null) return;
       const f = parseFloat(String(v).replace(",", ".")) * 1e6;
-      if (!(f >= 0.1e6 && f <= 1766e6)) { SDR.toast("Frecuencia fuera de rango (0.1–1766 MHz).", true); return; }
+      if (!(f >= 0.1e6 && f <= 1766e6)) { SDR.toast(_t("Frecuencia fuera de rango (0.1–1766 MHz)."), true); return; }
       tune(f, {mod: SDR.guessMod(f)});
     });
     const step = () => +$("#rStep").value;
@@ -429,7 +432,7 @@ const Radio = (() => {
       if (k.startsWith("data:")) {
         const kind = k.slice(5), cur = new Set(R.params.data || []); cur.add(kind);
         R.params.data = [...cur]; renderDataChips(); setParams({data: R.params.data});
-        SDR.toast("Decodificando " + kind.toUpperCase() + ": mira «Datos digitales» más abajo o Decodificar → Mensajes.");
+        SDR.toast(_t("Decodificando {k}: mira «Datos digitales» más abajo o Decodificar → Mensajes.", {k: kind.toUpperCase()}));
       } else { tune(R.params.freq, {mod: "dsd", dsd: k}); }
     });
     $("#rPlay").addEventListener("click", () => P.playing ? stop() : play());
@@ -438,8 +441,8 @@ const Radio = (() => {
     sq.addEventListener("input", () => { R.sqDragging = true; R.params.squelch = +sq.value; renderSq(); });
     sq.addEventListener("change", () => { R.sqDragging = false; setParams({squelch: +sq.value}); });
     $("#rSqAuto").addEventListener("click", () => {
-      if (!R.live) { SDR.toast("Espera a que llegue la señal."); return; }
-      setParams({squelch: Math.round(R.live.noise + 8)}); SDR.toast("Squelch a " + Math.round(R.live.noise + 8) + " dB (ruido + 8 dB).");
+      if (!R.live) { SDR.toast(_t("Espera a que llegue la señal.")); return; }
+      setParams({squelch: Math.round(R.live.noise + 8)}); SDR.toast(_t("Squelch a {n} dB (ruido + 8 dB).", {n: Math.round(R.live.noise + 8)}));
     });
     $("#rSqOff").addEventListener("click", () => setParams({squelch: "off"}));
     $("#rGain").addEventListener("change", ev => setParams({gain: ev.target.value}));
@@ -459,13 +462,13 @@ const Radio = (() => {
       try {
         if (on && SDR.status && SDR.status.mode !== "radio") await SDR.api("/api/mode", {mode: "radio"});
         const r = await SDR.api("/api/radio/record", {on});
-        if (!on && r.saved) SDR.toast("Guardada: " + r.saved.file + " (" + r.saved.duration + " s)");
-        if (on) SDR.toast("Grabando… pulsa otra vez para detener.");
+        if (!on && r.saved) SDR.toast(_t("Guardada: {f} ({d} s)", {f: r.saved.file, d: r.saved.duration}));
+        if (on) SDR.toast(_t("Grabando… pulsa otra vez para detener."));
       } catch (e) { SDR.toast(e.message, true); }
     });
     $("#rAuto").addEventListener("change", ev => {
       setParams({autorec: ev.target.checked});
-      SDR.toast(ev.target.checked ? "Cada transmisión se guardará en su propio archivo." : "Grabación automática desactivada.");
+      SDR.toast(ev.target.checked ? _t("Cada transmisión se guardará en su propio archivo.") : _t("Grabación automática desactivada."));
     });
     // escáner
     $("#scanSrc").addEventListener("click", ev => {
@@ -476,12 +479,12 @@ const Radio = (() => {
       $("#scanRangeBox").classList.toggle("hidden", R.scanSrc !== "range");
       $("#scanSvcBox").classList.toggle("hidden", R.scanSrc !== "svc");
     });
-    if (typeof Canales !== "undefined") $("#scanSvc").innerHTML = Canales.services.map(s => `<option value="${s.id}">${s.ico} ${SDR.esc(s.name)}</option>`).join("");
+    if (typeof Canales !== "undefined") $("#scanSvc").innerHTML = Canales.services.map(s => `<option value="${s.id}">${s.ico} ${SDR.esc(_t(s.name))}</option>`).join("");
     $("#scStart").addEventListener("click", async () => {
       const body = {action: "start"};
       if (R.scanSrc === "group") {
         body.group = $("#scanGroup").value;
-        if (!body.group) { SDR.toast("Primero guarda memorias en algún grupo.", true); return; }
+        if (!body.group) { SDR.toast(_t("Primero guarda memorias en algún grupo."), true); return; }
       } else if (R.scanSrc === "svc") {
         const sv = Canales.services.find(x => x.id === $("#scanSvc").value); if (!sv) return;
         const cs = Canales.chans(sv);
@@ -493,13 +496,13 @@ const Radio = (() => {
       }
       try {
         const r = await SDR.api("/api/radio/scan", body);
-        SDR.toast("Escaneando " + r.channels + " canales.");
+        SDR.toast(_tn(r.channels, "Escaneando {n} canal.", "Escaneando {n} canales."));
         setTimeout(SDR.pollStatus, 500);
       } catch (e) { SDR.toast(e.message, true); }
     });
-    $("#scStop").addEventListener("click", () => SDR.api("/api/radio/scan", {action: "stop"}).then(() => { $("#scStatus").textContent = "Escáner detenido."; $("#scStart").classList.remove("on"); }).catch(e => SDR.toast(e.message, true)));
+    $("#scStop").addEventListener("click", () => SDR.api("/api/radio/scan", {action: "stop"}).then(() => { $("#scStatus").textContent = _t("Escáner detenido."); $("#scStart").classList.remove("on"); }).catch(e => SDR.toast(e.message, true)));
     $("#scSkip").addEventListener("click", () => SDR.api("/api/radio/scan", {action: "skip"}).catch(e => SDR.toast(e.message, true)));
-    $("#scLock").addEventListener("click", () => SDR.api("/api/radio/scan", {action: "skip", minutes: 10}).then(() => SDR.toast("Ese canal se ignorará 10 minutos.")).catch(e => SDR.toast(e.message, true)));
+    $("#scLock").addEventListener("click", () => SDR.api("/api/radio/scan", {action: "skip", minutes: 10}).then(() => SDR.toast(_t("Ese canal se ignorará 10 minutos."))).catch(e => SDR.toast(e.message, true)));
     // memorias
     $("#memGroup").addEventListener("change", renderMemories);
     $("#memList").addEventListener("click", async ev => {
@@ -507,17 +510,17 @@ const Radio = (() => {
       if (del) {
         ev.stopPropagation();
         const m = R.mems.find(x => x.id === del.dataset.del);
-        if (m && confirm("¿Borrar la memoria «" + m.name + "»?")) { await SDR.api("/api/memories/delete", {ids: [m.id]}); loadMemories(); }
+        if (m && confirm(_t("¿Borrar la memoria «{name}»?", {name: _t(m.name)}))) { await SDR.api("/api/memories/delete", {ids: [m.id]}); loadMemories(); }
         return;
       }
       const li = ev.target.closest("li[data-id]"); if (!li) return;
       const m = R.mems.find(x => x.id === li.dataset.id);
       if (m) tune(m.freq, {mod: m.mod, name: m.name});
     });
-    $("#memAdd").addEventListener("click", () => { if (R.params) SDR.saveMemory(R.params.freq, R.params.mod, R.params.name, R.group || "Favoritos"); });
+    $("#memAdd").addEventListener("click", () => { if (R.params) SDR.saveMemory(R.params.freq, R.params.mod, R.params.name, R.group || _t("Favoritos")); });
     $("#memExport").addEventListener("click", () => {
       const blob = new Blob([JSON.stringify({sdrkit_memorias: 1, items: R.mems}, null, 1)], {type: "application/json"});
-      SDR.download("memorias-sdrkit.json", URL.createObjectURL(blob));
+      SDR.download(_t("memorias-sdrkit.json"), URL.createObjectURL(blob));
     });
     $("#memImport").addEventListener("click", () => $("#memFile").click());
     $("#memFile").addEventListener("change", async ev => {
@@ -525,10 +528,10 @@ const Radio = (() => {
       try {
         const data = JSON.parse(await f.text());
         const items = Array.isArray(data) ? data : data.items;
-        const replace = confirm("¿Reemplazar todas tus memorias? (Cancelar = agregarlas a las actuales)");
+        const replace = confirm(_t("¿Reemplazar todas tus memorias? (Cancelar = agregarlas a las actuales)"));
         const r = await SDR.api("/api/memories/import", {items, replace});
-        SDR.toast("Listo: " + r.count + " memorias."); loadMemories();
-      } catch (e) { SDR.toast("Archivo no válido: " + e.message, true); }
+        SDR.toast(_tn(r.count, "Listo: {n} memoria.", "Listo: {n} memorias.")); loadMemories();
+      } catch (e) { SDR.toast(_t("Archivo no válido: {e}", {e: _t(e.message)}), true); }
       ev.target.value = "";
     });
     $("#rAnalyze").addEventListener("click", () => { if (R.params) An.show(R.params.freq, 2e6); });
@@ -539,7 +542,7 @@ const Radio = (() => {
       if (cur.has(b.dataset.k)) cur.delete(b.dataset.k); else cur.add(b.dataset.k);
       R.params.data = [...cur]; renderDataChips();
       setParams({data: R.params.data});
-      if (["nfm", "nfmw"].indexOf(R.params.mod) < 0 && cur.size) SDR.toast("Consejo: los datos (POCSAG, APRS…) se reciben en FM.");
+      if (["nfm", "nfmw"].indexOf(R.params.mod) < 0 && cur.size) SDR.toast(_t("Consejo: los datos (POCSAG, APRS…) se reciben en FM."));
     });
     loadRadio();
     loadMemories();

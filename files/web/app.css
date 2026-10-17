@@ -25,6 +25,8 @@ a{color:var(--accent)}
 .chip .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:var(--muted);vertical-align:1px}
 .chip.ok .dot{background:var(--ok)} .chip.busy .dot{background:var(--warn)} .chip.bad .dot{background:var(--err)}
 .chip.warn{color:#1a1200;background:var(--warn);border-color:var(--warn);font-weight:700}
+html.i18n-wait body{visibility:hidden}
+.chip.langchip{flex:none;color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-left:-4px}
 .chip.recchip{color:#fff;background:var(--rec);border-color:var(--rec);font-weight:700}
 
 main{padding:12px 16px calc(var(--tabbar) + 24px + env(safe-area-inset-bottom));max-width:1280px;margin:0 auto}

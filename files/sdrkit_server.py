@@ -56,7 +56,7 @@ def _read_version():
                     return v
         except OSError:
             pass
-    return "3.1.0"
+    return "3.2.0"
 
 
 VERSION = _read_version()
@@ -499,13 +499,13 @@ def demo_data_tx():
         idx = np.minimum((np.arange(int(len(bits) * spb)) / spb).astype(int), len(bits) - 1)
         return np.where(bits[idx] == 1, -4500.0, 4500.0)  # 1 = frecuencia baja
 
-    pages = [pocsag(1234567, "SDR-Kit: mensaje de prueba POCSAG 1200"),
-             pocsag(200016, "UNIDAD 12 ACUDIR A BASE 15:30"),
-             pocsag(1500003, "Temperatura servidor 41C - alarma")]
+    pages = [pocsag(1234567, "SDR-Kit: POCSAG 1200 test page"),
+             pocsag(200016, "UNIT 12 RETURN TO BASE 15:30"),
+             pocsag(1500003, "Server room 41C - temperature alarm")]
     aprs = [3000.0 * dec_mod.aprs_afsk(src, "APRS", ["WIDE1-1", "WIDE2-1"], info, r).astype(np.float64)
-            for src, info in (("N0CALL-9", "!1829.17N/06955.87W>SDR-Kit en movimiento 72 km/h"),
-                              ("XE1ABC-7", ">Probando APRS desde el simulador"),
-                              ("HI8XYZ", "=1828.50N/06956.20W-Estacion fija"))]
+            for src, info in (("N0CALL-9", "!1829.17N/06955.87W>SDR-Kit mobile 72 km/h"),
+                              ("XE1ABC-7", ">Testing APRS from the simulator"),
+                              ("HI8XYZ", "=1828.50N/06956.20W-Home station"))]
     dur = lambda ws: max(len(w) for w in ws) / r + 0.05  # noqa: E731
     m17 = []
     sym = os.path.join(HERE, "demo_m17.sym")
@@ -1771,7 +1771,7 @@ class WiFi:
 
     def saved(self):
         if not self.available:
-            return [{"name": "Casa", "uuid": "demo-1", "ssid": "Casa", "priority": 10, "autoconnect": True}]
+            return [{"name": "HomeWiFi", "uuid": "demo-1", "ssid": "HomeWiFi", "priority": 10, "autoconnect": True}]
         rc, out, _ = run(["nmcli", "-t", "-f", "NAME,UUID,TYPE,AUTOCONNECT,AUTOCONNECT-PRIORITY", "connection", "show"])
         res = []
         for line in out.splitlines():
@@ -1791,7 +1791,7 @@ class WiFi:
 
     def scan(self):
         if not self.available:
-            return [{"ssid": "Casa", "signal": 80, "security": "WPA2"}, {"ssid": "Vecino", "signal": 35, "security": "WPA2"}]
+            return [{"ssid": "HomeWiFi", "signal": 80, "security": "WPA2"}, {"ssid": "Neighbor-5G", "signal": 35, "security": "WPA2"}]
         if self.summary(fresh=True)["mode"] == "hotspot":
             raise ValueError("En modo hotspot la Raspberry no puede buscar redes. Escribe el nombre de la red a mano.")
         run(["nmcli", "device", "wifi", "rescan", "ifname", self.iface], timeout=20)
@@ -1999,9 +1999,29 @@ input{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1p
 color:inherit;font-size:16px}button{margin-top:14px;width:100%;padding:12px;border:0;border-radius:10px;
 background:#ffd400;color:#111;font-weight:700;font-size:16px}.e{color:#ff6b6b;font-size:14px;margin-top:10px}
 </style></head><body><form method="post" action="/login"><h1>SDR-Kit</h1>
-<p>Escribe la clave del panel (ADMIN_PASSWORD).</p>
-<input type="password" name="password" autocomplete="current-password" autofocus placeholder="Clave">
-<button type="submit">Entrar</button>__ERR__</form></body></html>"""
+<p data-en="Enter the panel password (ADMIN_PASSWORD).">Escribe la clave del panel (ADMIN_PASSWORD).</p>
+<input type="password" name="password" autocomplete="current-password" autofocus placeholder="Clave"
+data-en-ph="Password">
+<button type="submit" data-en="Sign in">Entrar</button>__ERR__</form>
+<script>
+/* idioma: ?lang= → localStorage sdrkit.lang (el mismo que usa el panel) → idioma del navegador */
+(function () {
+  var l = "", q = /[?&]lang=(es|en)\\b/.exec(location.search);
+  try { l = localStorage.getItem("sdrkit.lang") || ""; } catch (e) {}
+  if (q) { l = q[1]; try { localStorage.setItem("sdrkit.lang", l); } catch (e) {} }
+  if (l !== "es" && l !== "en") {
+    var n = (navigator.languages && navigator.languages[0]) || navigator.language || "en";
+    l = /^es\\b/i.test(n) ? "es" : "en";
+  }
+  document.documentElement.lang = l;
+  if (l !== "en") return;
+  document.title = "SDR-Kit \\u00b7 Sign in";
+  var els = document.querySelectorAll("[data-en]");
+  for (var i = 0; i < els.length; i++) els[i].textContent = els[i].getAttribute("data-en");
+  els = document.querySelectorAll("[data-en-ph]");
+  for (i = 0; i < els.length; i++) els[i].setAttribute("placeholder", els[i].getAttribute("data-en-ph"));
+})();
+</script></body></html>"""
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -2161,7 +2181,7 @@ class Handler(BaseHTTPRequestHandler):
                 cookie = "sdrkit_auth=%s; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax" % app.token()
                 return self._send(303, "", headers={"Location": "/", "Set-Cookie": cookie})
             time.sleep(1.0)
-            err = '<div class="e">Clave incorrecta.</div>'
+            err = '<div class="e" data-en="Wrong password.">Clave incorrecta.</div>'
             return self._send(200, LOGIN_HTML.replace("__ERR__", err), "text/html; charset=utf-8")
         if not self._authed():
             return self._send(401, {"error": "auth"})

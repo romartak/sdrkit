@@ -24,7 +24,7 @@ const Dec = (() => {
     sensors: ["dec", "ism"], adsb: ["dec", "air"], ctcss: ["radio"], dsd: ["radio"], digid: ["radio"]};
   const GAINS = [0, 0.9, 1.4, 2.7, 3.7, 7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7, 20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8, 36.4,
     37.2, 38.6, 40.2, 42.1, 43.4, 43.9, 44.5, 48.0, 49.6];
-  const ago = (t) => { const s = Math.max(0, Math.round(Date.now() / 1000 - t)); return s < 60 ? "hace " + s + " s" : s < 3600 ? "hace " + Math.round(s / 60) + " min" : "hace " + (s / 3600).toFixed(1) + " h"; };
+  const ago = (t) => { const s = Math.max(0, Math.round(Date.now() / 1000 - t)); return s < 60 ? _t("hace {n} s", {n: s}) : s < 3600 ? _t("hace {n} min", {n: Math.round(s / 60)}) : _t("hace {n} h", {n: (s / 3600).toFixed(1)}); };
 
   // ------------------------------------------------------------------ navegación
   function showSub(sub) {
@@ -52,19 +52,23 @@ const Dec = (() => {
   function renderStates() {
     const s = SDR.status; if (!s) return;
     const rp = s.radio && s.radio.params, on = rp && rp.data && rp.data.length && s.mode === "radio";
-    $("#dmState").innerHTML = s.switching ? "Cambiando de modo…"
-      : on ? `<b style="color:var(--ok)">● Decodificando ${SDR.esc(rp.data.map(k => KINDS[k] || k).join(", "))}</b> en ${(rp.freq / 1e6).toFixed(4)} MHz` +
-        (s.radio.error ? " · ⚠ " + SDR.esc(s.radio.error) : "")
-      : s.mode === "radio" ? "El radio está encendido sin decodificadores: elige qué decodificar y pulsa ▶."
-      : "Al pulsar ▶ el dongle pasa al radio (se pausa " + ({sweep: "el analizador", sensors: "la búsqueda de sensores", adsb: "el radar de aviones", receiver: "el receptor avanzado"}[s.mode] || "lo demás") + ").";
+    const pausa = {sweep: "Al pulsar ▶ el dongle pasa al radio (se pausa el analizador).",
+      sensors: "Al pulsar ▶ el dongle pasa al radio (se pausa la búsqueda de sensores).",
+      adsb: "Al pulsar ▶ el dongle pasa al radio (se pausa el radar de aviones).",
+      receiver: "Al pulsar ▶ el dongle pasa al radio (se pausa el receptor avanzado)."}[s.mode] || "Al pulsar ▶ el dongle pasa al radio (se pausa lo demás).";
+    $("#dmState").innerHTML = s.switching ? SDR.esc(_t("Cambiando de modo…"))
+      : on ? _t('<b style="color:var(--ok)">● Decodificando {k}</b> en {f} MHz', {k: SDR.esc(rp.data.map(k => KINDS[k] || k).join(", ")), f: (rp.freq / 1e6).toFixed(4)}) +
+        (s.radio.error ? " · ⚠ " + SDR.esc(_t(s.radio.error)) : "")
+      : s.mode === "radio" ? SDR.esc(_t("El radio está encendido sin decodificadores: elige qué decodificar y pulsa ▶."))
+      : SDR.esc(_t(pausa));
     const sn = s.sensors || {};
     $("#snState").innerHTML = s.mode === "sensors"
-      ? (sn.error ? "⚠ " + SDR.esc(sn.error) : sn.running ? '<b style="color:var(--ok)">● Escuchando sensores</b>' : "Iniciando rtl_433…")
-      : "Detenido. Al iniciar, el dongle se dedica sólo a los sensores.";
+      ? (sn.error ? "⚠ " + SDR.esc(_t(sn.error)) : sn.running ? _t('<b style="color:var(--ok)">● Escuchando sensores</b>') : SDR.esc(_t("Iniciando rtl_433…")))
+      : SDR.esc(_t("Detenido. Al iniciar, el dongle se dedica sólo a los sensores."));
     $("#snStart").classList.toggle("on", s.mode === "sensors");
     const ad = s.adsb || {};
-    if (s.mode !== "adsb") $("#adState").textContent = "Radar apagado. Al encenderlo, el dongle se dedica sólo a 1090 MHz.";
-    else if (ad.error) $("#adState").textContent = "⚠ " + ad.error;
+    if (s.mode !== "adsb") $("#adState").textContent = _t("Radar apagado. Al encenderlo, el dongle se dedica sólo a 1090 MHz.");
+    else if (ad.error) $("#adState").textContent = "⚠ " + _t(ad.error);
     $("#adStart").classList.toggle("on", s.mode === "adsb");
   }
 
@@ -81,18 +85,18 @@ const Dec = (() => {
       return !q || (x.text + " " + (x.address || "") + " " + (x.from || "")).toLowerCase().includes(q);
     }).slice(0, 300);
     $("#dmList").innerHTML = rows.length ? rows.map(x => {
-      const pos = x.lat != null ? ` <a href="#" data-pos="${x.lat},${x.lon}" class="small">📍 en el radar</a>` : "";
+      const pos = x.lat != null ? ` <a href="#" data-pos="${x.lat},${x.lon}" class="small">${SDR.esc(_t("📍 en el radar"))}</a>` : "";
       return `<li><span class="badge y">${SDR.esc(x.kind)}</span><span class="muted small">${new Date(x.t * 1000).toLocaleString()} · ${(x.freq / 1e6).toFixed(4)} MHz</span>` +
         `<div>${SDR.esc(x.text)}${pos}</div></li>`;
-    }).join("") : '<li class="muted">Todavía no hay mensajes' + (q || f ? " con ese filtro" : "") + ".</li>";
+    }).join("") : `<li class="muted">${SDR.esc(q || f ? _t("Todavía no hay mensajes con ese filtro.") : _t("Todavía no hay mensajes."))}</li>`;
   }
   async function startMsg() {
     const f = parseFloat($("#dmFreq").value), kinds = selectedKinds();
-    if (!(f > 0)) { SDR.toast("Escribe la frecuencia en MHz.", true); return; }
-    if (!kinds.length) { SDR.toast("Elige al menos un tipo de mensaje.", true); return; }
+    if (!(f > 0)) { SDR.toast(_t("Escribe la frecuencia en MHz."), true); return; }
+    if (!kinds.length) { SDR.toast(_t("Elige al menos un tipo de mensaje."), true); return; }
     try {
       await SDR.api("/api/radio", {freq: Math.round(f * 1e6), mod: $("#dmMod").value, data: kinds, activate: true, name: ""});
-      SDR.toast("Decodificando en " + f.toFixed(4) + " MHz. Los mensajes aparecen a la derecha.");
+      SDR.toast(_t("Decodificando en {f} MHz. Los mensajes aparecen a la derecha.", {f: f.toFixed(4)}));
       setTimeout(SDR.pollStatus, 500); setTimeout(SDR.pollStatus, 2000);
     } catch (e) { SDR.toast(e.message, true); }
   }
@@ -102,12 +106,12 @@ const Dec = (() => {
     temperature_C: ["🌡", (v) => v.toFixed(1) + " °C"], temperature_F: ["🌡", (v) => ((v - 32) / 1.8).toFixed(1) + " °C"],
     humidity: ["💧", (v) => v + " %"], pressure_kPa: ["🛞", (v) => v.toFixed(0) + " kPa (" + (v * 0.145038).toFixed(1) + " PSI)"],
     pressure_PSI: ["🛞", (v) => v.toFixed(1) + " PSI"], pressure_hPa: ["⏲", (v) => v.toFixed(1) + " hPa"],
-    battery_ok: ["🔋", (v) => v ? "batería OK" : "batería BAJA"], wind_avg_km_h: ["🌬", (v) => v.toFixed(1) + " km/h"],
-    wind_max_km_h: ["🌬", (v) => "ráfaga " + v.toFixed(1) + " km/h"], wind_avg_m_s: ["🌬", (v) => (v * 3.6).toFixed(1) + " km/h"],
+    battery_ok: ["🔋", (v) => v ? _t("batería OK") : _t("batería BAJA")], wind_avg_km_h: ["🌬", (v) => v.toFixed(1) + " km/h"],
+    wind_max_km_h: ["🌬", (v) => _t("ráfaga {v} km/h", {v: v.toFixed(1)})], wind_avg_m_s: ["🌬", (v) => (v * 3.6).toFixed(1) + " km/h"],
     wind_dir_deg: ["🧭", (v) => v + "°"], rain_mm: ["🌧", (v) => v.toFixed(1) + " mm"], rain_in: ["🌧", (v) => (v * 25.4).toFixed(1) + " mm"],
     uv: ["☀", (v) => "UV " + v], light_lux: ["💡", (v) => v + " lux"], moisture: ["🌱", (v) => v + " %"],
     power_W: ["⚡", (v) => v + " W"], energy_kWh: ["⚡", (v) => v + " kWh"], state: ["🔔", (v) => v], event: ["🔔", (v) => v],
-    button: ["🔘", (v) => "botón " + v], cmd: ["🔘", (v) => "cmd " + v], code: ["🔢", (v) => v], type: ["🏷", (v) => v],
+    button: ["🔘", (v) => _t("botón {v}", {v})], cmd: ["🔘", (v) => "cmd " + v], code: ["🔢", (v) => v], type: ["🏷", (v) => v],
   };
   function fieldChips(fields, plain) {
     const list = Object.entries(fields || {}).filter(([k, v]) => v !== null && v !== "" && typeof v !== "object").map(([k, v]) => {
@@ -123,7 +127,7 @@ const Dec = (() => {
       if (!$("#snPreset").options.length) {
         const names = {"433": "433.92 MHz (lo más común)", "315": "315 MHz (América: llantas, alarmas)", "868": "868 MHz (Europa)",
           "915": "915 MHz (América)", "345": "345 MHz (alarmas Honeywell)", "433+868": "433 + 868 MHz", "433+315": "433 + 315 MHz", "433+915": "433 + 915 MHz"};
-        $("#snPreset").innerHTML = r.presets.map(p => `<option value="${p}">${SDR.esc(names[p] || p)}</option>`).join("");
+        $("#snPreset").innerHTML = r.presets.map(p => `<option value="${p}">${SDR.esc(names[p] ? _t(names[p]) : p)}</option>`).join("");
       }
       if (document.activeElement !== $("#snPreset")) $("#snPreset").value = r.params.preset;
       if (document.activeElement !== $("#snHop")) $("#snHop").value = String(r.params.hop);
@@ -132,11 +136,11 @@ const Dec = (() => {
       $("#snDevices").innerHTML = devs.length ? devs.map(d => {
         const sig = d.rssi != null ? `${Number(d.rssi).toFixed(1)} dB` + (d.snr != null ? ` · SNR ${Number(d.snr).toFixed(0)}` : "") : "";
         return `<div class="card sncard"><div class="snh"><b>${SDR.esc(d.model)}</b><span class="muted small">${SDR.esc(ago(d.last))}</span></div>` +
-          `<div class="muted small">ID ${SDR.esc(d.id == null ? "—" : d.id)}${d.channel != null ? " · canal " + SDR.esc(d.channel) : ""}${d.freq ? " · " + Number(d.freq).toFixed(2) + " MHz" : ""} · ${d.count} ${d.count === 1 ? "lectura" : "lecturas"}${sig ? " · " + sig : ""}</div>` +
+          `<div class="muted small">ID ${SDR.esc(d.id == null ? "—" : d.id)}${d.channel != null ? " · " + SDR.esc(_t("canal {c}", {c: d.channel})) : ""}${d.freq ? " · " + Number(d.freq).toFixed(2) + " MHz" : ""} · ${SDR.esc(_tn(d.count, "{n} lectura", "{n} lecturas"))}${sig ? " · " + sig : ""}</div>` +
           `<div class="fchips">${fieldChips(d.fields)}</div></div>`;
-      }).join("") : '<div class="card muted">Aún no se detectan sensores. Tip: en una zona residencial suelen aparecer en minutos (termómetros, llantas de autos que pasan).</div>';
+      }).join("") : `<div class="card muted">${SDR.esc(_t("Aún no se detectan sensores. Tip: en una zona residencial suelen aparecer en minutos (termómetros, llantas de autos que pasan)."))}</div>`;
       const ev = (r.events || []).slice(0, 60);
-      $("#snEvents").innerHTML = "<thead><tr><th>Hora</th><th>Modelo</th><th>ID</th><th>Datos</th></tr></thead><tbody>" +
+      $("#snEvents").innerHTML = `<thead><tr><th>${_t("Hora")}</th><th>${_t("Modelo")}</th><th>ID</th><th>${_t("Datos")}</th></tr></thead><tbody>` +
         (ev.length ? ev.map(e => `<tr><td class="mono">${new Date(e.t * 1000).toLocaleTimeString()}</td><td>${SDR.esc(e.model)}</td><td class="mono">${SDR.esc(e.id == null ? "" : e.id)}</td><td class="small">${fieldChips(e.fields, true)}</td></tr>`).join("")
           : '<tr><td colspan="4" class="muted">—</td></tr>') + "</tbody>";
     } catch (e) {}
@@ -150,13 +154,14 @@ const Dec = (() => {
       if (loc && loc.source === "manual" && document.activeElement !== $("#adLat") && document.activeElement !== $("#adLon") && !$("#adLat").value) {
         $("#adLat").value = loc.lat; $("#adLon").value = loc.lon;
       }
-      $("#adLocNote").textContent = loc ? (loc.source === "manual" ? "Ubicación guardada: " + loc.lat.toFixed(4) + ", " + loc.lon.toFixed(4)
-        : "Ubicación estimada con los aviones recibidos (guarda la tuya para distancias exactas).") : "Sin ubicación, el radar usa el centro de los aviones recibidos.";
+      $("#adLocNote").textContent = loc ? (loc.source === "manual" ? _t("Ubicación guardada: {lat}, {lon}", {lat: loc.lat.toFixed(4), lon: loc.lon.toFixed(4)})
+        : _t("Ubicación estimada con los aviones recibidos (guarda la tuya para distancias exactas).")) : _t("Sin ubicación, el radar usa el centro de los aviones recibidos.");
       if (document.activeElement !== $("#adGain") && r.params) $("#adGain").value = String(r.params.gain);
       const s = SDR.status;
       if (s && s.mode === "adsb" && !(r.info && r.info.error)) {
         const n = (r.aircraft || []).length, pos = (r.aircraft || []).filter(a => a.lat != null).length;
-        $("#adState").innerHTML = `<b style="color:var(--ok)">● Radar encendido</b> · ${n} aviones (${pos} con posición) · ${r.messages || 0} mensajes · ${r.today || 0} distintos hoy`;
+        $("#adState").innerHTML = [_t('<b style="color:var(--ok)">● Radar encendido</b>'), _tn(n, "{n} avión ({p} con posición)", "{n} aviones ({p} con posición)", {p: pos}),
+          _tn(r.messages || 0, "{n} mensaje", "{n} mensajes"), _tn(r.today || 0, "{n} distinto hoy", "{n} distintos hoy")].join(" · ");
       }
       const now = Date.now();
       for (const a of r.aircraft || []) {
@@ -192,16 +197,16 @@ const Dec = (() => {
   }
   function renderPlanes() {
     const list = ((D.adsb && D.adsb.aircraft) || []).slice().sort((a, b) => (a.dist_km == null) - (b.dist_km == null) || (a.dist_km || 0) - (b.dist_km || 0));
-    const emerg = {"7700": "EMERG.", "7600": "SIN RADIO", "7500": "SECUESTRO"};
-    $("#adTable").innerHTML = "<thead><tr><th>Vuelo</th><th>Altitud</th><th>Velocidad</th><th>Distancia</th><th>Squawk</th></tr></thead><tbody>" +
+    const emerg = {"7700": _t("EMERG."), "7600": _t("SIN RADIO"), "7500": _t("SECUESTRO")};
+    $("#adTable").innerHTML = `<thead><tr><th>${_t("Vuelo")}</th><th>${_t("Altitud")}</th><th>${_t("Velocidad")}</th><th>${_t("Distancia")}</th><th>Squawk</th></tr></thead><tbody>` +
       (list.length ? list.map(a => {
-        const alt = a.alt_baro == null ? "—" : a.alt_baro === "ground" ? "en tierra" : Math.round(a.alt_baro).toLocaleString("es") + " ft<br><span class='muted'>" + Math.round(a.alt_baro * 0.3048).toLocaleString("es") + " m</span>";
+        const alt = a.alt_baro == null ? "—" : a.alt_baro === "ground" ? SDR.esc(_t("en tierra")) : Math.round(a.alt_baro).toLocaleString(I18N.locale) + " ft<br><span class='muted'>" + Math.round(a.alt_baro * 0.3048).toLocaleString(I18N.locale) + " m</span>";
         const em = emerg[a.squawk];
         return `<tr data-hex="${SDR.esc(a.hex)}" class="${D.sel === a.hex ? "sel" : ""}${em ? " emerg" : ""}"><td><b>${SDR.esc((a.flight || "").trim() || "—")}</b><br><span class="muted mono">${SDR.esc(a.hex)}</span></td>` +
-          `<td>${alt}</td><td>${a.gs == null ? "—" : Math.round(a.gs * 1.852) + " km/h"}${a.track == null ? "" : "<br><span class='muted'>rumbo " + Math.round(a.track) + "°</span>"}</td>` +
-          `<td>${a.dist_km == null ? "—" : a.dist_km.toFixed(0) + " km" + (a.bearing != null ? "<br><span class='muted'>hacia " + a.bearing + "°</span>" : "")}</td>` +
+          `<td>${alt}</td><td>${a.gs == null ? "—" : Math.round(a.gs * 1.852) + " km/h"}${a.track == null ? "" : "<br><span class='muted'>" + SDR.esc(_t("rumbo {n}°", {n: Math.round(a.track)})) + "</span>"}</td>` +
+          `<td>${a.dist_km == null ? "—" : a.dist_km.toFixed(0) + " km" + (a.bearing != null ? "<br><span class='muted'>" + SDR.esc(_t("hacia {n}°", {n: a.bearing})) + "</span>" : "")}</td>` +
           `<td class="mono">${SDR.esc(a.squawk || "—")}${em ? "<br><b class='small'>" + em + "</b>" : ""}</td></tr>`;
-      }).join("") : '<tr><td colspan="6" class="muted">Sin aviones todavía.</td></tr>') + "</tbody>";
+      }).join("") : `<tr><td colspan="6" class="muted">${SDR.esc(_t("Sin aviones todavía."))}</td></tr>`) + "</tbody>";
   }
   function drawRadar() {
     const c = $("#radar"); if (!c.clientWidth) return;
@@ -216,16 +221,17 @@ const Dec = (() => {
     }
     ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.stroke();
     ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = `bold ${11 * dpr}px system-ui,sans-serif`;
-    [["N", 0, -1], ["S", 0, 1], ["E", 1, 0], ["O", -1, 0]].forEach(([t, x, y]) => ctx.fillText(t, cx + x * (R + 8 * dpr), cy + y * (R + 8 * dpr)));
+    const [cN, cS, cE, cW] = _t("N S E O").split(" ");  // iniciales de los puntos cardinales: norte, sur, este, oeste
+    [[cN, 0, -1], [cS, 0, 1], [cE, 1, 0], [cW, -1, 0]].forEach(([t, x, y]) => ctx.fillText(t, cx + x * (R + 8 * dpr), cy + y * (R + 8 * dpr)));
     const ctr = center();
     if (!ctr) {
       ctx.fillStyle = "#3a8a5c"; ctx.font = `${13 * dpr}px system-ui,sans-serif`;
-      ctx.fillText(SDR.status && SDR.status.mode === "adsb" ? "Esperando aviones…" : "Radar apagado", cx, cy + R / 2); return;
+      ctx.fillText(SDR.status && SDR.status.mode === "adsb" ? _t("Esperando aviones…") : _t("Radar apagado"), cx, cy + R / 2); return;
     }
     const P = (lat, lon) => { const [x, y] = km(ctr, lat, lon); return [cx + x / range * R, cy - y / range * R]; };
     if (!(SDR.status && SDR.status.mode === "adsb") && D.adsb && (D.adsb.aircraft || []).length) {
       ctx.fillStyle = "#ffb020"; ctx.font = `bold ${11 * dpr}px system-ui,sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "top";
-      ctx.fillText("Radar apagado · última imagen" + (D.adsb.now ? " de las " + new Date(D.adsb.now * 1000).toLocaleTimeString() : ""), 8 * dpr, 8 * dpr);
+      ctx.fillText(D.adsb.now ? _t("Radar apagado · última imagen de las {t}", {t: new Date(D.adsb.now * 1000).toLocaleTimeString()}) : _t("Radar apagado · última imagen"), 8 * dpr, 8 * dpr);
       ctx.globalAlpha = 0.45;
     }
     ctx.fillStyle = "#3ddc84"; ctx.beginPath(); ctx.arc(cx, cy, 3 * dpr, 0, 2 * Math.PI); ctx.fill();
@@ -263,39 +269,39 @@ const Dec = (() => {
         const items = r.items.filter(i => i.where === where);
         return `<h3 style="margin-top:12px">${title}</h3><ul class="list">` + items.map(i => {
           const ok = i.available || (SDR.status && SDR.status.demo && where === "panel");
-          const act = where === "panel" ? (PANEL_GO[i.key] ? `<button class="btn sm" data-go="${i.key}">Abrir</button>` : "")
-            : `<button class="btn sm" data-owrx="${i.key}">Abrir</button>`;
-          return `<li><div class="grow"><div><b>${SDR.esc(i.name)}</b></div><div class="muted small">${SDR.esc(i.note || "")}${!ok && i.needs.length ? " · falta: " + SDR.esc(i.needs.join(", ")) : ""}</div></div>` +
-            `<span class="badge ${ok ? "g" : "r"}">${ok ? "listo" : "no instalado"}</span>${act}</li>`;
+          const act = where === "panel" ? (PANEL_GO[i.key] ? `<button class="btn sm" data-go="${i.key}">${_t("Abrir")}</button>` : "")
+            : `<button class="btn sm" data-owrx="${i.key}">${_t("Abrir")}</button>`;
+          return `<li><div class="grow"><div><b>${SDR.esc(_t(i.name))}</b></div><div class="muted small">${SDR.esc(i.note ? _t(i.note) : "")}${!ok && i.needs.length ? " · " + SDR.esc(_t("falta: {x}", {x: i.needs.join(", ")})) : ""}</div></div>` +
+            `<span class="badge ${ok ? "g" : "r"}">${ok ? _t("listo") : _t("no instalado")}</span>${act}</li>`;
         }).join("") + "</ul>";
       };
-      $("#allList").innerHTML = group("panel", "En este panel (funcionan sin internet)") + group("owrx", "En el receptor avanzado (OpenWebRX+)");
-      $("#allNote").textContent = r.openwebrx ? "OpenWebRX+ instalado: sus decodificadores se abren en la página del receptor avanzado."
-        : SDR.status && SDR.status.demo ? "Modo demo: en la Raspberry verás aquí qué quedó instalado." : "OpenWebRX+ no está instalado: sólo funcionan los del panel.";
-      $("#ambeState").innerHTML = r.ambe ? '<b style="color:var(--ok)">✅ Códec AMBE configurado: DMR, D-Star, YSF, NXDN y P25 suenan en el receptor avanzado.</b>'
-        : '<b style="color:var(--warn)">Sin códec AMBE.</b> Se ven y se identifican las señales (y sus datos: ID de radio, grupo, talker alias), pero la voz no se escucha.';
+      $("#allList").innerHTML = group("panel", _t("En este panel (funcionan sin internet)")) + group("owrx", _t("En el receptor avanzado (OpenWebRX+)"));
+      $("#allNote").textContent = r.openwebrx ? _t("OpenWebRX+ instalado: sus decodificadores se abren en la página del receptor avanzado.")
+        : SDR.status && SDR.status.demo ? _t("Modo demo: en la Raspberry verás aquí qué quedó instalado.") : _t("OpenWebRX+ no está instalado: sólo funcionan los del panel.");
+      $("#ambeState").innerHTML = r.ambe ? _t('<b style="color:var(--ok)">✅ Códec AMBE configurado: DMR, D-Star, YSF, NXDN y P25 suenan en el receptor avanzado.</b>')
+        : _t('<b style="color:var(--warn)">Sin códec AMBE.</b> Se ven y se identifican las señales (y sus datos: ID de radio, grupo, talker alias), pero la voz no se escucha.');
     } catch (e) {}
   }
 
   // ------------------------------------------------------------------ inicio
   function init() {
     $$("#decNav button").forEach(b => b.addEventListener("click", () => showSub(b.dataset.dsub)));
-    $("#dmPreset").innerHTML = '<option value="">— Elige qué escuchar —</option>' + MSG_PRESETS.map((p, i) => `<option value="${i}">${SDR.esc(p[0])}</option>`).join("");
+    $("#dmPreset").innerHTML = `<option value="">${SDR.esc(_t("— Elige qué escuchar —"))}</option>` + MSG_PRESETS.map((p, i) => `<option value="${i}">${SDR.esc(_t(p[0]))}</option>`).join("");
     $("#dmKinds").innerHTML = Object.entries(KINDS).map(([k, n]) => `<button data-k="${k}">${n}</button>`).join("");
     $("#dmKinds").addEventListener("click", ev => { const b = ev.target.closest("[data-k]"); if (b) b.classList.toggle("active"); });
     $("#dmPreset").addEventListener("change", ev => {
       const p = MSG_PRESETS[+ev.target.value]; if (!p) return;
       if (p[1]) $("#dmFreq").value = p[1]; $("#dmMod").value = p[2]; setKinds(p[3]);
-      if (!p[1]) SDR.toast("Escribe la frecuencia: búscala con el analizador.");
+      if (!p[1]) SDR.toast(_t("Escribe la frecuencia: búscala con el analizador."));
     });
     setKinds(["aprs"]); $("#dmFreq").value = 144.39;
     $("#dmStart").addEventListener("click", startMsg);
-    $("#dmStop").addEventListener("click", async () => { try { await SDR.api("/api/radio", {data: []}); SDR.toast("Decodificadores apagados."); SDR.pollStatus(); } catch (e) { SDR.toast(e.message, true); } });
+    $("#dmStop").addEventListener("click", async () => { try { await SDR.api("/api/radio", {data: []}); SDR.toast(_t("Decodificadores apagados.")); SDR.pollStatus(); } catch (e) { SDR.toast(e.message, true); } });
     $("#dmListen").addEventListener("click", () => { const f = parseFloat($("#dmFreq").value); SDR.openRadio(f > 0 ? f * 1e6 : null, $("#dmMod").value); });
     $("#dmSearch").addEventListener("input", renderDecoded);
     $("#dmFilter").addEventListener("change", renderDecoded);
     $("#dmClear").addEventListener("click", async () => {
-      if (!confirm("¿Borrar todos los mensajes decodificados?")) return;
+      if (!confirm(_t("¿Borrar todos los mensajes decodificados?"))) return;
       try { await SDR.api("/api/decoded/clear", {}); D.decoded = []; renderDecoded(); } catch (e) { SDR.toast(e.message, true); }
     });
     $("#dmList").addEventListener("click", ev => {
@@ -306,7 +312,7 @@ const Dec = (() => {
     $("#snGain").innerHTML = gainOpts; $("#adGain").innerHTML = gainOpts.replace('<option value="auto">Auto</option>', "");
     const snParams = () => ({preset: $("#snPreset").value || "433", hop: +$("#snHop").value, gain: $("#snGain").value});
     $("#snStart").addEventListener("click", async () => {
-      try { await SDR.api("/api/sensors", Object.assign(snParams(), {activate: true})); SDR.toast("Buscando sensores… deja la antena vertical."); setTimeout(SDR.pollStatus, 800); }
+      try { await SDR.api("/api/sensors", Object.assign(snParams(), {activate: true})); SDR.toast(_t("Buscando sensores… deja la antena vertical.")); setTimeout(SDR.pollStatus, 800); }
       catch (e) { SDR.toast(e.message, true); }
     });
     ["#snPreset", "#snHop", "#snGain"].forEach(id => $(id).addEventListener("change", async () => {
@@ -315,7 +321,7 @@ const Dec = (() => {
     $("#snStop").addEventListener("click", () => SDR.useMode("sweep"));
     $("#snClear").addEventListener("click", async () => { try { await SDR.api("/api/sensors/clear", {}); loadSensors(); } catch (e) {} });
     $("#adStart").addEventListener("click", async () => {
-      try { await SDR.api("/api/adsb", {activate: true}); SDR.toast("Radar encendido: los aviones aparecen en 10–60 s."); setTimeout(SDR.pollStatus, 800); }
+      try { await SDR.api("/api/adsb", {activate: true}); SDR.toast(_t("Radar encendido: los aviones aparecen en 10–60 s.")); setTimeout(SDR.pollStatus, 800); }
       catch (e) { SDR.toast(e.message, true); }
     });
     $("#adStop").addEventListener("click", () => SDR.useMode("sweep"));
@@ -324,16 +330,16 @@ const Dec = (() => {
     $("#adAprs").addEventListener("change", () => { loadAprs().then(drawRadar); });
     $("#adSaveLoc").addEventListener("click", async () => {
       const lat = parseFloat($("#adLat").value), lon = parseFloat($("#adLon").value);
-      if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180)) { SDR.toast("Escribe latitud y longitud en grados decimales (ej. 18.4861, -69.9312).", true); return; }
-      try { await SDR.api("/api/location", {lat, lon}); SDR.toast("Ubicación guardada."); loadAdsb(); } catch (e) { SDR.toast(e.message, true); }
+      if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180)) { SDR.toast(_t("Escribe latitud y longitud en grados decimales (ej. 18.4861, -69.9312)."), true); return; }
+      try { await SDR.api("/api/location", {lat, lon}); SDR.toast(_t("Ubicación guardada.")); loadAdsb(); } catch (e) { SDR.toast(e.message, true); }
     });
     $("#adGeo").addEventListener("click", () => {
       if (!navigator.geolocation || !window.isSecureContext) {
-        SDR.toast("El navegador sólo da el GPS en páginas https. Copia tus coordenadas de Google Maps (mantén pulsado tu punto) y escríbelas.", true); return;
+        SDR.toast(_t("El navegador sólo da el GPS en páginas https. Copia tus coordenadas de Google Maps (mantén pulsado tu punto) y escríbelas."), true); return;
       }
       navigator.geolocation.getCurrentPosition(p => {
         $("#adLat").value = p.coords.latitude.toFixed(5); $("#adLon").value = p.coords.longitude.toFixed(5); $("#adSaveLoc").click();
-      }, () => SDR.toast("No se pudo leer el GPS. Escribe las coordenadas a mano.", true), {timeout: 10000});
+      }, () => SDR.toast(_t("No se pudo leer el GPS. Escribe las coordenadas a mano."), true), {timeout: 10000});
     });
     $("#adTable").addEventListener("click", ev => {
       const tr = ev.target.closest("[data-hex]"); if (!tr) return;
