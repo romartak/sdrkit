@@ -14,6 +14,7 @@ Update an installed kit with `sudo sdrkit update`.
 
 ### Changed
 - The demo server no longer needs the POSIX-only `pwd` module at import time.
+- Added a `Dockerfile` (demo mode) and `requirements.txt`.
 - Documentation screenshots added; removed unused files (`GUIA.md` at the root, `profile/`).
 
 ## [3.3.0] - 2026-10-17
