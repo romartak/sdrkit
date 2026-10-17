@@ -6,6 +6,10 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+### Added
+- Animated demo GIFs in the README (analyzer, radio, aircraft radar, pagers), recorded with `tools/gifs.mjs` + `tools/make_gifs.py`.
+- The Release workflow can be run by hand from the Actions tab; it publishes a SHA-256 checksum next to the tarball.
+
 ## [3.3.1] - 2026-10-17
 
 ### Security
