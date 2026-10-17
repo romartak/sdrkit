@@ -1,6 +1,6 @@
 # Publishes a GitHub release with the notes of that version from CHANGELOG.md and a source tarball.
 # Either push a tag like v3.3.1 (matching the VERSION file), or run this workflow by hand
-# (Actions → Release → Run workflow): it tags the current commit with v<VERSION>.
+# (Actions → Release → Run workflow): it tags the current commit with v<VERSION>, replacing that release if it exists.
 name: Release
 on:
   push:
@@ -38,5 +38,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           sha256sum "sdrkit-$VERSION.tar.gz" > "sdrkit-$VERSION.tar.gz.sha256"
+          # run by hand on a version that is already published: replace it (and its tag) with this commit
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then gh release delete "$TAG" --cleanup-tag --yes || true; fi
           gh release create "$TAG" "sdrkit-$VERSION.tar.gz" "sdrkit-$VERSION.tar.gz.sha256" \
             --target "$GITHUB_SHA" --title "SDR-Kit $VERSION" --notes-file notes.md
