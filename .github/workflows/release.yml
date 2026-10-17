@@ -1,9 +1,11 @@
-# Push a tag like v3.2.0 (matching the VERSION file) to publish a GitHub release
-# with the notes of that version from CHANGELOG.md and a source tarball.
+# Publishes a GitHub release with the notes of that version from CHANGELOG.md and a source tarball.
+# Either push a tag like v3.3.1 (matching the VERSION file), or run this workflow by hand
+# (Actions → Release → Run workflow): it tags the current commit with v<VERSION>.
 name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,8 +18,11 @@ jobs:
       - name: Tag matches VERSION
         run: |
           v="$(tr -d '[:space:]' < VERSION)"
-          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "Tag ${GITHUB_REF_NAME} does not match VERSION $v"; exit 1; }
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "Tag ${GITHUB_REF_NAME} does not match VERSION $v"; exit 1; }
+          fi
           echo "VERSION=$v" >> "$GITHUB_ENV"
+          echo "TAG=v$v" >> "$GITHUB_ENV"
       - name: Release notes from CHANGELOG.md
         run: |
           awk -v v="$VERSION" '
@@ -31,4 +36,7 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "sdrkit-$VERSION.tar.gz" --title "SDR-Kit $VERSION" --notes-file notes.md
+        run: |
+          sha256sum "sdrkit-$VERSION.tar.gz" > "sdrkit-$VERSION.tar.gz.sha256"
+          gh release create "$TAG" "sdrkit-$VERSION.tar.gz" "sdrkit-$VERSION.tar.gz.sha256" \
+            --target "$GITHUB_SHA" --title "SDR-Kit $VERSION" --notes-file notes.md
