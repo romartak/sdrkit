@@ -2095,6 +2095,13 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             return {}
 
+    def _same_origin(self):
+        """Defensa contra CSRF: si el navegador manda Origin, debe coincidir con el Host del panel."""
+        origin = self.headers.get("Origin")
+        if not origin or origin == "null":
+            return origin is None
+        return urlparse(origin).netloc.lower() == (self.headers.get("Host") or "").lower()
+
     def _authed(self):
         app = self.app
         if not app.password:
@@ -2207,6 +2214,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         u = urlparse(self.path)
         path = u.path
+        if not self._same_origin():
+            return self._send(403, {"error": "origin"})
         body = self._json_body()
         app = self.app
         if path == "/login":

@@ -454,7 +454,7 @@ Dipolo del kit: cada brazo mide ≈ `71 / MHz` metros.
 
 ## 16. Actualizar el proyecto
 
-Cuando haya una versión nueva en GitHub (porque tú o Claude mejoraron algo):
+Cuando haya una versión nueva en GitHub (porque mejoraste algo o salió una actualización):
 
 1. Conecta la Raspberry a **internet**: el WiFi de casa o el hotspot de tu celular.
 2. Por SSH ejecuta `sudo sdrkit actualizar`. También puedes usar el panel: **Más → Sistema → 🔎 Buscar actualizaciones → ⬇ Actualizar ahora**.

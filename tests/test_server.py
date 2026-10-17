@@ -47,8 +47,9 @@ def get(base, path):
         return r.status, r.headers.get("Content-Type", ""), body
 
 
-def post(base, path, data):
-    req = urllib.request.Request(base + path, json.dumps(data).encode(), {"Content-Type": "application/json"})
+def post(base, path, data, headers=None):
+    req = urllib.request.Request(base + path, json.dumps(data).encode(),
+                                 {"Content-Type": "application/json", **(headers or {})})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
             return r.status, json.loads(r.read() or b"{}")
@@ -94,6 +95,14 @@ def test_switch_to_radio_and_tune(server):
 def test_bad_input_is_rejected(server):
     code, body = post(server, "/api/mode", {"mode": "nonsense"})
     assert code == 400 and body.get("error")
+
+
+def test_cross_site_post_is_rejected(server):
+    code, body = post(server, "/api/mode", {"mode": "idle"}, {"Origin": "http://evil.example"})
+    assert code == 403 and body.get("error") == "origin"
+    host = server.split("://", 1)[1]
+    code, _ = post(server, "/api/mode", {"mode": "nonsense"}, {"Origin": "http://" + host})
+    assert code == 400   # mismo origen: pasa el filtro y llega a la validación normal
 
 
 def test_unknown_paths_404(server):

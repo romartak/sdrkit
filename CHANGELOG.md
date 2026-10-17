@@ -10,6 +10,7 @@ Update an installed kit with `sudo sdrkit update`.
 - The server refuses to start without `ADMIN_PASSWORD` (except `--demo`); minimum password length is now 8 (installer and `sdrkit password`).
 - Login lockout: 5 wrong passwords lock the client IP for 5 minutes (HTTP 429).
 - Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`).
+- Cross-site request protection: `POST` requests whose `Origin` does not match the panel's `Host` are rejected (HTTP 403).
 - The OpenWebRX+ apt key is stored in its own keyring (`/etc/apt/keyrings`) instead of the global trusted keys.
 
 ### Changed
