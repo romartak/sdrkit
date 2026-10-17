@@ -178,6 +178,7 @@ case "${1:-help}" in
     read -r -s -p "$(Ln "New panel/OpenWebRX+ password: " "Nueva clave del panel/OpenWebRX+: ")" p1; echo
     read -r -s -p "$(Ln "Repeat the password: " "Repite la clave: ")" p2; echo
     [ "$p1" = "$p2" ] && [ -n "$p1" ] || { L "They do not match, or it is empty." "No coinciden o está vacía."; exit 1; }
+    [ ${#p1} -ge 8 ] || { L "The password must have at least 8 characters." "La clave debe tener al menos 8 caracteres."; exit 1; }
     case "$p1" in *'"'*) L 'The password cannot contain double quotes (").' 'La clave no puede contener comillas dobles (").'; exit 1;; esac
     sdrkit_set_conf ADMIN_PASSWORD "$p1" "$CONF"
     if command -v openwebrx >/dev/null; then
