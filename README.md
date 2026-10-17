@@ -301,6 +301,17 @@ pip install numpy                                   # apt install multimon-ng to
 python3 files/sdrkit_server.py --demo --port 8080   # → http://localhost:8080
 ```
 
+### 🎬 See it in action
+
+Recorded straight from the demo panel on a phone-sized screen:
+
+| Spectrum analyzer | Radio | Aircraft radar (ADS-B) | Pager messages |
+|:--:|:--:|:--:|:--:|
+| <img src="docs/media/gifs/analyzer.gif" width="200" alt="Sweeping the FM band and jumping between stations with the tuner"> | <img src="docs/media/gifs/radio.gif" width="200" alt="Listening to a channel with live signal level"> | <img src="docs/media/gifs/radar.gif" width="200" alt="Offline aircraft radar updating"> | <img src="docs/media/gifs/pagers.gif" width="200" alt="POCSAG pager messages arriving"> |
+| sweep 87.5–108.5 MHz, tap ⏭ to jump to the next station | tune, see the signal and the detected mode, listen on the phone | aircraft around you, no internet | decoded live as they arrive |
+
+<sub>Regenerate them with `tools/gifs.mjs` + `tools/make_gifs.py`.</sub>
+
 ## 🌍 Two languages
 
 The whole kit is bilingual: panel, help, frequency guide, antenna tools, installer and CLI.
