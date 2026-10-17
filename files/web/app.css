@@ -303,6 +303,8 @@ pre.dsdlog:empty{display:none}
 #stepper .btn,#rDown,#rUp{touch-action:none;user-select:none;-webkit-user-select:none}
 
 /* servicios y canales */
+.tonebig{font:700 26px var(--mono);color:var(--accent);margin:8px 0 2px}
+.tonebig.muted{color:var(--muted)}
 .svcgrid{display:grid;grid-template-columns:1fr;gap:6px}
 @media (min-width:640px){.svcgrid{grid-template-columns:1fr 1fr}}
 @media (min-width:1100px){.svcgrid{grid-template-columns:1fr 1fr 1fr}}

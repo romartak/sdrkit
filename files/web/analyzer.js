@@ -550,8 +550,27 @@ const An = (() => {
     box.innerHTML = `<span class="lbl">${_t("{n} activas:", {n: T.sigs.length})}</span>` + T.sigs.slice(0, 60).map((g, k) =>
       `<button data-sig="${idxToX(g.i)}" class="${k === cur ? "cur" : ""}">${(dHz(idxToX(g.i)) / 1e6).toFixed(S.f1 - S.f0 < 2e6 ? 4 : 3)}<small>${vAt(g.i).toFixed(0)} ${SDR.esc(unitLabel())}</small></button>`).join("");
   }
+  // Escanea con el radio todas las señales activas del barrido: en cada una que transmita se detiene y
+  // decodifica subtono CTCSS/DCS, DTMF y voz digital, y lo anota en el registro de actividad
+  async function decodeSignals() {
+    const sigs = activeSignals();
+    if (!sigs.length) { SDR.toast(_t("No hay señales activas en pantalla para decodificar (prueba «+6 dB»)."), true); return; }
+    const seen = new Set(), chans = [];
+    for (const g of sigs) {
+      const f = snapStep(dHz(idxToX(g.i)));
+      if (seen.has(f) || f < 1e5) continue;
+      seen.add(f);
+      chans.push({freq: f, mod: T.mod && T.mod !== "auto" ? T.mod : SDR.guessMod(f), name: ""});
+    }
+    try {
+      await SDR.api("/api/radio/scan", {channels: chans.slice(0, 400)});
+      SDR.toast(_tn(chans.length, "Decodificando {n} señal: el radio se detiene en ella cuando transmite.", "Decodificando {n} señales: el radio se detiene en cada una que transmita."));
+      SDR.showTab("radio");
+    } catch (e) { SDR.toast(e.message, true); }
+  }
   let sliding = false;
   function initTuner() {
+    $("#tnDecode").addEventListener("click", decodeSignals);
     $("#tnStep").value = String(T.step); $("#tnMod").value = T.mod; $("#tnThr").value = String(T.thr);
     if (!$("#tnStep").value) $("#tnStep").value = "12500";
     const hold = (btn, dir) => {

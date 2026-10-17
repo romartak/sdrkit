@@ -5,6 +5,31 @@ I18N.add({
   // index.html
   "🌎 Tu país": "🌎 Your country",
   "País": "Country",
+  "Buscar país": "Find a country",
+  "Escribe: Dominicana, México, España…": "Type: Dominican, Mexico, Spain…",
+  "🔎 Decodificador de subtono": "🔎 Tone decoder",
+  "Escucha una frecuencia y te dice qué subtono CTCSS o código DCS usa (y su código de walkie). Sirve para configurar tu radio y abrir una repetidora.":
+    "Listens to a frequency and tells you which CTCSS tone or DCS code it uses (and its walkie-talkie code). Use it to set up your radio and open a repeater.",
+  "MHz, ej. 146.940": "MHz, e.g. 146.940",
+  "🎧 Escuchar y detectar": "🎧 Listen and detect",
+  "— {n} país encontrado —": "— {n} country found —",
+  "— {n} países encontrados —": "— {n} countries found —",
+  "El decodificador funciona con el radio encendido. Escribe una frecuencia y pulsa «Escuchar y detectar», o usa «Buscar» en las repetidoras.":
+    "The decoder works while the radio is on. Enter a frequency and tap “Listen and detect”, or use “Search” on the repeaters.",
+  "Escuchando {f} MHz": "Listening on {f} MHz",
+  "hay señal": "signal present",
+  "en silencio": "quiet",
+  "en {f} MHz": "on {f} MHz",
+  "ahora": "now",
+  "★ Usar en «Mis repetidoras»": "★ Use in “My repeaters”",
+  "Escribe la frecuencia en MHz.": "Enter the frequency in MHz.",
+  "Detectando el subtono en {f} MHz…": "Detecting the tone on {f} MHz…",
+  "Elige primero tu país.": "Choose your country first.",
+  // analyzer.js
+  "🔎 Decodificar las señales de la pantalla": "🔎 Decode the signals on screen",
+  "No hay señales activas en pantalla para decodificar (prueba «+6 dB»).": "No active signals on screen to decode (try “+6 dB”).",
+  "Decodificando {n} señal: el radio se detiene en ella cuando transmite.": "Decoding {n} signal: the radio stops on it when it transmits.",
+  "Decodificando {n} señales: el radio se detiene en cada una que transmita.": "Decoding {n} signals: the radio stops on each one that transmits.",
   // paises.js — interface
   "— Elige tu país —": "— Choose your country —",
   "Elige tu país para ver sus walkie-talkies, bandas de radioaficionado, repetidoras y subtonos.":

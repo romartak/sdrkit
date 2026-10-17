@@ -159,14 +159,29 @@ const Paises = (() => {
     const p = cur(), r = SDR.modules.radio;
     return p && r && r.mems ? r.mems().filter(m => m.group === group(p.id)) : [];
   }
+  // sin tildes ni mayúsculas: «republica dom» encuentra «República Dominicana»
+  const plain = (t) => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  // lista de países, filtrada por lo escrito en el buscador
+  function fillSelect() {
+    const sel = $("#paisSel"), q = plain(($("#paisQ") && $("#paisQ").value || "").trim());
+    const coll = new Intl.Collator(I18N.lang);
+    const opts = ALL.map(id => [id, name(id)]).sort((a, b) => coll.compare(a[1], b[1]))
+      .filter(([id, n]) => !q || plain(n).includes(q) || id.toLowerCase() === q || id === S.sel);
+    sel.setAttribute("translate", "no");  // los nombres ya vienen en el idioma del panel (Intl.DisplayNames)
+    sel.innerHTML = `<option value="">${esc(q ? _tn(opts.filter(o => o[0] !== S.sel).length, "— {n} país encontrado —", "— {n} países encontrados —") : _t("— Elige tu país —"))}</option>` +
+      opts.map(([id, n]) => `<option value="${id}"${id === S.sel ? " selected" : ""}>${flag(id)} ${esc(n)}</option>`).join("");
+    return opts;
+  }
+  function choose(id) {
+    S.sel = id || null;
+    try { if (S.sel) localStorage.setItem(KEY, S.sel); else localStorage.removeItem(KEY); } catch (e) { /* storage blocked */ }
+    render();
+    if (SDR.modules.canales) SDR.modules.canales.onShow();
+  }
   function render() {
     const sel = $("#paisSel"), box = $("#paisInfo");
     if (!sel) return;
-    const coll = new Intl.Collator(I18N.lang);
-    const opts = ALL.map(id => [id, name(id)]).sort((a, b) => coll.compare(a[1], b[1]));
-    sel.setAttribute("translate", "no");  // los nombres ya vienen en el idioma del panel (Intl.DisplayNames)
-    sel.innerHTML = `<option value="">${esc(_t("— Elige tu país —"))}</option>` +
-      opts.map(([id, n]) => `<option value="${id}"${id === S.sel ? " selected" : ""}>${flag(id)} ${esc(n)}</option>`).join("");
+    fillSelect();
     const p = cur();
     if (!p) { box.innerHTML = `<p class="muted small" style="margin:0">${esc(_t("Elige tu país para ver sus walkie-talkies, bandas de radioaficionado, repetidoras y subtonos."))}</p>`; return; }
     const facts = [];
@@ -249,15 +264,87 @@ const Paises = (() => {
       }
     } catch (e) { SDR.toast(e.message, true); }
   }
+  // ------------------------------------------------------------ decodificador de subtono (tarjeta propia en Más → Canales)
+  // el radio sólo procesa mientras alguien escucha sus eventos: la tarjeta abre su propio flujo mientras se ve
+  const D = {timer: null, last: null, live: null, es: null};
+  function decVisible() { const c = $("#toneDec"); return !!(c && c.offsetParent !== null && !document.hidden); }
+  function decTick() {
+    const on = decVisible() && SDR.status && SDR.status.mode === "radio";
+    if (on && !D.es) {
+      D.es = new EventSource("/api/radio/stream");
+      D.es.addEventListener("radio", ev => {
+        const d = JSON.parse(ev.data);
+        D.live = d;
+        if (d.ctcss || d.dcs) D.last = {t: Date.now(), freq: d.freq, ctcss: d.ctcss, dcs: d.dcs};
+      });
+    } else if (!on && D.es) { D.es.close(); D.es = null; D.live = null; }
+    if (decVisible()) decRender(on);
+  }
+  function decRender(on) {
+    const box = $("#toneOut"); if (!box) return;
+    const l = D.live || {}, f = l.freq || null;
+    let head;
+    if (!on || !f) head = `<p class="muted small" style="margin:0">${esc(_t("El decodificador funciona con el radio encendido. Escribe una frecuencia y pulsa «Escuchar y detectar», o usa «Buscar» en las repetidoras."))}</p>`;
+    else head = `<p class="small" style="margin:0">${esc(_t("Escuchando {f} MHz", {f: fmt(f / 1e6)}))} · ${l.sq ? `<b style="color:var(--ok)">${esc(_t("hay señal"))}</b>` : esc(_t("en silencio"))}</p>`;
+    const hit = on && (l.ctcss || l.dcs) ? {t: Date.now(), freq: f, ctcss: l.ctcss, dcs: l.dcs} : D.last;
+    let tone = `<div class="tonebig muted">—</div>`;
+    if (hit) {
+      const live = hit.t > Date.now() - 1500;
+      const what = hit.ctcss ? "CTCSS " + hit.ctcss.tone.toFixed(1) + " Hz" : "DCS " + hit.dcs.text.split(" ≡ ")[0];
+      const c = hit.ctcss ? code(hit.ctcss.tone) : null;
+      const s = Math.round((Date.now() - hit.t) / 1000);
+      tone = `<div class="tonebig${live ? "" : " muted"}">${esc(what)}</div><p class="muted small" style="margin:0">` +
+        esc([c ? _t("código walkie {n}", {n: c}) : "", _t("en {f} MHz", {f: fmt(hit.freq / 1e6)}), live ? _t("ahora") : (s < 60 ? _t("hace {n} s", {n: s}) : _t("hace {n} min", {n: Math.round(s / 60)}))].filter(Boolean).join(" · ")) +
+        `</p><div class="row" style="margin-top:6px"><button class="btn sm" data-dec="use">${esc(_t("★ Usar en «Mis repetidoras»"))}</button></div>`;
+    }
+    box.innerHTML = head + tone;
+  }
+  function initDecoder() {
+    const card = $("#toneDec"); if (!card) return;
+    card.addEventListener("click", async ev => {
+      const b = ev.target.closest("[data-dec]"); if (!b) return;
+      if (b.dataset.dec === "listen") {
+        const f = parseFloat($("#toneF").value);
+        if (!(f > 1 && f < 1766)) { SDR.toast(_t("Escribe la frecuencia en MHz."), true); return; }
+        try {
+          D.last = null;
+          await SDR.api("/api/radio/scan", {action: "stop"}).catch(() => {});
+          await SDR.api("/api/radio", {freq: Math.round(f * 1e6), mod: "nfm"});
+          if (!SDR.status || SDR.status.mode !== "radio") await SDR.api("/api/mode", {mode: "radio"});
+          setTimeout(SDR.pollStatus, 400);
+          SDR.toast(_t("Detectando el subtono en {f} MHz…", {f: fmt(f)}));
+        } catch (e) { SDR.toast(e.message, true); }
+      } else if (b.dataset.dec === "use" && D.last) {
+        const h = D.last;
+        if ($("#repOut")) {
+          $("#repOut").value = fmt(h.freq / 1e6);
+          $("#repTone").value = h.ctcss ? h.ctcss.tone.toFixed(1) : h.dcs.text.split(" ≡ ")[0].replace(/^DCS\s*/, "");
+          $("#repName").focus(); $("#repName").scrollIntoView({behavior: "smooth", block: "center"});
+        } else SDR.toast(_t("Elige primero tu país."), true);
+      }
+    });
+    clearInterval(D.timer);
+    D.timer = setInterval(decTick, 1000);
+    decRender(false);
+  }
   function init() {
     const sel = $("#paisSel"), box = $("#paisInfo");
     if (!sel) return;
-    sel.addEventListener("change", () => {
-      S.sel = sel.value || null;
-      try { if (S.sel) localStorage.setItem(KEY, S.sel); else localStorage.removeItem(KEY); } catch (e) { /* storage blocked */ }
-      render();
-      if (SDR.modules.canales) SDR.modules.canales.onShow();
+    sel.addEventListener("change", () => choose(sel.value));
+    const q = $("#paisQ");
+    // escribir filtra la lista; si sólo queda un país (o se pulsa Enter) se elige solo
+    q.addEventListener("input", () => {
+      const opts = fillSelect().filter(o => o[0] !== S.sel), t = plain(q.value.trim());
+      const exact = opts.find(o => plain(o[1]) === t);
+      if (t && (opts.length === 1 || exact)) { choose((exact || opts[0])[0]); q.blur(); }
     });
+    q.addEventListener("keydown", ev => {
+      if (ev.key !== "Enter") return;
+      ev.preventDefault();
+      const o = fillSelect().find(x => x[0] !== S.sel) || fillSelect()[0];
+      if (o) { choose(o[0]); q.blur(); }
+    });
+    initDecoder();
     box.addEventListener("click", async ev => {
       const svc = ev.target.closest("[data-svc]"), rep = ev.target.closest("[data-rep]"), a = ev.target.closest("[data-act]");
       const li = ev.target.closest("[data-listen]"), del = ev.target.closest("[data-del]");

@@ -98,6 +98,7 @@
         </div>
         <button class="btn primary big" id="tnListen">🎧 Escuchar esta frecuencia</button>
         <div class="sigchips" id="tnSigs"></div>
+        <button class="btn" id="tnDecode">🔎 Decodificar las señales de la pantalla</button>
       </div>
       <div class="mkchips" id="mkChips"></div>
       <div class="markerbar">
@@ -602,8 +603,18 @@
   <div id="more-canales" class="sub">
     <div class="card" data-help="paises">
       <h3>🌎 Tu país</h3>
-      <label class="f">País<select id="paisSel"></select></label>
+      <div class="grid2">
+        <label class="f">Buscar país<input type="search" id="paisQ" placeholder="Escribe: Dominicana, México, España…" autocomplete="off"></label>
+        <label class="f">País<select id="paisSel"></select></label>
+      </div>
       <div id="paisInfo"></div>
+    </div>
+    <div class="card" id="toneDec" data-help="decsub">
+      <h3>🔎 Decodificador de subtono</h3>
+      <p class="small">Escucha una frecuencia y te dice qué subtono CTCSS o código DCS usa (y su código de walkie). Sirve para configurar tu radio y abrir una repetidora.</p>
+      <div class="inrow"><input type="number" id="toneF" step="any" inputmode="decimal" placeholder="MHz, ej. 146.940">
+        <button class="btn primary" data-dec="listen">🎧 Escuchar y detectar</button></div>
+      <div id="toneOut" style="margin-top:8px"></div>
     </div>
     <div class="card" data-help="canales">
       <h3>Escuchar todo: servicios y canales</h3>
@@ -748,7 +759,7 @@
       <div class="row">
         <button class="btn" id="btnLogs">📄 Ver registros</button>
         <button class="btn" id="btnReboot">🔄 Reiniciar</button>
-        <button class="btn danger" id="btnOff">⏻ Apagar</button>
+        <button class="btn danger" id="btnOff">🔴 Apagar</button>
         <a class="btn" id="btnLogout" href="/logout">Cerrar sesión</a>
       </div>
       <p class="muted small" style="margin:10px 0 0">Apaga desde aquí antes de desconectar la batería: así cuidas la tarjeta microSD. Espera a que la luz verde deje de parpadear.</p>

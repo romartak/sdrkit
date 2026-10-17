@@ -100,6 +100,14 @@ const Help = (() => {
       u: ["Los servicios propios de tu país aparecen primero en la lista de abajo; los de otros países, más tenues.", "«📡 Buscar» escanea las salidas de repetidoras de esa banda: el escáner se detiene en cada una que esté activa.",
         "En el Radio verás el subtono (CTCSS) o código DCS de la repetidora y su <b>código de walkie</b> (1–38).", "Anota cada repetidora que encuentres en «Mis repetidoras» con su subtono y desplazamiento: quedan en tus memorias, en el grupo «Repetidoras» + el código del país."],
       c: "Las bandas, desplazamientos y subtonos mostrados son los habituales de cada región; cada repetidora puede ser distinta. El panel no inventa listas de repetidoras: las que guardes son las que tú comprobaste."},
+    decsub: {t: "Decodificador de subtono", p: "Mide el subtono que acompaña la voz de un walkie o una repetidora: un CTCSS (67.0–254.1 Hz) o un código DCS. Es lo que tu radio necesita para «abrir» esa repetidora o hablar con ese grupo.",
+      u: ["Escribe la frecuencia y pulsa «Escuchar y detectar». El radio se enciende en esa frecuencia (el analizador se pausa).", "Cuando alguien transmite, en ~2 s aparece el subtono y su <b>código de walkie</b> (1–38), el que eligen los walkies FRS/PMR.",
+        "«Usar en Mis repetidoras» copia la frecuencia y el subtono al formulario de tu país.", "También funciona mientras el escáner o «Buscar» recorren canales: muestra el subtono de lo último que escuchó."],
+      c: "Si no aparece nada, puede que esa estación no use subtono, que sea digital (DMR, P25…) o que la señal sea débil."},
+    decsignals: {t: "Decodificar las señales", p: "Toma todas las señales activas que ve el barrido y las pasa al escáner del radio. El dongle sólo hace una cosa a la vez: barre O escucha; por eso el panel decodifica escaneando una por una.",
+      u: ["En cada señal que esté transmitiendo, el radio se detiene y decodifica subtono CTCSS/DCS, tonos DTMF y el tipo de voz digital (DMR, P25, NXDN, D-Star…).", "Todo queda anotado en Radio → Registro de actividad, con hora, frecuencia, nivel y subtono.",
+        "Usa el modo del sintonizador («Auto» elige según la banda)."],
+      c: "Para mensajes de texto (buscapersonas, APRS), sensores de 433 MHz o aviones usa la pestaña Decodificar."},
     canales: {t: "Servicios y canales", p: "Los planes de canales completos de cada servicio de radio, para escuchar todo sin buscar frecuencias.",
       u: ["Toca un servicio: verás qué es, quién lo usa y todos sus canales.", "Toca un canal para escucharlo, o «Escanear» para recorrer el servicio entero.", "«Guardar como grupo» lo agrega a tus memorias.", "Los servicios de otra región aparecen más tenues."],
       c: "Revisa siempre las leyes de tu país: escuchar suele estar permitido; transmitir en estos servicios necesita radios homologadas o licencia."},
@@ -124,7 +132,7 @@ const Help = (() => {
     ["squelch", "#rSq"], ["panorama", "#pan"], ["subtonos", "#dCtcss"], ["dsd", "#dsdModes"], ["datos", "#rData"], ["grabar", "#rRec"],
     ["escaner", "#scStart"], ["memorias", "#memList"], ["mensajes", "#dmKinds"], ["sensores", "#snPreset"], ["adsb", "#radar"],
     ["ubicacion", "#adLat"], ["todos", "#allList"], ["vozdigital", "#ambeState"], ["grabaciones", "#recSearch"], ["actividad", "#actTable"],
-    ["canales", "#chServices"], ["guia", "#refTable"], ["tablas", "#ctcssGrid"], ["tablas", "#dcsGrid"], ["antenas", "#antF"], ["cable", "#cabT"],
+    ["paises", "#paisSel"], ["decsub", "#toneF"], ["canales", "#chServices"], ["guia", "#refTable"], ["tablas", "#ctcssGrid"], ["tablas", "#dcsGrid"], ["antenas", "#antF"], ["cable", "#cabT"],
     ["owrx", "#btnRxOpen"], ["wifi", "#btnHotspot"], ["sistema", "#tiles"], ["actualizar", "#btnUpdCheck"],
   ];
   // English sheets live in lang-en-help.js (I18N.data.help, same keys); missing fields fall back to Spanish
@@ -146,6 +154,7 @@ const Help = (() => {
     const radio = $("#radioMain"); if (radio && !radio.querySelector('[data-info="radio"]')) radio.insertAdjacentHTML("afterbegin", btn("radio", "abs"));
     $(".legend").insertAdjacentHTML("beforeend", btn("espectro", "inl"));
     $(".readout").insertAdjacentHTML("beforeend", `<div class="roinfo">${btn("lecturas", "inl")}</div>`);
+    const dec = $("#tnDecode"); if (dec) dec.insertAdjacentHTML("afterend", btn("decsignals", "inl"));
     const mk = $(".markerbar .mk"); if (mk) mk.insertAdjacentHTML("afterbegin", btn("marcadores", "abs"));
     $(".brand").insertAdjacentHTML("afterend", `<button type="button" class="hbtn" data-info="inicio" aria-label="${_t("Ayuda")}">?</button>`);
   }

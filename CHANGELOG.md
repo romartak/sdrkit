@@ -6,6 +6,18 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-10-17
+
+### Added
+- **Tone decoder** card in More → Channels: enter a frequency, tap "Listen and detect" and it shows the CTCSS tone or DCS code
+  live with its walkie-talkie code (1–38); "Use in My repeaters" copies frequency and tone into the country's repeater form.
+- Analyzer: **🔎 Decode the signals on screen** hands every active signal of the sweep to the radio scanner, which stops on each
+  one that transmits and decodes its CTCSS/DCS tone, DTMF and digital voice type (all logged in the activity log).
+- Country search box: type part of the name (accents optional) to filter the list; a single match is chosen automatically.
+
+### Fixed
+- The shut-down button used a power symbol (⏻) that many phones cannot draw; it now uses 🔴.
+
 ## [3.4.0] - 2026-10-17
 
 ### Added
@@ -109,6 +121,7 @@ Update an installed kit with `sudo sdrkit update`.
 ### Added
 - tinySA-style spectrum analyzer, automatic hotspot, OpenWebRX+ and Tailscale.
 
+[3.5.0]: https://github.com/romartak/sdrkit/releases/tag/v3.5.0
 [3.4.0]: https://github.com/romartak/sdrkit/releases/tag/v3.4.0
 [3.3.1]: https://github.com/romartak/sdrkit/releases/tag/v3.3.1
 [3.2.0]: https://github.com/romartak/sdrkit/releases/tag/v3.2.0

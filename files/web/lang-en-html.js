@@ -360,7 +360,7 @@ I18N.add({
   "Mantenimiento": "Maintenance",
   "📄 Ver registros": "📄 View logs",
   "🔄 Reiniciar": "🔄 Restart",
-  "⏻ Apagar": "⏻ Shut down",
+  "🔴 Apagar": "🔴 Shut down",
   "Cerrar sesión": "Log out",
   "Apaga desde aquí antes de desconectar la batería: así cuidas la tarjeta microSD. Espera a que la luz verde deje de parpadear.":
     "Shut down from here before unplugging the battery: it protects the microSD card. Wait until the green light stops blinking.",
