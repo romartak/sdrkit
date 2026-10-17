@@ -28,6 +28,16 @@ to it**, identify what it is, decode it, record it — all from a phone browser,
 internet required. At home it joins your WiFi; in the field it creates its own hotspot; anywhere else it is one
 [Tailscale](https://tailscale.com) hop away.
 
+<p align="center">
+<img src="docs/media/screenshots/analyzer.png" width="24%" alt="Spectrum analyzer and waterfall">
+<img src="docs/media/screenshots/radio.png" width="24%" alt="Multimode radio">
+<img src="docs/media/screenshots/decode-messages.png" width="24%" alt="Decoded pager and APRS messages">
+<img src="docs/media/screenshots/aircraft-radar.png" width="24%" alt="Offline aircraft radar">
+</p>
+
+> [!NOTE]
+> **No hardware yet?** Try the panel on any computer with demo mode: `pip install numpy && python3 files/sdrkit_server.py --demo --port 8080` → http://localhost:8080
+
 > [!TIP]
 > **In a hurry?** Flash the Pi, SSH in and run one line — jump to [the 3-minute version](#-the-short-version).
 

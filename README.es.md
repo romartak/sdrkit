@@ -28,6 +28,16 @@ escucharla**, identifica qué es, decodifícala y grábala — todo desde el nav
 apps y sin internet. En casa se conecta a tu WiFi; en el campo crea su propio hotspot; desde cualquier otro
 lugar entras con [Tailscale](https://tailscale.com).
 
+<p align="center">
+<img src="docs/media/screenshots/analyzer.png" width="24%" alt="Analizador de espectro y cascada">
+<img src="docs/media/screenshots/radio.png" width="24%" alt="Radio multimodo">
+<img src="docs/media/screenshots/decode-messages.png" width="24%" alt="Mensajes de buscapersonas y APRS decodificados">
+<img src="docs/media/screenshots/aircraft-radar.png" width="24%" alt="Radar de aviones sin internet">
+</p>
+
+> [!NOTE]
+> **¿Aún sin hardware?** Prueba el panel en cualquier computadora con el modo demo: `pip install numpy && python3 files/sdrkit_server.py --demo --port 8080` → http://localhost:8080
+
 > [!TIP]
 > **¿Con prisa?** Graba la Pi, entra por SSH y ejecuta una línea — ve a [la versión corta](#-la-versión-corta).
 
