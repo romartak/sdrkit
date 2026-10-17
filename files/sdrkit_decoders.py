@@ -912,35 +912,53 @@ def classify_digital(hz, fs=48000):
     tot = band(200, 6000) + 1e-12
     if band(900, 2500) / tot > 0.85 and band(1000, 1400) / tot > 0.15 and band(2000, 2400) / tot > 0.15:
         return {"kind": "afsk1200", "rate": 1200, "levels": 2, "guess": "AFSK 1200: APRS / packet", "conf": 0.8}
-    # velocidad de símbolos: línea espectral de |dx/dt|
-    k = max(1, fs // 12000)
-    y = np.convolve(x, np.ones(k) / k, mode="same")
-    d = np.abs(np.diff(y))
-    d = d - d.mean()
-    m = 1 << int(math.log2(min(len(d), 65536)))
-    D = np.abs(np.fft.rfft(d[:m] * np.hanning(m))) ** 2
-    fd = np.fft.rfftfreq(m, 1.0 / fs)
+    # un tono fijo (portadora con tono, pitido de prueba) concentra la energía en una sola raya: es analógico
+    sel = np.flatnonzero((f >= 200) & (f <= 6000))
+    i = sel[int(np.argmax(X[sel]))]
+    if float(X[max(sel[0], i - 4):i + 5].sum()) / tot > 0.35:
+        return None
+    # velocidad de símbolos: línea espectral de |dx/dt|. Hasta 4800 baudios se filtra a ~4.8 kHz (mucho menos
+    # ruido: detecta NXDN/dPMR débiles); 6000 y 9600 necesitan ~12 kHz de banda
+    smooth = {}
     scores = {}
-    for rate in (512, 1200, 1600, 2400, 3600, 4800, 6000, 9600):
-        sel = np.abs(fd - rate) < max(8.0, rate * 0.004)
-        ref = (np.abs(fd - rate) > rate * 0.03) & (np.abs(fd - rate) < rate * 0.15)
-        if sel.any() and ref.any():
-            scores[rate] = float(D[sel].max()) / (float(np.median(D[ref])) + 1e-12)
+    for k, rates in ((max(1, fs // 4800), (512, 1200, 1600, 2400, 3600, 4800)), (max(1, fs // 12000), (6000, 9600))):
+        y = smooth[k] = np.convolve(x, np.ones(k) / k, mode="same")
+        d = np.abs(np.diff(y))
+        d = d - d.mean()
+        m = 1 << int(math.log2(min(len(d), 65536)))
+        D = np.abs(np.fft.rfft(d[:m] * np.hanning(m))) ** 2
+        fd = np.fft.rfftfreq(m, 1.0 / fs)
+        for rate in rates:
+            sel = np.abs(fd - rate) < max(8.0, rate * 0.004)
+            ref = (np.abs(fd - rate) > rate * 0.03) & (np.abs(fd - rate) < rate * 0.15)
+            if sel.any() and ref.any():
+                scores[rate] = float(D[sel].max()) / (float(np.median(D[ref])) + 1e-12)
     top = max(scores.values()) if scores else 0.0
     if top < 25:
         return None
     # la fundamental: la velocidad más baja con una línea fuerte (las demás son armónicas)
     best = min(r for r, v in scores.items() if v >= max(25.0, 0.2 * top))
     score = scores[best]
-    # niveles: histograma de la desviación (la señal sostenida)
-    a = np.abs(y)
-    lim = np.percentile(a, 97)
-    if lim <= 0:
+    y = smooth[max(1, fs // 4800) if best <= 4800 else max(1, fs // 12000)]
+    # niveles: se muestrea en el centro de cada símbolo (la fase con el ojo más abierto) y se cuenta cuántas
+    # muestras caen en los niveles interiores: en 4FSK (±1/3) son la mitad; en 2FSK/GMSK casi ninguna
+    sps = fs / best
+    z = y - 0.5 * (np.percentile(y, 95) + np.percentile(y, 5))
+    nsym = int((len(z) - 2 * sps) / sps)
+    if nsym < 64:
         return None
-    h, edges = np.histogram(np.clip(y / lim, -1.2, 1.2), bins=48, range=(-1.2, 1.2))
-    hs = np.convolve(h, np.ones(3) / 3, mode="same")
-    peaks = [i for i in range(1, 47) if hs[i] > hs[i - 1] and hs[i] >= hs[i + 1] and hs[i] > 0.25 * hs.max()]
-    levels = 4 if len(peaks) >= 3 and best <= 6000 else 2  # a 9600 baudios en FM casi siempre es GMSK (AIS, packet)
+    pos = np.arange(len(z))
+    eye, v = -1.0, None
+    for ph in np.linspace(0, sps, 16, endpoint=False):
+        s = np.interp(ph + sps * (np.arange(nsym) + 0.5), pos, z)
+        e = float(np.mean(np.abs(s)))
+        if e > eye:
+            eye, v = e, s
+    outer = float(np.percentile(np.abs(v), 90))
+    if outer <= 0:
+        return None
+    inner = float(np.mean(np.abs(v) < 0.6 * outer))
+    levels = 4 if inner > 0.38 and best <= 6000 else 2  # a 9600 baudios en FM casi siempre es GMSK (AIS, packet)
     span = float(np.percentile(y, 97) - np.percentile(y, 3)) / 2.0  # ≈ desviación máxima (Hz)
     names = {
         (4, 4800): "4FSK 4800 baudios: DMR, P25 fase 1, Yaesu Fusion (C4FM) o M17",

@@ -1,15 +1,18 @@
 #!/bin/bash
-# SDR-Kit · vigilante de red
-# Mantiene la Raspberry siempre accesible:
-#   1) Al encender espera a una WiFi conocida (casa, hotspot del celular…).
-#   2) Si no aparece ninguna, levanta su propio hotspot (por defecto "SDR-Pi", http://192.168.4.1).
-#   3) Con el hotspot encendido y nadie conectado, cada N minutos vuelve a buscar las redes conocidas.
-#   4) Si se pierde la WiFi conocida, vuelve al hotspot.
-# Forzar hotspot fijo:  echo hotspot > /run/sdrkit/netmode   (lo hace el panel; "auto" lo libera)
+# SDR-Kit · network watchdog · vigilante de red
+# Keeps the Pi always reachable · Mantiene la Raspberry siempre accesible:
+#   1) At boot it waits for a known WiFi (home, phone hotspot…) · Al encender espera a una WiFi conocida.
+#   2) If none shows up, it starts its own hotspot (default "SDR-Pi", http://192.168.4.1).
+#      Si no aparece ninguna, levanta su propio hotspot.
+#   3) Hotspot on and nobody connected: every N minutes it looks for the known networks again.
+#      Con el hotspot encendido y nadie conectado, cada N minutos vuelve a buscar las redes conocidas.
+#   4) If the known WiFi is lost, back to the hotspot · Si se pierde la WiFi conocida, vuelve al hotspot.
+# Fixed hotspot · Forzar hotspot fijo:  echo hotspot > /run/sdrkit/netmode   (the panel does it; "auto" releases it)
 
 # shellcheck source=sdrkit-lib.sh
 source /opt/sdrkit/sdrkit-lib.sh
 sdrkit_load_conf /etc/sdrkit/sdrkit.conf
+sdrkit_lang_init
 
 IFACE="${WIFI_IFACE:-wlan0}"
 HS="${HOTSPOT_CON:-sdrkit-hotspot}"
@@ -18,7 +21,7 @@ RETRY_MIN="${HOME_RETRY_MIN:-5}"
 LOST_GRACE="${LOST_GRACE:-40}"
 MODEFILE=/run/sdrkit/netmode
 
-log() { echo "$*"; }
+log() { L "$@"; }   # "English" "Español" → journal (sdrkit logs)
 
 dev_state()   { nmcli -g GENERAL.STATE device show "$IFACE" 2>/dev/null | cut -d' ' -f1; }
 active_con()  { nmcli -g GENERAL.CONNECTION device show "$IFACE" 2>/dev/null; }
@@ -27,7 +30,7 @@ client_on()   { [ "$(dev_state)" = "100" ] && [ "$(active_con)" != "$HS" ]; }
 stations()    { iw dev "$IFACE" station dump 2>/dev/null | grep -c '^Station'; }
 forced_mode() { cat "$MODEFILE" 2>/dev/null || echo auto; }
 
-# UUIDs de las redes WiFi conocidas (modo cliente), ordenadas por prioridad
+# UUIDs of the known WiFi networks (client mode), by priority · UUIDs de las redes WiFi conocidas, por prioridad
 known_uuids() {
   nmcli -t -f UUID,TYPE,AUTOCONNECT-PRIORITY connection show 2>/dev/null |
   while IFS=: read -r uuid type prio; do
@@ -38,15 +41,16 @@ known_uuids() {
 }
 
 start_hotspot() {
-  log "Levantando hotspot ($HS)…"
-  nmcli connection up "$HS" >/dev/null 2>&1 || log "No se pudo levantar el hotspot (revisa: nmcli connection show $HS)"
+  log "Starting the hotspot ($HS)…" "Levantando hotspot ($HS)…"
+  nmcli connection up "$HS" >/dev/null 2>&1 || log "Could not start the hotspot (check: nmcli connection show $HS)" \
+                                                   "No se pudo levantar el hotspot (revisa: nmcli connection show $HS)"
 }
 
 try_known() {
   local uuids visible uuid ssid
   uuids="$(known_uuids)"
   [ -n "$uuids" ] || return 1
-  log "Buscando redes conocidas…"
+  log "Looking for known networks…" "Buscando redes conocidas…"
   nmcli connection down "$HS" >/dev/null 2>&1
   sleep 3
   nmcli device wifi rescan ifname "$IFACE" >/dev/null 2>&1
@@ -56,14 +60,14 @@ try_known() {
     ssid="$(nmcli -g 802-11-wireless.ssid connection show "$uuid" 2>/dev/null)"
     [ -n "$ssid" ] || continue
     if grep -Fxq -- "$ssid" <<<"$visible"; then
-      log "Red conocida visible: $ssid → conectando"
+      log "Known network in range: $ssid → connecting" "Red conocida visible: $ssid → conectando"
       if nmcli --wait 40 connection up uuid "$uuid" ifname "$IFACE" >/dev/null 2>&1; then
-        log "Conectada a $ssid"
+        log "Connected to $ssid" "Conectada a $ssid"
         return 0
       fi
     fi
   done
-  log "Ninguna red conocida disponible."
+  log "No known network available." "Ninguna red conocida disponible."
   return 1
 }
 
@@ -71,15 +75,15 @@ mkdir -p /run/sdrkit
 [ -f "$MODEFILE" ] || echo auto > "$MODEFILE"
 iw dev "$IFACE" set power_save off 2>/dev/null
 
-# 1) arranque: esperar una red conocida
+# 1) boot: wait for a known network · arranque: esperar una red conocida
 for _ in $(seq "$BOOT_WAIT"); do
   client_on && break
   sleep 1
 done
 if client_on; then
-  log "Arranque: conectada a WiFi conocida ($(active_con))."
+  log "Boot: connected to a known WiFi ($(active_con))." "Arranque: conectada a WiFi conocida ($(active_con))."
 else
-  log "Arranque: sin WiFi conocida tras ${BOOT_WAIT}s."
+  log "Boot: no known WiFi after ${BOOT_WAIT}s." "Arranque: sin WiFi conocida tras ${BOOT_WAIT}s."
   start_hotspot
 fi
 
@@ -103,10 +107,10 @@ while true; do
     fi
     continue
   fi
-  # ni cliente ni hotspot: conectando o red perdida
+  # neither client nor hotspot: connecting, or network lost · ni cliente ni hotspot: conectando o red perdida
   [ "$lost_since" -eq 0 ] && lost_since=$now
   if [ $((now - lost_since)) -ge "$LOST_GRACE" ]; then
-    log "Sin red durante ${LOST_GRACE}s."
+    log "No network for ${LOST_GRACE}s." "Sin red durante ${LOST_GRACE}s."
     start_hotspot
     lost_since=0
     last_try=$now

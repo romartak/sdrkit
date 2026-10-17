@@ -79,7 +79,7 @@ const Canales = (() => {
         {n: 7, f: 437.8, name: "ISS repetidor bajada", mod: "nfm"}, {n: 8, f: 436.795, name: "SO-50", mod: "nfm"}]},
     {id: "rail", ico: "🚆", name: "Ferrocarril AAR (EE. UU. / Canadá)", reg: "A", mod: "nfm",
       info: "Canales de los trenes de carga y pasajeros en Norteamérica (160.215–161.565 MHz). Muchas líneas pasaron a NXDN digital: usa el modo «Digital» si oyes «ruido de datos».",
-      range: {start: 160.215, stop: 161.565, step: 0.015, label: "97 canales AAR"}},
+      range: {start: 160.215, stop: 161.565, step: 0.015, label: "91 canales AAR"}},
     {id: "vhfb", ico: "🚓", name: "VHF servicios (148–174 MHz)", reg: "*", mod: "nfm",
       info: "Empresas, seguridad privada, bomberos, ambulancias, municipios, taxis, buscapersonas. Muchos ya son digitales (DMR, NXDN, P25) y algunos cifrados (ésos no se pueden oír).",
       range: {start: 148, stop: 174, step: 0.0125, label: "148–174 MHz"}},
@@ -116,23 +116,26 @@ const Canales = (() => {
     const reg = region();
     const order = S.slice().sort((a, b) => (a.reg !== "*" && a.reg !== reg) - (b.reg !== "*" && b.reg !== reg));
     $("#chServices").innerHTML = order.map(s =>
-      `<button data-svc="${s.id}" class="${C.sel === s.id ? "active" : ""}${s.reg !== "*" && s.reg !== reg ? " other" : ""}">${s.ico} ${SDR.esc(s.name)}</button>`).join("");
+      `<button data-svc="${s.id}" class="${C.sel === s.id ? "active" : ""}${s.reg !== "*" && s.reg !== reg ? " other" : ""}">${s.ico} ${SDR.esc(_t(s.name))}</button>`).join("");
     const s = S.find(x => x.id === C.sel);
     const box = $("#chDetail");
-    if (!s) { box.innerHTML = '<p class="muted">Elige un servicio para ver todos sus canales, escucharlos o escanearlos completos.</p>'; return; }
-    const cs = chans(s), modName = {nfm: "FM", nfmw: "FM ancha", wfm: "WFM", am: "AM", usb: "USB", lsb: "LSB", dsd: "Digital"}[s.mod];
-    const regTxt = s.reg === "A" ? "América" : s.reg === "E" ? "Europa / otros países" : "todo el mundo";
-    box.innerHTML = `<h3 style="margin-top:4px">${s.ico} ${SDR.esc(s.name)}</h3>
-      <p class="small">${SDR.esc(s.info)}</p>
-      <p class="muted small">Región: ${regTxt} · modo ${modName}${cs.length ? " · " + cs.length + " canales" : ""}${s.range ? " · rango: " + SDR.esc(s.range.label) : ""}</p>
+    if (!s) { box.innerHTML = `<p class="muted">${SDR.esc(_t("Elige un servicio para ver todos sus canales, escucharlos o escanearlos completos."))}</p>`; return; }
+    const cs = chans(s), modName = _t({nfm: "FM", nfmw: "FM ancha", wfm: "WFM", am: "AM", usb: "USB", lsb: "LSB", dsd: "Digital"}[s.mod]);
+    const regTxt = s.reg === "A" ? _t("América") : s.reg === "E" ? _t("Europa / otros países") : _t("todo el mundo");
+    const label = s.range ? _t(s.range.label) : "";
+    const facts = [_t("Región: {r}", {r: regTxt}), _t("modo {m}", {m: modName})]
+      .concat(cs.length ? [_tn(cs.length, "{n} canal", "{n} canales")] : [], s.range ? [_t("rango: {r}", {r: label})] : []);
+    box.innerHTML = `<h3 style="margin-top:4px">${s.ico} ${SDR.esc(_t(s.name))}</h3>
+      <p class="small">${SDR.esc(_t(s.info))}</p>
+      <p class="muted small">${SDR.esc(facts.join(" · "))}</p>
       <div class="row" style="margin-bottom:10px">
-        ${cs.length ? `<button class="btn primary" data-act="scan">📡 Escanear los ${cs.length} canales</button>` : ""}
-        ${s.range ? `<button class="btn${cs.length ? "" : " primary"}" data-act="range">📡 Escanear ${SDR.esc(s.range.label)}</button>` : ""}
-        ${cs.length ? `<button class="btn" data-act="mem">★ Guardar como grupo</button>` : ""}
-        ${s.range ? `<button class="btn" data-act="an">📈 Ver en el analizador</button>` : ""}
+        ${cs.length ? `<button class="btn primary" data-act="scan">${SDR.esc(_tn(cs.length, "📡 Escanear el canal", "📡 Escanear los {n} canales"))}</button>` : ""}
+        ${s.range ? `<button class="btn${cs.length ? "" : " primary"}" data-act="range">${SDR.esc(_t("📡 Escanear {r}", {r: label}))}</button>` : ""}
+        ${cs.length ? `<button class="btn" data-act="mem">${SDR.esc(_t("★ Guardar como grupo"))}</button>` : ""}
+        ${s.range ? `<button class="btn" data-act="an">${SDR.esc(_t("📈 Ver en el analizador"))}</button>` : ""}
       </div>
-      ${cs.length ? `<div class="chgrid">${cs.map((c, k) => `<button data-k="${k}"><b>${SDR.esc(c.name)}</b><span>${(c.freq / 1e6).toFixed(c.freq % 1000 ? 5 : 4)}</span>${c.mod !== s.mod ? `<small>${SDR.esc(modName === "Digital" && c.mod !== "dsd" ? c.mod.toUpperCase() : c.mod === "dsd" ? "Digital" : c.mod.toUpperCase())}</small>` : ""}</button>`).join("")}</div>` : ""}
-      <p class="muted small" style="margin:8px 0 0">Toca un canal para escucharlo. El escáner se detiene solo cuando alguien habla y sigue buscando cuando termina.</p>`;
+      ${cs.length ? `<div class="chgrid">${cs.map((c, k) => `<button data-k="${k}"><b>${SDR.esc(_t(c.name))}</b><span>${(c.freq / 1e6).toFixed(c.freq % 1000 ? 5 : 4)}</span>${c.mod !== s.mod ? `<small>${SDR.esc(c.mod === "dsd" ? _t("Digital") : c.mod.toUpperCase())}</small>` : ""}</button>`).join("")}</div>` : ""}
+      <p class="muted small" style="margin:8px 0 0">${SDR.esc(_t("Toca un canal para escucharlo. El escáner se detiene solo cuando alguien habla y sigue buscando cuando termina."))}</p>`;
   }
   async function act(a) {
     const s = S.find(x => x.id === C.sel); if (!s) return;
@@ -140,14 +143,14 @@ const Canales = (() => {
     try {
       if (a === "scan") {
         await SDR.api("/api/radio/scan", {channels: cs.map(c => ({freq: c.freq, mod: c.mod === "dsd" ? "nfm" : c.mod, name: c.name}))});
-        SDR.toast("Escaneando " + cs.length + " canales de " + s.name + "."); SDR.showTab("radio");
+        SDR.toast(_tn(cs.length, "Escaneando {n} canal de {s}.", "Escaneando {n} canales de {s}.", {s: _t(s.name)})); SDR.showTab("radio");
       } else if (a === "range") {
         const g = s.range;
         await SDR.api("/api/radio/scan", {range: {start: g.start * 1e6, stop: g.stop * 1e6, step: g.step * 1e6, mod: s.mod === "dsd" ? "nfm" : s.mod}});
-        SDR.toast("Escaneando " + g.label + "."); SDR.showTab("radio");
+        SDR.toast(_t("Escaneando {r}.", {r: _t(g.label)})); SDR.showTab("radio");
       } else if (a === "mem") {
         await SDR.api("/api/memories/import", {items: cs.map(c => ({freq: c.freq, mod: c.mod, name: c.name, group: s.name.split(" (")[0]}))});
-        SDR.toast("Guardados " + cs.length + " canales en el grupo «" + s.name.split(" (")[0] + "»."); if (SDR.modules.radio) SDR.modules.radio.loadMemories();
+        SDR.toast(_tn(cs.length, "Guardado {n} canal en el grupo «{g}».", "Guardados {n} canales en el grupo «{g}».", {g: _t(s.name.split(" (")[0])})); if (SDR.modules.radio) SDR.modules.radio.loadMemories();
       } else if (a === "an") {
         const g = s.range; An.show((g.start + g.stop) / 2 * 1e6, (g.stop - g.start) * 1e6 * 1.04);
       }

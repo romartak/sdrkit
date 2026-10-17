@@ -1,5 +1,5 @@
 [Unit]
-Description=SDR-Kit: panel web y analizador de espectro
+Description=SDR-Kit web panel and spectrum analyzer (panel web y analizador de espectro)
 After=network.target
 Wants=network.target
 

@@ -1,0 +1,34 @@
+# Push a tag like v3.2.0 (matching the VERSION file) to publish a GitHub release
+# with the notes of that version from CHANGELOG.md and a source tarball.
+name: Release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches VERSION
+        run: |
+          v="$(tr -d '[:space:]' < VERSION)"
+          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "Tag ${GITHUB_REF_NAME} does not match VERSION $v"; exit 1; }
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="$VERSION" '
+            /^## / { if (p) exit; if (index($0, "[" v "]") || index($0, " " v)) { p = 1; next } }
+            p' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "See CHANGELOG.md" > notes.md
+          printf '\n---\nInstall: `curl -fsSL https://raw.githubusercontent.com/%s/main/get.sh | sudo bash` · Update: `sudo sdrkit update`\n' "$GITHUB_REPOSITORY" >> notes.md
+          cat notes.md
+      - name: Source tarball
+        run: git archive --format=tar.gz --prefix="sdrkit-$VERSION/" -o "sdrkit-$VERSION.tar.gz" HEAD
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "sdrkit-$VERSION.tar.gz" --title "SDR-Kit $VERSION" --notes-file notes.md

@@ -3,3 +3,7 @@ __pycache__/
 *.zip
 .sdrkit-demo/
 *.log
+.pytest_cache/
+.ruff_cache/
+node_modules/
+.DS_Store

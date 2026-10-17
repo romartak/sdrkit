@@ -134,7 +134,7 @@ const An = (() => {
   function bandName(rawHz) {
     const f = dHz(rawHz) / 1e6; let best = null;
     for (const b of BANDS) if (f >= b[0] && f <= b[1] && (!best || b[1] - b[0] < best[1] - best[0])) best = b;
-    return best ? best[2] : "";
+    return best ? _t(best[2]) : "";
   }
 
   // ------------------------------------------------------------------ flujo de datos
@@ -148,7 +148,7 @@ const An = (() => {
         es = new EventSource("/api/stream");
         es.addEventListener("frame", ev => onFrame(JSON.parse(ev.data)));
         es.addEventListener("status", ev => { const st = JSON.parse(ev.data); setStatusLine(st.msg, st.level === "error" ? "err" : st.level === "ok" ? "ok" : ""); });
-        es.onerror = () => setStatusLine("Reconectando con la Raspberry…", "err");
+        es.onerror = () => setStatusLine(_t("Reconectando con la Raspberry…"), "err");
       }
     } else if (es) { es.close(); es = null; }
   }
@@ -166,7 +166,7 @@ const An = (() => {
     else S.markers.forEach(m => { m.snap = m.exact ? 0 : oldBin; });
     wfReset(fr.n); persistReset();
     $("#peaksCard").classList.toggle("hidden", z);
-    $("#mkZspan").textContent = z ? "↩ Barrido" : "⏱ Span cero";
+    $("#mkZspan").textContent = z ? _t("↩ Barrido") : _t("⏱ Span cero");
     renderReadout(); renderMarkers(); renderPeaks(); renderModeUi(); renderTuner();
   }
   function onFrame(fr) {
@@ -195,9 +195,11 @@ const An = (() => {
     renderReadout(); renderMarkers();
     const st = SDR.status;
     if (st && st.mode === "sweep") {
-      const msg = z ? "Span cero en " + SDR.fmtMHz(dHz(S.zf || 0), 1e5) + (S.trig ? " · disparo por nivel" : " · libre")
-        : fr.kind === "hop" && !fr.complete ? "Barriendo… " + Math.round(fr.pos * 100) + "%" : "En vivo · " + (st.sweep.device || "");
-      setStatusLine(S.paused ? "En pausa (barrido único)" : msg, "ok");
+      const zf = z ? SDR.fmtMHz(dHz(S.zf || 0), 1e5) : "";
+      const msg = z ? (S.trig ? _t("Span cero en {f} · disparo por nivel", {f: zf}) : _t("Span cero en {f} · libre", {f: zf}))
+        : fr.kind === "hop" && !fr.complete ? _t("Barriendo… {p}%", {p: Math.round(fr.pos * 100)})
+        : _t("En vivo · {dev}", {dev: _t(st.sweep.device || "")});
+      setStatusLine(S.paused ? _t("En pausa (barrido único)") : msg, "ok");
     }
     drawSoon();
   }
@@ -238,7 +240,7 @@ const An = (() => {
   const mIdx = (m) => m ? xToIdx(m.x) : null;
   function curMarker() { return S.markers[S.active] || null; }
   function addMarker(i) {
-    if (S.markers.length >= 4) { SDR.toast("Máximo 4 marcadores."); return; }
+    if (S.markers.length >= 4) { SDR.toast(_t("Máximo 4 marcadores.")); return; }
     const m = {x: idxToX(i), delta: false, track: false, snap: 0, exact: false};
     S.markers.push(m); S.active = S.markers.length - 1;
     renderMarkers(); measure(); drawSoon();
@@ -272,34 +274,34 @@ const An = (() => {
     while (a > 0 && v[a - 1] > lvl) a--;
     while (b < S.n - 1 && v[b + 1] > lvl) b++;
     const bin = (S.f1 - S.f0) / S.n, bw = (b - a + 1) * bin;
-    if (bw < 2.5 * Math.max(bin, S.rbw || 0)) return {bw, guess: "señal estrecha (portadora, CW o datos)"};
+    if (bw < 2.5 * Math.max(bin, S.rbw || 0)) return {bw, guess: _t("señal estrecha (portadora, CW o datos)")};
     const f = dHz(idxToX(i)) / 1e6;
     let g = "";
-    if (bw < 4e3) g = "estrecha: CW, datos o AM de voz";
-    else if (bw < 9e3) g = (f > 108 && f < 137) ? "AM de aviación" : "AM / FM muy estrecha (6.25 kHz)";
-    else if (bw < 22e3) g = "FM estrecha: walkie-talkie, repetidora o digital (DMR)";
-    else if (bw < 60e3) g = "FM ancha / datos";
-    else if (bw < 300e3) g = (f >= 87.5 && f <= 108) ? "FM comercial (estéreo)" : "señal ancha (FM comercial, video)";
-    else if (bw < 3e6) g = "digital ancha (ADS-B, LTE estrecho, DAB)";
-    else g = "muy ancha: TV digital, LTE, WiFi";
+    if (bw < 4e3) g = _t("estrecha: CW, datos o AM de voz");
+    else if (bw < 9e3) g = (f > 108 && f < 137) ? _t("AM de aviación") : _t("AM / FM muy estrecha (6.25 kHz)");
+    else if (bw < 22e3) g = _t("FM estrecha: walkie-talkie, repetidora o digital (DMR)");
+    else if (bw < 60e3) g = _t("FM ancha / datos");
+    else if (bw < 300e3) g = (f >= 87.5 && f <= 108) ? _t("FM comercial (estéreo)") : _t("señal ancha (FM comercial, video)");
+    else if (bw < 3e6) g = _t("digital ancha (ADS-B, LTE estrecho, DAB)");
+    else g = _t("muy ancha: TV digital, LTE, WiFi");
     return {bw, guess: g};
   }
   let bwTick = 0;
   function renderMarkers(forceBw) {
     const chips = S.markers.map((m, k) =>
       `<button class="mkc${k === S.active ? " active" : ""}" data-m="${k}">M${k + 1}${m.delta && k ? " Δ" : ""}${m.track ? " ⟳" : ""}</button>`).join("");
-    $("#mkChips").innerHTML = chips + (S.markers.length < 4 ? '<button class="mkc add" data-add="1">＋ Marcador</button>' : "") +
-      (S.markers.length ? '<button class="mkc del" data-del="1">✕ Quitar</button>' : "");
+    $("#mkChips").innerHTML = chips + (S.markers.length < 4 ? '<button class="mkc add" data-add="1">' + _t("＋ Marcador") + '</button>' : "") +
+      (S.markers.length ? '<button class="mkc del" data-del="1">' + _t("✕ Quitar") + '</button>' : "");
     $("#btnTrack").classList.toggle("on", !!(curMarker() && curMarker().track));
     $("#btnDelta").classList.toggle("on", !!(curMarker() && curMarker().delta));
     const el = $("#mkText");
     if (!S.markers.length || !S.n) {
-      el.innerHTML = '<i>M1</i>Toca el espectro para poner un marcador'; $("#mkBw").textContent = ""; return;
+      el.innerHTML = '<i>M1</i>' + _t("Toca el espectro para poner un marcador"); $("#mkBw").textContent = ""; return;
     }
     const m1 = S.markers[0], i1 = mIdx(m1);
     el.innerHTML = S.markers.map((m, k) => {
       const i = mIdx(m);
-      if (i == null) return `<div class="mkl"><i>M${k + 1}</i><span class="muted">fuera de pantalla (${SDR.esc(fmtX(m.x))})</span></div>`;
+      if (i == null) return `<div class="mkl"><i>M${k + 1}</i><span class="muted">${_t("fuera de pantalla ({x})", {x: SDR.esc(fmtX(m.x))})}</span></div>`;
       const v = vAt(i);
       if (m.delta && k && i1 != null) {
         const dx = m.x - m1.x, dv = v - vAt(i1);
@@ -312,15 +314,15 @@ const An = (() => {
       const m = curMarker(), i = mIdx(m);
       if (i == null || S.zmode) { $("#mkBw").textContent = ""; return; }
       const o = occupiedBw(i), band = bandName(idxToX(i));
-      $("#mkBw").textContent = [o ? "Ancho ≈ " + SDR.fmtHz(o.bw) + " · " + o.guess : "", band ? "Banda: " + band : ""].filter(Boolean).join("  ·  ");
+      $("#mkBw").textContent = [o ? _t("Ancho ≈ {bw} · {guess}", {bw: SDR.fmtHz(o.bw), guess: o.guess}) : "", band ? _t("Banda: {b}", {b: band}) : ""].filter(Boolean).join("  ·  ");
     }
   }
   function renderPeaks() {
     const tb = $("#peakRows");
-    if (!S.peaks.length) { tb.innerHTML = '<tr><td colspan="4" class="muted">Sin picos destacados todavía.</td></tr>'; return; }
+    if (!S.peaks.length) { tb.innerHTML = '<tr><td colspan="4" class="muted">' + _t("Sin picos destacados todavía.") + '</td></tr>'; return; }
     tb.innerHTML = S.peaks.map((p, k) =>
       `<tr><td>${k + 1}</td><td><a href="#" data-i="${p[0]}" style="color:inherit">${(dHz(idxToX(p[0])) / 1e6).toFixed(4)} MHz</a></td>` +
-      `<td>${SDR.esc(fmtLv(vAt(p[0])))}</td><td><button class="btn sm" data-listen="${idxToX(p[0])}" aria-label="Escuchar">🎧</button></td></tr>`).join("");
+      `<td>${SDR.esc(fmtLv(vAt(p[0])))}</td><td><button class="btn sm" data-listen="${idxToX(p[0])}" aria-label="${_t("Escuchar")}">🎧</button></td></tr>`).join("");
   }
   function renderReadout() {
     const span = S.f1 - S.f0;
@@ -337,7 +339,7 @@ const An = (() => {
     }
     $("#roRbw").textContent = SDR.fmtHz(S.rbw);
     $("#roSweep").textContent = S.sweepMs == null ? "—" : S.sweepMs < 1500 ? Math.round(S.sweepMs) + " ms" : (S.sweepMs / 1000).toFixed(1) + " s";
-    $("#roGain").textContent = S.gain == null ? "—" : S.gain === "auto" ? "Auto" : Number(S.gain).toFixed(1) + " dB";
+    $("#roGain").textContent = S.gain == null ? "—" : S.gain === "auto" ? _t("Auto") : Number(S.gain).toFixed(1) + " dB";
     const g = S.n ? globalMax() : -1;
     $("#roPeak").textContent = g >= 0 && isFinite(S.live[g]) ? (S.zmode ? "" : (dHz(idxToX(g)) / 1e6).toFixed(3) + " · ") + vAt(g).toFixed(0) : "—";
   }
@@ -375,9 +377,9 @@ const An = (() => {
     const rows = [];
     const row = (k, val) => rows.push(`<div><b>${SDR.esc(k)}</b><span>${SDR.esc(val)}</span></div>`);
     const note = (t) => rows.push(`<p class="muted small">${SDR.esc(t)}</p>`);
-    if (S.zmode && S.meas !== "pulse") { note("En span cero usa la medición «Pulsos». Las demás se calculan sobre un barrido."); }
+    if (S.zmode && S.meas !== "pulse") { note(_t("En span cero usa la medición «Pulsos». Las demás se calculan sobre un barrido.")); }
     else if (S.meas === "pulse") {
-      if (!S.zmode) note("Pulsos: cambia a Span cero (botón ⏱ junto a los marcadores) sobre la señal.");
+      if (!S.zmode) note(_t("Pulsos: cambia a Span cero (botón ⏱ junto a los marcadores) sobre la señal."));
       else {
         const fin = Array.from(v).filter(isFinite).sort((a, b) => a - b);
         const lo = fin[Math.floor(fin.length * 0.2)], hi = fin[fin.length - 1], thr = (lo + hi) / 2, dt = (S.f1 - S.f0) / S.n;
@@ -390,25 +392,25 @@ const An = (() => {
         rise.forEach(r => { const f = fall.find(x => x > r); if (f) widths.push((f - r) * dt); });
         const periods = rise.slice(1).map((r, k) => (r - rise[k]) * dt);
         const avgA = (a) => a.reduce((s, x) => s + x, 0) / a.length;
-        if (hi - lo < 6) note("No hay pulsos claros (la señal no supera el ruido por 6 dB).");
+        if (hi - lo < 6) note(_t("No hay pulsos claros (la señal no supera el ruido por 6 dB)."));
         else {
-          row("Pulsos en pantalla", String(rise.length));
-          if (widths.length) row("Ancho medio", (avgA(widths) * 1e6).toFixed(0) + " µs");
+          row(_t("Pulsos en pantalla"), String(rise.length));
+          if (widths.length) row(_t("Ancho medio"), (avgA(widths) * 1e6).toFixed(0) + " µs");
           if (periods.length) {
             const per = avgA(periods);
-            row("Período", (per * 1e3).toFixed(3) + " ms (" + (1 / per).toFixed(1) + " Hz)");
-            if (widths.length) row("Ciclo de trabajo", (100 * avgA(widths) / per).toFixed(0) + " %");
+            row(_t("Período"), (per * 1e3).toFixed(3) + " ms (" + (1 / per).toFixed(1) + " Hz)");
+            if (widths.length) row(_t("Ciclo de trabajo"), (100 * avgA(widths) / per).toFixed(0) + " %");
           }
-          row("Nivel encendido / apagado", hi.toFixed(1) + " / " + lo.toFixed(1) + " " + u);
-          note("Útil para controles remotos (OOK), radares y datos: cada fila de la cascada es una captura.");
+          row(_t("Nivel encendido / apagado"), hi.toFixed(1) + " / " + lo.toFixed(1) + " " + u);
+          note(_t("Útil para controles remotos (OOK), radares y datos: cada fila de la cascada es una captura."));
         }
       }
     } else if (S.meas === "chpower") {
       const i = refIdx(), c = idxToX(i), p = chPower(v, c - S.chbw / 2, c + S.chbw / 2);
-      row("Centro", fmtX(c)); row("Ancho del canal", SDR.fmtHz(S.chbw));
-      row("Potencia en el canal", p == null ? "—" : dB(p).toFixed(1) + " " + u);
-      row("Potencia en todo el span", dB(chPower(v, S.f0, S.f1) || 0).toFixed(1) + " " + u);
-      if (S.chbw < bin * 3) note("El canal mide menos de 3 puntos: acerca el zoom para más precisión.");
+      row(_t("Centro"), fmtX(c)); row(_t("Ancho del canal"), SDR.fmtHz(S.chbw));
+      row(_t("Potencia en el canal"), p == null ? "—" : dB(p).toFixed(1) + " " + u);
+      row(_t("Potencia en todo el span"), dB(chPower(v, S.f0, S.f1) || 0).toFixed(1) + " " + u);
+      if (S.chbw < bin * 3) note(_t("El canal mide menos de 3 puntos: acerca el zoom para más precisión."));
     } else if (S.meas === "obw") {
       let tot = 0; const cum = new Float64Array(S.n);
       for (let i = 0; i < S.n; i++) { tot += isFinite(v[i]) ? lin(v[i]) : 0; cum[i] = tot; }
@@ -416,28 +418,28 @@ const An = (() => {
       while (a < S.n - 1 && cum[a] < 0.005 * tot) a++;
       while (b > 0 && cum[b] > 0.995 * tot) b--;
       row("OBW 99 %", SDR.fmtHz(idxToX(b) - idxToX(a) + bin));
-      row("Desde – hasta", fmtX(idxToX(a)) + " – " + fmtX(idxToX(b)));
-      row("Centro de la señal", fmtX((idxToX(a) + idxToX(b)) / 2));
-      row("Potencia total", dB(tot * bin / rbw).toFixed(1) + " " + u);
-      note("Calcula sobre todo el span: encuadra sólo la señal que quieres medir.");
+      row(_t("Desde – hasta"), fmtX(idxToX(a)) + " – " + fmtX(idxToX(b)));
+      row(_t("Centro de la señal"), fmtX((idxToX(a) + idxToX(b)) / 2));
+      row(_t("Potencia total"), dB(tot * bin / rbw).toFixed(1) + " " + u);
+      note(_t("Calcula sobre todo el span: encuadra sólo la señal que quieres medir."));
     } else if (S.meas === "xdb") {
       const i = refIdx();
-      row("Señal", fmtX(idxToX(i)) + " · " + fmtLv(v[i]));
-      for (const x of [3, 6, 20, 26]) { const w = xdbBw(v, i, x); row("Ancho a −" + x + " dB", w == null ? "fuera del span" : SDR.fmtHz(w)); }
-      if (S.rbw && S.rbw > bin * 4) note("RBW grande: el ancho medido no puede ser menor que la RBW (" + SDR.fmtHz(S.rbw) + ").");
+      row(_t("Señal"), fmtX(idxToX(i)) + " · " + fmtLv(v[i]));
+      for (const x of [3, 6, 20, 26]) { const w = xdbBw(v, i, x); row(_t("Ancho a −{x} dB", {x}), w == null ? _t("fuera del span") : SDR.fmtHz(w)); }
+      if (S.rbw && S.rbw > bin * 4) note(_t("RBW grande: el ancho medido no puede ser menor que la RBW ({rbw}).", {rbw: SDR.fmtHz(S.rbw)}));
     } else if (S.meas === "acpr") {
       const i = refIdx(), c = idxToX(i), h = S.chbw / 2;
       const pm = chPower(v, c - h, c + h), pl = chPower(v, c - S.spacing - h, c - S.spacing + h), pu = chPower(v, c + S.spacing - h, c + S.spacing + h);
-      row("Canal principal", pm == null ? "—" : dB(pm).toFixed(1) + " " + u + " @ " + fmtX(c));
-      row("Adyacente inferior", pl == null || !pm ? "fuera del span" : (dB(pl) - dB(pm)).toFixed(1) + " dBc");
-      row("Adyacente superior", pu == null || !pm ? "fuera del span" : (dB(pu) - dB(pm)).toFixed(1) + " dBc");
-      note("Canal " + SDR.fmtHz(S.chbw) + ", separación " + SDR.fmtHz(S.spacing) + ". Detector «Promedio» recomendado.");
+      row(_t("Canal principal"), pm == null ? "—" : dB(pm).toFixed(1) + " " + u + " @ " + fmtX(c));
+      row(_t("Adyacente inferior"), pl == null || !pm ? _t("fuera del span") : (dB(pl) - dB(pm)).toFixed(1) + " dBc");
+      row(_t("Adyacente superior"), pu == null || !pm ? _t("fuera del span") : (dB(pu) - dB(pm)).toFixed(1) + " dBc");
+      note(_t("Canal {bw}, separación {sp}. Detector «Promedio» recomendado.", {bw: SDR.fmtHz(S.chbw), sp: SDR.fmtHz(S.spacing)}));
     } else if (S.meas === "snr") {
       const i = refIdx(), fin = Array.from(v).filter(isFinite).sort((a, b) => a - b), floor = fin[Math.floor(fin.length / 2)];
-      row("Señal", fmtLv(v[i]) + " @ " + fmtX(idxToX(i)));
-      row("Piso de ruido (en RBW " + SDR.fmtHz(rbw) + ")", floor.toFixed(1) + " " + u);
+      row(_t("Señal"), fmtLv(v[i]) + " @ " + fmtX(idxToX(i)));
+      row(_t("Piso de ruido (en RBW {rbw})", {rbw: SDR.fmtHz(rbw)}), floor.toFixed(1) + " " + u);
       row("SNR", (v[i] - floor).toFixed(1) + " dB");
-      row("Densidad de ruido", (floor - 10 * Math.log10(rbw)).toFixed(1) + " " + u + "/Hz");
+      row(_t("Densidad de ruido"), (floor - 10 * Math.log10(rbw)).toFixed(1) + " " + u + "/Hz");
       row("C/N₀", (v[i] - floor + 10 * Math.log10(rbw)).toFixed(1) + " dB·Hz");
     } else if (S.meas === "counter") {
       const i = refIdx();
@@ -447,25 +449,26 @@ const An = (() => {
         if (den < 0) d = SDR.clamp(0.5 * (v[i - 1] - v[i + 1]) / den, -0.5, 0.5);
       }
       const f = idxToX(i + d), hz = dHz(f);
-      row("Frecuencia", (hz / 1e6).toFixed(bin < 100 ? 6 : 5) + " MHz");
-      row("Resolución", "≈ " + SDR.fmtHz(Math.max(bin / 10, 1)));
-      row("Error del oscilador (±1 ppm)", "± " + SDR.fmtHz(hz / 1e6));
-      note("Para máxima precisión: haz zoom sobre la portadora (span pequeño, detalle «Fino»).");
+      row(_t("Frecuencia"), (hz / 1e6).toFixed(bin < 100 ? 6 : 5) + " MHz");
+      row(_t("Resolución"), "≈ " + SDR.fmtHz(Math.max(bin / 10, 1)));
+      row(_t("Error del oscilador (±1 ppm)"), "± " + SDR.fmtHz(hz / 1e6));
+      note(_t("Para máxima precisión: haz zoom sobre la portadora (span pequeño, detalle «Fino»)."));
     } else if (S.meas === "harm") {
       const i = refIdx(), f = idxToX(i), p1 = lin(v[i]);
-      row("Fundamental", fmtX(f) + " · " + fmtLv(v[i]));
+      row(_t("Fundamental"), fmtX(f) + " · " + fmtLv(v[i]));
       let sum = 0, miss = 0;
       for (let h = 2; h <= 5; h++) {
         const j = xToIdx(f * h);
-        if (j == null) { row(h + "º armónico", "fuera del span"); miss++; continue; }
+        const hn = _t(["2º armónico", "3º armónico", "4º armónico", "5º armónico"][h - 2]);
+        if (j == null) { row(hn, _t("fuera del span")); miss++; continue; }
         const k = localMax(j, 2); sum += lin(v[k]);
-        row(h + "º armónico", (v[k] - v[i]).toFixed(1) + " dBc @ " + fmtX(idxToX(k)));
+        row(hn, (v[k] - v[i]).toFixed(1) + " dBc @ " + fmtX(idxToX(k)));
       }
-      if (sum) row("THD (aprox.)", (100 * Math.sqrt(sum / p1)).toFixed(2) + " %");
-      if (miss) rows.push(`<button class="btn sm" id="btnHarmSpan">Ajustar el span para ver 5 armónicos</button>`);
-      note("Ojo: el propio dongle genera armónicos si la señal es muy fuerte. Baja la ganancia para confirmar.");
+      if (sum) row(_t("THD (aprox.)"), (100 * Math.sqrt(sum / p1)).toFixed(2) + " %");
+      if (miss) rows.push(`<button class="btn sm" id="btnHarmSpan">${_t("Ajustar el span para ver 5 armónicos")}</button>`);
+      note(_t("Ojo: el propio dongle genera armónicos si la señal es muy fuerte. Baja la ganancia para confirmar."));
     }
-    out.innerHTML = `<h4>${SDR.esc(MEAS[S.meas])}</h4><div class="mgrid">${rows.join("")}</div>`;
+    out.innerHTML = `<h4>${SDR.esc(_t(MEAS[S.meas]))}</h4><div class="mgrid">${rows.join("")}</div>`;
   }
 
   // ------------------------------------------------------------------ sintonizador (sin tocar el gráfico)
@@ -517,8 +520,8 @@ const An = (() => {
       : sigs.slice().reverse().find(g => g.b < (i == null ? S.n : i));
     if (cand) { setTunerFreq(idxToX(cand.i)); return; }
     const span = curSpan(), maxHz = (S.info && S.info.max_hz) || 1766e6;
-    if (dir > 0 && S.f1 + 1 < maxHz) { SDR.toast("No hay más señales a la derecha en pantalla: muevo la vista →"); applyParams({start: S.f1, stop: Math.min(maxHz, S.f1 + span)}); }
-    else if (dir < 0 && S.f0 > 1e5) { SDR.toast("No hay más señales a la izquierda en pantalla: muevo la vista ←"); applyParams({start: Math.max(0, S.f0 - span), stop: S.f0}); }
+    if (dir > 0 && S.f1 + 1 < maxHz) { SDR.toast(_t("No hay más señales a la derecha en pantalla: muevo la vista →")); applyParams({start: S.f1, stop: Math.min(maxHz, S.f1 + span)}); }
+    else if (dir < 0 && S.f0 > 1e5) { SDR.toast(_t("No hay más señales a la izquierda en pantalla: muevo la vista ←")); applyParams({start: Math.max(0, S.f0 - span), stop: S.f0}); }
   }
   function renderTuner() {
     const f = tunerFreq(), inp = $("#tnFreq"), sl = $("#tnSlider");
@@ -532,19 +535,19 @@ const An = (() => {
     const i = f == null || S.zmode ? null : xToIdx(f);
     T.sigs = activeSignals();
     if (S.zmode) {
-      $("#tnLevel").textContent = "Span cero"; $("#tnWhat").textContent = "Los botones mueven la frecuencia observada";
+      $("#tnLevel").textContent = _t("Span cero"); $("#tnWhat").textContent = _t("Los botones mueven la frecuencia observada");
     } else if (i == null) {
-      $("#tnLevel").textContent = "—"; $("#tnWhat").textContent = "Fuera de la pantalla: la vista se moverá";
+      $("#tnLevel").textContent = "—"; $("#tnWhat").textContent = _t("Fuera de la pantalla: la vista se moverá");
     } else {
       const inSig = T.sigs.find(g => i >= g.a - 1 && i <= g.b + 1);
       $("#tnLevel").textContent = fmtLv(vAt(i));
       const o = inSig ? occupiedBw(inSig.i) : null, band = bandName(f);
-      $("#tnWhat").textContent = inSig ? (o ? o.guess : "señal") + (band ? " · " + band : "") : "sin señal (ruido)" + (band ? " · " + band : "");
+      $("#tnWhat").textContent = inSig ? (o ? o.guess : _t("señal")) + (band ? " · " + band : "") : _t("sin señal (ruido)") + (band ? " · " + band : "");
     }
     const box = $("#tnSigs");
-    if (S.zmode || !T.sigs.length) { box.innerHTML = S.zmode ? "" : '<span class="lbl">Sin señales activas en pantalla (prueba «+6 dB»).</span>'; return; }
+    if (S.zmode || !T.sigs.length) { box.innerHTML = S.zmode ? "" : '<span class="lbl">' + _t("Sin señales activas en pantalla (prueba «+6 dB»).") + '</span>'; return; }
     const cur = i == null ? -1 : T.sigs.findIndex(g => i >= g.a - 1 && i <= g.b + 1);
-    box.innerHTML = `<span class="lbl">${T.sigs.length} activas:</span>` + T.sigs.slice(0, 60).map((g, k) =>
+    box.innerHTML = `<span class="lbl">${_t("{n} activas:", {n: T.sigs.length})}</span>` + T.sigs.slice(0, 60).map((g, k) =>
       `<button data-sig="${idxToX(g.i)}" class="${k === cur ? "cur" : ""}">${(dHz(idxToX(g.i)) / 1e6).toFixed(S.f1 - S.f0 < 2e6 ? 4 : 3)}<small>${vAt(g.i).toFixed(0)} ${SDR.esc(unitLabel())}</small></button>`).join("");
   }
   let sliding = false;
@@ -576,7 +579,7 @@ const An = (() => {
     $("#tnMod").addEventListener("change", ev => { T.mod = ev.target.value; savePrefs(); });
     $("#tnThr").addEventListener("change", ev => { T.thr = +ev.target.value; savePrefs(); renderTuner(); });
     $("#tnListen").addEventListener("click", () => {
-      const f = tunerFreq(); if (f == null) { SDR.toast("Espera a que llegue el primer barrido."); return; }
+      const f = tunerFreq(); if (f == null) { SDR.toast(_t("Espera a que llegue el primer barrido.")); return; }
       SDR.openRadio(f, T.mod === "auto" ? SDR.guessMod(dHz(f)) : T.mod);
     });
     document.addEventListener("keydown", ev => {  // en computadora: flechas para sintonizar
@@ -610,7 +613,7 @@ const An = (() => {
     S.fail = fail;
     badge.className = "anbadge " + (fail == null ? "pass" : "fail");
     badge.style.top = (spec.offsetHeight + 6) + "px";
-    badge.textContent = fail == null ? "PASA" : "FALLA · " + fmtX(idxToX(fail)) + " " + v[fail].toFixed(1);
+    badge.textContent = fail == null ? _t("PASA") : _t("FALLA · {x} {v}", {x: fmtX(idxToX(fail)), v: v[fail].toFixed(1)});
     if (fail != null && L.beep && Date.now() - S.lastBeep > 1500) { S.lastBeep = Date.now(); beep(); }
   }
 
@@ -749,7 +752,7 @@ const An = (() => {
     const yOf = v => A.y + SDR.clamp((S.refMax - v) / rng, 0, 1) * A.h;
     if (!S.n) {
       sctx.textAlign = "center"; sctx.textBaseline = "middle"; sctx.fillStyle = "#56657a";
-      sctx.font = `${14 * dpr}px system-ui,sans-serif`; sctx.fillText("Esperando datos del SDR…", A.x + A.w / 2, A.y + A.h / 2);
+      sctx.font = `${14 * dpr}px system-ui,sans-serif`; sctx.fillText(_t("Esperando datos del SDR…"), A.x + A.w / 2, A.y + A.h / 2);
     } else {
       sctx.save(); sctx.beginPath(); sctx.rect(A.x, A.y, A.w, A.h); sctx.clip();
       if (S.show.persist && PER.buf) { sctx.imageSmoothingEnabled = true; sctx.globalAlpha = 0.9; sctx.drawImage(PER.c, A.x, A.y, A.w, A.h); sctx.globalAlpha = 1; }
@@ -815,7 +818,7 @@ const An = (() => {
     }
     if (S.paused) {
       sctx.fillStyle = "rgba(255,176,32,.9)"; sctx.font = `bold ${12 * dpr}px system-ui,sans-serif`;
-      sctx.textAlign = "right"; sctx.textBaseline = "top"; sctx.fillText("EN PAUSA", A.x + A.w - 6 * dpr, A.y + 6 * dpr);
+      sctx.textAlign = "right"; sctx.textBaseline = "top"; sctx.fillText(_t("EN PAUSA"), A.x + A.w - 6 * dpr, A.y + 6 * dpr);
     }
     const WW = wf.width, WH = wf.height;
     wctx.fillStyle = "#000"; wctx.fillRect(0, 0, WW, WH);
@@ -863,13 +866,13 @@ const An = (() => {
   function fillGains(sel, list) {
     const cur = sel.value;
     const gains = (list && list.length ? list : [0, 9.7, 19.7, 29.7, 38.6, 49.6]);
-    sel.innerHTML = '<option value="auto">Auto</option>' + gains.map(x => `<option value="${x}">${Number(x).toFixed(1)} dB</option>`).join("");
+    sel.innerHTML = '<option value="auto">' + _t("Auto") + '</option>' + gains.map(x => `<option value="${x}">${Number(x).toFixed(1)} dB</option>`).join("");
     if (cur) sel.value = cur;
   }
   function fillPresets() {
     const maxHz = (S.info && S.info.max_hz) || 1766e6;
-    $("#preset").innerHTML = '<option value="">— Elige una banda —</option>' + PRESETS
-      .filter(p => (p[2] * 1e6 - S.offset) <= maxHz + 1).map((p) => `<option value="${PRESETS.indexOf(p)}">${SDR.esc(p[0])}</option>`).join("");
+    $("#preset").innerHTML = '<option value="">' + _t("— Elige una banda —") + '</option>' + PRESETS
+      .filter(p => (p[2] * 1e6 - S.offset) <= maxHz + 1).map((p) => `<option value="${PRESETS.indexOf(p)}">${SDR.esc(_t(p[0]))}</option>`).join("");
   }
   async function loadSweep() {
     try {
@@ -883,13 +886,13 @@ const An = (() => {
       const r = await SDR.api("/api/sweep", p);
       S.params = r.params; fillInputs(r.params); renderCal();
       if (window.innerWidth < 960 && window.scrollY > 120) window.scrollTo({top: 0, behavior: "smooth"});
-      if (r.params.mode === "zspan") setStatusLine("Span cero en " + SDR.fmtMHz(dHz(r.params.zf), 1e5) + "…");
-      else setStatusLine("Aplicando " + SDR.fmtMHz(dHz(r.params.start), r.params.stop - r.params.start) + " – " + SDR.fmtMHz(dHz(r.params.stop), r.params.stop - r.params.start) + "…");
+      if (r.params.mode === "zspan") setStatusLine(_t("Span cero en {f}…", {f: SDR.fmtMHz(dHz(r.params.zf), 1e5)}));
+      else setStatusLine(_t("Aplicando {a} – {b}…", {a: SDR.fmtMHz(dHz(r.params.start), r.params.stop - r.params.start), b: SDR.fmtMHz(dHz(r.params.stop), r.params.stop - r.params.start)}));
       if (S.paused && !S.single) { S.paused = false; renderPauseBtns(); }
       const st = SDR.status;
       if (st && st.mode !== "sweep") {
         if (st.mode === "radio" && st.radio && st.radio.monitoring &&
-            !confirm("El radio está grabando, escaneando o decodificando. ¿Pasar al analizador de todos modos?")) return;
+            !confirm(_t("El radio está grabando, escaneando o decodificando. ¿Pasar al analizador de todos modos?"))) return;
         SDR.useMode("sweep");
       }
     } catch (e) { SDR.toast(e.message, true); }
@@ -901,12 +904,12 @@ const An = (() => {
       const c = parseFloat($("#inCenter").value), s = parseFloat($("#inSpan").value);
       if (isFinite(c) && isFinite(s) && s > 0) { a = c - s / 2; b = c + s / 2; }
     }
-    if (!isFinite(a) || !isFinite(b) || b <= a) { SDR.toast("Revisa las frecuencias: el fin debe ser mayor que el inicio.", true); return; }
+    if (!isFinite(a) || !isFinite(b) || b <= a) { SDR.toast(_t("Revisa las frecuencias: el fin debe ser mayor que el inicio."), true); return; }
     applyParams({mode: "sweep", start: a * 1e6 - S.offset, stop: b * 1e6 - S.offset});
   }
   function applyZspan(freqRaw) {
     const f = freqRaw != null ? freqRaw : parseFloat($("#zF").value) * 1e6 - S.offset;
-    if (!(f > 0)) { SDR.toast("Escribe la frecuencia para el span cero.", true); return; }
+    if (!(f > 0)) { SDR.toast(_t("Escribe la frecuencia para el span cero."), true); return; }
     applyParams({mode: "zspan", zf: f, zrbw: +$("#zRbw").value, zt: +$("#zT").value, ztrig: $("#zTrig").value,
       zlevel: parseFloat($("#zLvl").value) - U()});
   }
@@ -922,18 +925,22 @@ const An = (() => {
   function renderOverlay() {
     const s = SDR.status; if (!s) return;
     const ov = $("#anOverlay");
-    if (s.switching) { ov.classList.remove("hidden"); $("#anOverlayMsg").textContent = s.mode_msg || "Cambiando de modo…"; $("#btnUseAnalyzer").classList.add("hidden"); return; }
+    if (s.switching) { ov.classList.remove("hidden"); $("#anOverlayMsg").textContent = s.mode_msg || _t("Cambiando de modo…"); $("#btnUseAnalyzer").classList.add("hidden"); return; }
     $("#btnUseAnalyzer").classList.remove("hidden");
     if (s.mode === "sweep") { ov.classList.add("hidden"); return; }
     ov.classList.remove("hidden");
-    const what = {radio: "el radio", receiver: "el receptor avanzado (OpenWebRX+)", sensors: "el decodificador de sensores (rtl_433)",
-      adsb: "el radar de aviones (dump1090)"}[s.mode];
-    let msg = what ? "El dongle lo está usando " + what + ". Puedes cambiar al analizador." : "El SDR está en reposo.";
-    if (s.radio && s.radio.monitoring && s.mode === "radio") msg += " Ojo: el radio está grabando, escaneando o decodificando; se pausará.";
+    const busy = {
+      radio: () => _t("El dongle lo está usando el radio. Puedes cambiar al analizador."),
+      receiver: () => _t("El dongle lo está usando el receptor avanzado (OpenWebRX+). Puedes cambiar al analizador."),
+      sensors: () => _t("El dongle lo está usando el decodificador de sensores (rtl_433). Puedes cambiar al analizador."),
+      adsb: () => _t("El dongle lo está usando el radar de aviones (dump1090). Puedes cambiar al analizador."),
+    }[s.mode];
+    let msg = busy ? busy() : _t("El SDR está en reposo.");
+    if (s.radio && s.radio.monitoring && s.mode === "radio") msg += " " + _t("Ojo: el radio está grabando, escaneando o decodificando; se pausará.");
     $("#anOverlayMsg").textContent = msg;
   }
   function renderPauseBtns() {
-    $("#btnHold").textContent = S.paused ? "▶ Seguir" : "⏸ Pausa";
+    $("#btnHold").textContent = S.paused ? _t("▶ Seguir") : _t("⏸ Pausa");
     $("#btnHold").classList.toggle("on", S.paused);
     $("#btnSingle").classList.toggle("on", S.single);
   }
@@ -942,21 +949,22 @@ const An = (() => {
   function renderCal() {
     $("#inUnit").value = S.unit; $("#inOffset").value = S.offset ? +(S.offset / 1e6).toFixed(6) : "";
     const c = S.cal, el = $("#calState");
-    if (!c) { el.innerHTML = "Sin calibrar: dBm/dBµV/dBmV se muestran <b>sin corregir</b> (igual que dBFS)."; return; }
+    if (!c) { el.innerHTML = _t("Sin calibrar: dBm/dBµV/dBmV se muestran <b>sin corregir</b> (igual que dBFS)."); return; }
     const g = S.params ? S.params.gain : null;
     const warn = c.gain != null && g != null && String(c.gain) !== String(g)
-      ? ` <b style="color:var(--warn)">⚠ Se calibró con ganancia ${SDR.esc(c.gain)}; ahora es ${SDR.esc(g)}: vuelve a esa ganancia o recalibra.</b>` : "";
-    el.innerHTML = `Calibrado: dBm = dBFS ${c.k >= 0 ? "+" : "−"} ${Math.abs(c.k).toFixed(1)} dB · ${new Date(c.t * 1000).toLocaleDateString()}${warn}`;
+      ? ` <b style="color:var(--warn)">${_t("⚠ Se calibró con ganancia {a}; ahora es {b}: vuelve a esa ganancia o recalibra.", {a: SDR.esc(c.gain), b: SDR.esc(g)})}</b>` : "";
+    el.innerHTML = _t("Calibrado: dBm = dBFS {k} dB · {date}", {k: (c.k >= 0 ? "+" : "−") + " " + Math.abs(c.k).toFixed(1),
+      date: new Date(c.t * 1000).toLocaleDateString(I18N.locale)}) + warn;
   }
   async function calibrate() {
     const i = mIdx(curMarker());
-    if (i == null || !isFinite(S.live[i])) { SDR.toast("Pon el marcador sobre la señal de nivel conocido.", true); return; }
+    if (i == null || !isFinite(S.live[i])) { SDR.toast(_t("Pon el marcador sobre la señal de nivel conocido."), true); return; }
     const real = parseFloat($("#calLevel").value);
-    if (!isFinite(real)) { SDR.toast("Escribe el nivel real de la señal en dBm.", true); return; }
+    if (!isFinite(real)) { SDR.toast(_t("Escribe el nivel real de la señal en dBm."), true); return; }
     try {
       const r = await SDR.api("/api/sweep/cal", {k: real - S.live[i], gain: S.params ? S.params.gain : null});
       S.cal = r.cal; if (S.unit === "dBFS") S.unit = "dBm";
-      savePrefs(); renderCal(); SDR.toast("Calibrado. Ahora el marcador marca " + real.toFixed(1) + " dBm."); drawSoon();
+      savePrefs(); renderCal(); SDR.toast(_t("Calibrado. Ahora el marcador marca {v} dBm.", {v: real.toFixed(1)})); drawSoon();
     } catch (e) { SDR.toast(e.message, true); }
   }
 
@@ -975,9 +983,9 @@ const An = (() => {
         $("#monNtfyNote").classList.toggle("hidden", !!r.ntfy);
         const al = r.alarms || [];
         $("#monAlarms").innerHTML = al.length ? al.slice(0, 30).map(a =>
-          `<li><div class="grow"><div><b>${(dHz(a.freq) / 1e6).toFixed(4)} MHz</b> · ${(a.level + U()).toFixed(1)} ${UNITS[S.unit]}</div><div class="muted small">${new Date(a.t * 1000).toLocaleString()}</div></div></li>`).join("")
-          : '<li class="muted">Sin alarmas.</li>';
-        $("#monRows").textContent = r.rows ? r.rows + " registros de ocupación" + (r.meta ? " · " + (dHz(r.meta[0]) / 1e6).toFixed(3) + "–" + (dHz(r.meta[1]) / 1e6).toFixed(3) + " MHz" : "") : "Aún sin registros (se guarda uno por intervalo).";
+          `<li><div class="grow"><div><b>${(dHz(a.freq) / 1e6).toFixed(4)} MHz</b> · ${(a.level + U()).toFixed(1)} ${UNITS[S.unit]}</div><div class="muted small">${new Date(a.t * 1000).toLocaleString(I18N.locale)}</div></div></li>`).join("")
+          : '<li class="muted">' + _t("Sin alarmas.") + '</li>';
+        $("#monRows").textContent = r.rows ? _tn(r.rows, "{n} registro de ocupación", "{n} registros de ocupación") + (r.meta ? " · " + (dHz(r.meta[0]) / 1e6).toFixed(3) + "–" + (dHz(r.meta[1]) / 1e6).toFixed(3) + " MHz" : "") : _t("Aún sin registros (se guarda uno por intervalo).");
         Mon.heat();
       } catch (e) {}
     },
@@ -990,7 +998,7 @@ const An = (() => {
       };
       try {
         await SDR.api("/api/monitor", body);
-        SDR.toast(body.enabled ? "Vigilancia activa: la Raspberry sigue midiendo aunque cierres el panel." : "Vigilancia detenida.");
+        SDR.toast(body.enabled ? _t("Vigilancia activa: la Raspberry sigue midiendo aunque cierres el panel.") : _t("Vigilancia detenida."));
         Mon.load();
       } catch (e) { SDR.toast(e.message, true); }
     },
@@ -1017,8 +1025,8 @@ const An = (() => {
       tmp.getContext("2d").putImageData(img, 0, 0);
       ctx.imageSmoothingEnabled = false; ctx.drawImage(tmp, 0, 0, c.width, c.height);
       const m = r.meta;
-      $("#heatAxis").textContent = m ? (dHz(m.f0) / 1e6).toFixed(3) + " MHz ← arriba lo más reciente (" +
-        new Date(rows[rows.length - 1].t * 1000).toLocaleTimeString() + ") → " + (dHz(m.f1) / 1e6).toFixed(3) + " MHz" : "";
+      $("#heatAxis").textContent = m ? _t("{a} MHz ← arriba lo más reciente ({t}) → {b} MHz", {a: (dHz(m.f0) / 1e6).toFixed(3),
+        t: new Date(rows[rows.length - 1].t * 1000).toLocaleTimeString(I18N.locale), b: (dHz(m.f1) / 1e6).toFixed(3)}) : "";
     },
     tick() {
       clearInterval(Mon.timer); Mon.timer = null;
@@ -1029,14 +1037,14 @@ const An = (() => {
   // ------------------------------------------------------------------ estados guardados
   const STATE_KEYS = ["start", "stop", "gain", "avg", "points", "det", "mode", "zf", "zrbw", "zt", "ztrig", "zlevel"];
   function statesGet() { try { return JSON.parse(localStorage.getItem("sdrkit.states") || "[]"); } catch (e) { return []; } }
-  function statesPut(list) { try { localStorage.setItem("sdrkit.states", JSON.stringify(list)); } catch (e) { SDR.toast("No se pudo guardar en este navegador.", true); } }
+  function statesPut(list) { try { localStorage.setItem("sdrkit.states", JSON.stringify(list)); } catch (e) { SDR.toast(_t("No se pudo guardar en este navegador."), true); } }
   function renderStates() {
     const list = statesGet();
     $("#stList").innerHTML = list.length ? list.map((s, k) =>
-      `<li><div class="grow"><div><b>${SDR.esc(s.name)}</b></div><div class="muted small">${s.p.mode === "zspan" ? "Span cero " + (dHz(s.p.zf) / 1e6).toFixed(4) + " MHz"
-        : (s.p.start / 1e6).toFixed(3) + "–" + (s.p.stop / 1e6).toFixed(3) + " MHz"} · ${SDR.esc(UNITS[s.ui.unit] || "")}${s.ui.meas !== "none" ? " · " + SDR.esc(MEAS[s.ui.meas] || "") : ""}</div></div>` +
-      `<button class="btn sm" data-st-load="${k}">Cargar</button><button class="btn sm danger" data-st-del="${k}" aria-label="Borrar">🗑</button></li>`).join("")
-      : '<li class="muted">Guarda aquí tus configuraciones favoritas (banda, unidades, mediciones, límites).</li>';
+      `<li><div class="grow"><div><b>${SDR.esc(s.name)}</b></div><div class="muted small">${s.p.mode === "zspan" ? _t("Span cero {f}", {f: (dHz(s.p.zf) / 1e6).toFixed(4) + " MHz"})
+        : (s.p.start / 1e6).toFixed(3) + "–" + (s.p.stop / 1e6).toFixed(3) + " MHz"} · ${SDR.esc(UNITS[s.ui.unit] || "")}${s.ui.meas !== "none" ? " · " + SDR.esc(_t(MEAS[s.ui.meas] || "")) : ""}</div></div>` +
+      `<button class="btn sm" data-st-load="${k}">${_t("Cargar")}</button><button class="btn sm danger" data-st-del="${k}" aria-label="${_t("Borrar")}">🗑</button></li>`).join("")
+      : '<li class="muted">' + _t("Guarda aquí tus configuraciones favoritas (banda, unidades, mediciones, límites).") + '</li>';
   }
   function applyUi() {
     for (const [k, id] of [["max", "#tgMax"], ["min", "#tgMin"], ["avg", "#tgAvg"], ["peaks", "#tgPeaks"], ["persist", "#tgPersist"], ["ref", "#tgRef"]])
@@ -1057,7 +1065,7 @@ const An = (() => {
   function init() {
     loadPrefs();
     fillGains($("#inGain"), null); fillPresets(); wfReset(1);
-    $("#inMeas").innerHTML = Object.entries(MEAS).map(([k, v]) => `<option value="${k}">${SDR.esc(v)}</option>`).join("");
+    $("#inMeas").innerHTML = Object.entries(MEAS).map(([k, v]) => `<option value="${k}">${SDR.esc(_t(v))}</option>`).join("");
     applyUi(); renderStates(); renderMarkers(); initTuner();
     new ResizeObserver(resizeCanvases).observe($("#scope"));
     window.addEventListener("resize", resizeCanvases);
@@ -1112,7 +1120,7 @@ const An = (() => {
     $("#btnRight").addEventListener("click", () => { if (S.zmode) return; const s = curSpan(), c = curCenter() + s / 2; applyParams({start: c - s / 2, stop: c + s / 2}); });
     $("#btnCenter").addEventListener("click", () => {
       const c = markerFreq();
-      if (c == null || S.zmode) { SDR.toast("Primero toca el espectro para poner el marcador."); return; }
+      if (c == null || S.zmode) { SDR.toast(_t("Primero toca el espectro para poner el marcador.")); return; }
       const s = curSpan(); applyParams({start: Math.max(0, c - s / 2), stop: c + s / 2});
     });
     $("#btnPeak").addEventListener("click", () => { if (!S.n) return; const g = globalMax(); if (g >= 0) { moveMarker(g); S.peakCursor = 0; } });
@@ -1123,37 +1131,37 @@ const An = (() => {
     const peakSide = (dir) => {
       const i = mIdx(curMarker()); if (i == null) { $("#btnPeak").click(); return; }
       const c = dir < 0 ? S.cands.filter(k => k < i - 1).pop() : S.cands.find(k => k > i + 1);
-      if (c != null) moveMarker(c); else SDR.toast("No hay más picos hacia " + (dir < 0 ? "la izquierda." : "la derecha."));
+      if (c != null) moveMarker(c); else SDR.toast(dir < 0 ? _t("No hay más picos hacia la izquierda.") : _t("No hay más picos hacia la derecha."));
     };
     $("#btnPeakL").addEventListener("click", () => peakSide(-1));
     $("#btnPeakR").addEventListener("click", () => peakSide(1));
     $("#btnTrack").addEventListener("click", () => {
       if (!S.markers.length) addMarker(Math.max(0, globalMax()));
       const m = curMarker(); m.track = !m.track; renderMarkers(); drawSoon();
-      SDR.toast(m.track ? (S.active === 0 ? "M1 seguirá al pico más alto." : "M" + (S.active + 1) + " seguirá a la señal cercana.") : "Seguimiento desactivado.");
+      SDR.toast(m.track ? (S.active === 0 ? _t("M1 seguirá al pico más alto.") : _t("M{n} seguirá a la señal cercana.", {n: S.active + 1})) : _t("Seguimiento desactivado."));
     });
     $("#btnDelta").addEventListener("click", () => {
-      if (S.markers.length < 2 || S.active === 0) { SDR.toast("Δ mide contra M1: agrega un segundo marcador y selecciónalo."); return; }
+      if (S.markers.length < 2 || S.active === 0) { SDR.toast(_t("Δ mide contra M1: agrega un segundo marcador y selecciónalo.")); return; }
       const m = curMarker(); m.delta = !m.delta; renderMarkers(); drawSoon();
     });
     $("#mkZspan").addEventListener("click", () => {
       if (S.zmode || (S.params && S.params.mode === "zspan")) { applyParams({mode: "sweep"}); return; }
-      const f = markerFreq(); if (f == null) { SDR.toast("Pon el marcador sobre una señal para verla en el tiempo."); return; }
+      const f = markerFreq(); if (f == null) { SDR.toast(_t("Pon el marcador sobre una señal para verla en el tiempo.")); return; }
       applyZspan(f);
     });
     $("#btnListen").addEventListener("click", () => {
       const f = S.zmode ? S.zf : markerFreq();
-      if (f == null) { SDR.toast("Toca una señal en el espectro y luego pulsa Escuchar."); return; }
+      if (f == null) { SDR.toast(_t("Toca una señal en el espectro y luego pulsa Escuchar.")); return; }
       SDR.openRadio(f);
     });
     $("#btnSaveMarker").addEventListener("click", () => {
       const f = S.zmode ? S.zf : markerFreq();
-      if (f == null) { SDR.toast("Primero pon el marcador sobre una señal."); return; }
+      if (f == null) { SDR.toast(_t("Primero pon el marcador sobre una señal.")); return; }
       SDR.saveMemory(f, SDR.guessMod(f));
     });
     const toggleShow = (id, key) => $(id).addEventListener("click", () => {
       S.show[key] = !S.show[key]; if (key === "persist") persistReset();
-      if (key === "ref" && S.show.ref && !S.ref) { S.show.ref = false; SDR.toast("Primero guarda una referencia (botón «Guardar ref.»)."); }
+      if (key === "ref" && S.show.ref && !S.ref) { S.show.ref = false; SDR.toast(_t("Primero guarda una referencia (botón «Guardar ref.»).")); }
       applyUi(); savePrefs(); drawSoon();
     });
     toggleShow("#tgMax", "max"); toggleShow("#tgMin", "min"); toggleShow("#tgAvg", "avg");
@@ -1163,15 +1171,16 @@ const An = (() => {
       const src = S.avgN > 3 ? S.avg : S.live;
       S.ref = {f0: S.f0, f1: S.f1, n: S.n, z: S.zmode, data: Float32Array.from(src)};
       S.show.ref = true; applyUi(); drawSoon();
-      SDR.toast("Referencia guardada (" + (S.avgN > 3 ? "promedio" : "traza en vivo") + "). «Normalizar» resta la referencia.");
+      SDR.toast(S.avgN > 3 ? _t("Referencia guardada (promedio). «Normalizar» resta la referencia.")
+        : _t("Referencia guardada (traza en vivo). «Normalizar» resta la referencia."));
     });
     $("#tgNorm").addEventListener("click", () => {
-      if (!S.norm && !refOK()) { SDR.toast("Guarda una referencia con el mismo rango primero.", true); return; }
+      if (!S.norm && !refOK()) { SDR.toast(_t("Guarda una referencia con el mismo rango primero."), true); return; }
       S.norm = !S.norm; if (S.norm) { S.auto = true; } applyUi(); if (S.auto) autoScale(); persistReset(); wfReset(S.n); measure(); drawSoon();
     });
     $("#tgAuto").addEventListener("click", () => { S.auto = !S.auto; if (S.auto) autoScale(); applyUi(); savePrefs(); drawSoon(); });
     $("#btnHold").addEventListener("click", () => { S.paused = !S.paused; S.single = false; renderPauseBtns(); drawSoon(); });
-    $("#btnSingle").addEventListener("click", () => { S.single = true; S.paused = false; renderPauseBtns(); setStatusLine("Barrido único: esperando un barrido completo…"); });
+    $("#btnSingle").addEventListener("click", () => { S.single = true; S.paused = false; renderPauseBtns(); setStatusLine(_t("Barrido único: esperando un barrido completo…")); });
     $("#btnClear").addEventListener("click", () => {
       if (!S.n) return; S.maxh.fill(NaN); S.minh.fill(NaN); S.avg.fill(NaN); S.avgN = 0; wfReset(S.n); persistReset(); drawSoon();
     });
@@ -1188,7 +1197,7 @@ const An = (() => {
       const [bw, sp] = b.dataset.ch.split(",").map(Number); S.chbw = bw; S.spacing = sp; applyUi(); savePrefs(); measure(); drawSoon();
     }));
     $("#inUnit").addEventListener("change", ev => {
-      S.unit = ev.target.value; if (S.unit !== "dBFS" && !S.cal) SDR.toast("Sin calibrar: el valor es aproximado. Calibra con una señal conocida para medir de verdad.");
+      S.unit = ev.target.value; if (S.unit !== "dBFS" && !S.cal) SDR.toast(_t("Sin calibrar: el valor es aproximado. Calibra con una señal conocida para medir de verdad."));
       if (S.auto) autoScale(); savePrefs(); persistReset(); wfReset(S.n); renderCal(); renderMarkers(); renderPeaks(); measure(); drawSoon();
     });
     $("#inOffset").addEventListener("change", ev => {
@@ -1197,7 +1206,7 @@ const An = (() => {
     });
     $("#btnCal").addEventListener("click", calibrate);
     $("#btnCalClear").addEventListener("click", async () => {
-      try { await SDR.api("/api/sweep/cal", {k: null}); S.cal = null; renderCal(); drawSoon(); SDR.toast("Calibración borrada."); } catch (e) { SDR.toast(e.message, true); }
+      try { await SDR.api("/api/sweep/cal", {k: null}); S.cal = null; renderCal(); drawSoon(); SDR.toast(_t("Calibración borrada.")); } catch (e) { SDR.toast(e.message, true); }
     });
     ["#limUp", "#limLo"].forEach(id => $(id).addEventListener("change", () => {
       const up = parseFloat($("#limUp").value), lo = parseFloat($("#limLo").value);
@@ -1210,12 +1219,12 @@ const An = (() => {
       if (beepCtx && beepCtx.state === "suspended") beepCtx.resume();
     });
     $("#limFromMarker").addEventListener("click", () => {
-      const i = mIdx(curMarker()); if (i == null) { SDR.toast("Pon un marcador sobre el nivel deseado."); return; }
+      const i = mIdx(curMarker()); if (i == null) { SDR.toast(_t("Pon un marcador sobre el nivel deseado.")); return; }
       S.limit.upper = Math.round(vAt(i) + 3); applyUi(); savePrefs(); checkLimits(); drawSoon();
     });
     $("#limToServer").addEventListener("click", () => {
-      if (S.limit.upper == null) { SDR.toast("Primero define el límite superior.", true); return; }
-      if (normOn()) { SDR.toast("Desactiva «Normalizar»: la vigilancia usa niveles absolutos.", true); return; }
+      if (S.limit.upper == null) { SDR.toast(_t("Primero define el límite superior."), true); return; }
+      if (normOn()) { SDR.toast(_t("Desactiva «Normalizar»: la vigilancia usa niveles absolutos."), true); return; }
       $("#monLimit").value = S.limit.upper; $("#monCard").open = true; $("#monOn").checked = true; Mon.save();
       $("#monCard").scrollIntoView({behavior: "smooth", block: "start"});
     });
@@ -1224,16 +1233,17 @@ const An = (() => {
     $("#monOn").addEventListener("change", Mon.save);
     $("#heatMode").addEventListener("change", Mon.heat);
     $("#monClear").addEventListener("click", async () => {
-      if (!confirm("¿Borrar las alarmas y la ocupación registradas en memoria?")) return;
+      if (!confirm(_t("¿Borrar las alarmas y la ocupación registradas en memoria?"))) return;
       try { await SDR.api("/api/monitor/clear", {}); Mon.load(); } catch (e) { SDR.toast(e.message, true); }
     });
     $("#stSave").addEventListener("click", () => {
       if (!S.params) return;
-      const name = prompt("Nombre para esta configuración:", S.params.mode === "zspan" ? "Span cero " + (dHz(S.params.zf) / 1e6).toFixed(3) : bandName((S.params.start + S.params.stop) / 2) || "Mi banda");
+      const name = prompt(_t("Nombre para esta configuración:"), S.params.mode === "zspan" ? _t("Span cero {f}", {f: (dHz(S.params.zf) / 1e6).toFixed(3)})
+        : bandName((S.params.start + S.params.stop) / 2) || _t("Mi banda"));
       if (!name) return;
       const p = {}; STATE_KEYS.forEach(k => p[k] = S.params[k]);
       const list = statesGet(); list.unshift({name, t: Date.now(), p, ui: {unit: S.unit, offset: S.offset, meas: S.meas, chbw: S.chbw, spacing: S.spacing, limit: S.limit, show: S.show}});
-      statesPut(list.slice(0, 40)); renderStates(); SDR.toast("Configuración guardada en este celular.");
+      statesPut(list.slice(0, 40)); renderStates(); SDR.toast(_t("Configuración guardada en este celular."));
     });
     $("#stList").addEventListener("click", ev => {
       const l = ev.target.closest("[data-st-load]"), d = ev.target.closest("[data-st-del]"), list = statesGet();
@@ -1241,9 +1251,9 @@ const An = (() => {
         const s = list[+l.dataset.stLoad]; if (!s) return;
         Object.assign(S, {unit: s.ui.unit || "dBFS", offset: s.ui.offset || 0, meas: s.ui.meas || "none", chbw: s.ui.chbw || 12500, spacing: s.ui.spacing || 25000});
         S.limit = Object.assign({upper: null, lower: null, beep: false}, s.ui.limit || {}); Object.assign(S.show, s.ui.show || {});
-        applyUi(); savePrefs(); applyParams(s.p); SDR.toast("Cargado: " + s.name);
+        applyUi(); savePrefs(); applyParams(s.p); SDR.toast(_t("Cargado: {name}", {name: s.name}));
       }
-      if (d && confirm("¿Borrar «" + (list[+d.dataset.stDel] || {}).name + "»?")) { list.splice(+d.dataset.stDel, 1); statesPut(list); renderStates(); }
+      if (d && confirm(_t("¿Borrar «{name}»?", {name: String((list[+d.dataset.stDel] || {}).name)}))) { list.splice(+d.dataset.stDel, 1); statesPut(list); renderStates(); }
     });
     $("#btnPng").addEventListener("click", () => {
       const c = document.createElement("canvas"); c.width = spec.width; c.height = spec.height + wf.height;

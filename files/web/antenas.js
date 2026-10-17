@@ -25,6 +25,11 @@ const Ant = (() => {
     ["Onda corta / HF (V4)", "Alambre largo 10–20 m + unun 9:1", "Lo más alto y largo posible"],
   ];
 
+  // English data lives in lang-en-help.js (I18N.data.antenas, keyed by the Spanish text)
+  const tr = (s, vars) => {
+    const e = I18N.lang === "en" ? I18N.data.antenas : null, r = e ? e[s] : null;
+    return r == null ? _t(s, vars) : vars ? r.replace(/\{(\w+)\}/g, (m, k) => k in vars ? vars[k] : m) : r;
+  };
   const fmtLen = (m) => m >= 1 ? m.toFixed(2) + " m" : m >= 0.1 ? (m * 100).toFixed(1) + " cm" : (m * 1000).toFixed(0) + " mm";
   const T = (x, y, s, cls, anchor) => `<text x="${x}" y="${y}" class="${cls || ""}" text-anchor="${anchor || "middle"}">${s}</text>`;
   const dimH = (x1, x2, y, label) => `<path class="dim" d="M${x1} ${y}H${x2}M${x1} ${y - 5}v10M${x2} ${y - 5}v10"/>` + T((x1 + x2) / 2, y - 7, label, "k");
@@ -34,60 +39,60 @@ const Ant = (() => {
     const lam = C / f;
     return [
       {
-        id: "dipole", name: "Dipolo λ/2", meta: "Fácil y bueno para todo · ganancia ~2.1 dBi · bidireccional",
+        id: "dipole", name: tr("Dipolo λ/2"), meta: tr("Fácil y bueno para todo · ganancia ~2.1 dBi · bidireccional"),
         svg: `<svg viewBox="0 0 320 150">${dimH(30, 154, 40, "A")}${dimH(166, 290, 40, "A")}
-          <path class="el" d="M30 70H154M166 70H290"/><path class="coax" d="M157 72v62M163 72v62"/>${T(160, 148, "coaxial al dongle")}</svg>`,
-        dims: [["A", fmtLen(k * lam / 4), "cada brazo"], ["Total", fmtLen(k * lam / 2), "punta a punta"]],
-        how: "Vivo del coaxial a un brazo, malla al otro. Para ondas verticales (walkies, aviación) ponlo de pie.",
+          <path class="el" d="M30 70H154M166 70H290"/><path class="coax" d="M157 72v62M163 72v62"/>${T(160, 148, tr("coaxial al dongle"))}</svg>`,
+        dims: [["A", fmtLen(k * lam / 4), tr("cada brazo")], [tr("Total"), fmtLen(k * lam / 2), tr("punta a punta")]],
+        how: tr("Vivo del coaxial a un brazo, malla al otro. Para ondas verticales (walkies, aviación) ponlo de pie."),
       },
       {
-        id: "gp", name: "Vertical λ/4 con plano de tierra", meta: "Omnidireccional · ~2 dBi · ideal para aviación, ADS-B y walkies",
+        id: "gp", name: tr("Vertical λ/4 con plano de tierra"), meta: tr("Omnidireccional · ~2 dBi · ideal para aviación, ADS-B y walkies"),
         svg: `<svg viewBox="0 0 320 170"><path class="el" d="M160 20V96"/><path class="el2" d="M160 98L95 150M160 98L225 150"/>
           <path class="coax" d="M160 100V165"/>${dimV(186, 20, 96, "A")}${T(92, 138, "B", "k", "end")}${T(232, 138, "B", "k", "start")}
-          ${T(160, 12, "radiador", "", "middle")}</svg>`,
-        dims: [["A", fmtLen(k * lam / 4), "radiador vertical"], ["B", fmtLen(1.05 * k * lam / 4), "4 radiales a 45° hacia abajo"]],
-        how: "El radiador va al vivo; los 4 radiales, a la malla. Con los radiales a 45° la impedancia queda cerca de 50 Ω.",
+          ${T(160, 12, tr("radiador"), "", "middle")}</svg>`,
+        dims: [["A", fmtLen(k * lam / 4), tr("radiador vertical")], ["B", fmtLen(1.05 * k * lam / 4), tr("4 radiales a 45° hacia abajo")]],
+        how: tr("El radiador va al vivo; los 4 radiales, a la malla. Con los radiales a 45° la impedancia queda cerca de 50 Ω."),
       },
       {
-        id: "jpole", name: "J-Pole", meta: "Sin radiales · ~2.5 dBi · clásica de VHF/UHF, se hace con tubo o cinta",
+        id: "jpole", name: tr("J-Pole"), meta: tr("Sin radiales · ~2.5 dBi · clásica de VHF/UHF, se hace con tubo o cinta"),
         svg: `<svg viewBox="0 0 320 190"><path class="el" d="M150 15V170M150 170H180V112"/>
           <path class="coax" d="M150 152H120M180 152H210"/>${dimV(115, 15, 170, "A", "l")}${dimV(205, 112, 170, "B")}
-          ${dimH(150, 180, 186, "C")}${T(225, 156, "D: punto de", "", "start")}${T(225, 170, "alimentación", "", "start")}</svg>`,
-        dims: [["A", fmtLen(0.75 * k * lam), "elemento largo"], ["B", fmtLen(0.25 * k * lam), "elemento corto (stub)"],
-          ["C", fmtLen(0.02 * lam), "separación entre ambos"], ["D", "≈ " + fmtLen(0.035 * lam), "desde abajo (ajusta probando)"]],
-        how: "Vivo al elemento largo y malla al corto, a la altura D. Sube o baja el punto D hasta que la señal sea máxima.",
+          ${dimH(150, 180, 186, "C")}${T(225, 156, tr("D: punto de"), "", "start")}${T(225, 170, tr("alimentación"), "", "start")}</svg>`,
+        dims: [["A", fmtLen(0.75 * k * lam), tr("elemento largo")], ["B", fmtLen(0.25 * k * lam), tr("elemento corto (stub)")],
+          ["C", fmtLen(0.02 * lam), tr("separación entre ambos")], ["D", "≈ " + fmtLen(0.035 * lam), tr("desde abajo (ajusta probando)")]],
+        how: tr("Vivo al elemento largo y malla al corto, a la altura D. Sube o baja el punto D hasta que la señal sea máxima."),
       },
       {
-        id: "yagi", name: "Yagi 3 elementos (direccional)", meta: "~7 dBi · apunta hacia la señal · perfecta para el modo cazador",
+        id: "yagi", name: tr("Yagi 3 elementos (direccional)"), meta: tr("~7 dBi · apunta hacia la señal · perfecta para el modo cazador"),
         svg: `<svg viewBox="0 0 320 170"><path class="el2" d="M30 85H290"/>
           <path class="el" d="M60 25V145M150 32V138M240 40V130"/>
           ${T(60, 160, "R", "k")}${T(150, 160, "E", "k")}${T(240, 160, "D", "k")}
           ${dimH(60, 150, 15, "S1")}${dimH(150, 240, 15, "S2")}${T(300, 90, "→", "k", "end")}</svg>`,
-        dims: [["R", fmtLen(0.495 * lam), "reflector (atrás)"], ["E", fmtLen(0.473 * lam), "excitado: dipolo partido al centro, va al coaxial"],
-          ["D", fmtLen(0.440 * lam), "director (adelante)"], ["S1", fmtLen(0.20 * lam), "reflector ↔ excitado"], ["S2", fmtLen(0.15 * lam), "excitado ↔ director"]],
-        how: "Apunta el director hacia el transmisor. El boom puede ser de madera o PVC. Para cazar, gírala buscando el máximo.",
+        dims: [["R", fmtLen(0.495 * lam), tr("reflector (atrás)")], ["E", fmtLen(0.473 * lam), tr("excitado: dipolo partido al centro, va al coaxial")],
+          ["D", fmtLen(0.440 * lam), tr("director (adelante)")], ["S1", fmtLen(0.20 * lam), tr("reflector ↔ excitado")], ["S2", fmtLen(0.15 * lam), tr("excitado ↔ director")]],
+        how: tr("Apunta el director hacia el transmisor. El boom puede ser de madera o PVC. Para cazar, gírala buscando el máximo."),
       },
       {
-        id: "vdip", name: "V-dipolo para satélites", meta: "Para satélites meteorológicos (Meteor-M 137 MHz) · horizontal",
+        id: "vdip", name: tr("V-dipolo para satélites"), meta: tr("Para satélites meteorológicos (Meteor-M 137 MHz) · horizontal"),
         svg: `<svg viewBox="0 0 320 150"><path class="el" d="M154 75L60 30M166 75L260 30"/><path class="coax" d="M157 78v60M163 78v60"/>
           ${T(95, 70, "A", "k")}${T(225, 70, "A", "k")}${T(160, 40, "120°", "k")}</svg>`,
-        dims: [["A", fmtLen(k * lam / 4), "cada brazo"], ["Ángulo", "120°", "entre brazos, en horizontal"]],
-        how: "Acostada en horizontal, con los brazos apuntando a norte y sur. Necesita cielo despejado.",
+        dims: [["A", fmtLen(k * lam / 4), tr("cada brazo")], [tr("Ángulo"), "120°", tr("entre brazos, en horizontal")]],
+        how: tr("Acostada en horizontal, con los brazos apuntando a norte y sur. Necesita cielo despejado."),
       },
       {
-        id: "discone", name: "Discone (banda ancha)", meta: `Cubre desde ${f} MHz hasta ~${Math.round(f * 10)} MHz · ideal para escáner`,
+        id: "discone", name: tr("Discone (banda ancha)"), meta: tr("Cubre desde {f} MHz hasta ~{g} MHz · ideal para escáner", {f, g: Math.round(f * 10)}),
         svg: `<svg viewBox="0 0 320 170"><path class="el" d="M95 30H225"/><path class="el2" d="M160 40L100 140M160 40L220 140M100 140H220"/>
-          <path class="coax" d="M160 34V165"/>${dimH(95, 225, 18, "D")}${T(112, 92, "L", "k", "end")}${dimH(100, 220, 156, "Base")}</svg>`,
-        dims: [["L", fmtLen(0.25 * lam), "lado del cono (para la frecuencia mínima)"], ["Base", fmtLen(0.25 * lam), "diámetro base (cono de 60°)"],
-          ["D", fmtLen(0.7 * 0.25 * lam), "diámetro del disco"], ["Separación", "1–2 cm", "entre disco y punta del cono"]],
-        how: "Disco al vivo, cono a la malla. Puede hacerse con varillas (8+ por elemento) en vez de chapa.",
+          <path class="coax" d="M160 34V165"/>${dimH(95, 225, 18, "D")}${T(112, 92, "L", "k", "end")}${dimH(100, 220, 156, tr("Base"))}</svg>`,
+        dims: [["L", fmtLen(0.25 * lam), tr("lado del cono (para la frecuencia mínima)")], [tr("Base"), fmtLen(0.25 * lam), tr("diámetro base (cono de 60°)")],
+          ["D", fmtLen(0.7 * 0.25 * lam), tr("diámetro del disco")], [tr("Separación"), "1–2 cm", tr("entre disco y punta del cono")]],
+        how: tr("Disco al vivo, cono a la malla. Puede hacerse con varillas (8+ por elemento) en vez de chapa."),
       },
       {
-        id: "whip", name: "Látigo telescópico (la del kit)", meta: "Ajusta la antena telescópica del dongle a la banda",
+        id: "whip", name: tr("Látigo telescópico (la del kit)"), meta: tr("Ajusta la antena telescópica del dongle a la banda"),
         svg: `<svg viewBox="0 0 320 150"><path class="el" d="M160 15V110"/><rect x="140" y="110" width="40" height="22" rx="4" fill="#2b3644"/>
-          ${T(160, 145, "dongle / base")}${dimV(190, 15, 110, "A")}</svg>`,
-        dims: [["A", fmtLen(k * lam / 4), "largo de la varilla (λ/4)"], ["Mejor aún", fmtLen(k * lam / 2), "dipolo: dos varillas de A"]],
-        how: "Sobre una superficie metálica (base magnética en el techo del carro) funciona mucho mejor.",
+          ${T(160, 145, tr("dongle / base"))}${dimV(190, 15, 110, "A")}</svg>`,
+        dims: [["A", fmtLen(k * lam / 4), tr("largo de la varilla (λ/4)")], [tr("Mejor aún"), fmtLen(k * lam / 2), tr("dipolo: dos varillas de A")]],
+        how: tr("Sobre una superficie metálica (base magnética en el techo del carro) funciona mucho mejor."),
       },
     ];
   }
@@ -95,8 +100,8 @@ const Ant = (() => {
   function render() {
     const f = parseFloat($("#antF").value), k = parseFloat($("#antK").value) || 0.95;
     $$("#antChips button").forEach(b => b.classList.toggle("active", +b.dataset.f === f));
-    if (!(f > 0.1 && f < 6000)) { $("#antCards").innerHTML = '<div class="card muted">Escribe una frecuencia entre 0.1 y 6000 MHz.</div>'; return; }
-    $("#antLambda").textContent = fmtLen(C / f) + " a " + f + " MHz";
+    if (!(f > 0.1 && f < 6000)) { $("#antCards").innerHTML = `<div class="card muted">${_t("Escribe una frecuencia entre 0.1 y 6000 MHz.")}</div>`; return; }
+    $("#antLambda").textContent = _t("{l} a {f} MHz", {l: fmtLen(C / f), f});
     $("#antCards").innerHTML = designs(f, k).map(d => `<div class="card ant"><h3>${d.name}</h3><p class="meta">${d.meta}</p>${d.svg}
       <dl>${d.dims.map(x => `<dt>${x[0]}</dt><dd><b>${x[1]}</b> <span class="muted">· ${x[2]}</span></dd>`).join("")}</dl>
       <p class="muted small" style="margin:8px 0 0">${d.how}</p></div>`).join("");
@@ -113,21 +118,21 @@ const Ant = (() => {
       per = Math.exp(Math.log(a1) + (Math.log(a2) - Math.log(a1)) * (Math.log(f) - Math.log(f1)) / (Math.log(f2) - Math.log(f1)));
     }
     const db = per * L / 100, pct = 100 * Math.pow(10, -db / 10);
-    const verdict = db < 1 ? "✅ Excelente." : db < 3 ? "👍 Aceptable." : db < 6 ? "⚠ Pierdes bastante: acorta el cable o usa uno más grueso." :
-      "❌ Demasiado: lleva el dongle junto a la antena y usa una extensión USB.";
+    const verdict = db < 1 ? _t("✅ Excelente.") : db < 3 ? _t("👍 Aceptable.") : db < 6 ? _t("⚠ Pierdes bastante: acorta el cable o usa uno más grueso.") :
+      _t("❌ Demasiado: lleva el dongle junto a la antena y usa una extensión USB.");
     $("#cabOut").innerHTML = `<div style="font:700 26px var(--mono)">${db.toFixed(1)} dB</div>
-      <div class="muted small">Llega el ${pct.toFixed(0)}% de la señal · ${per.toFixed(1)} dB cada 100 m a ${f} MHz</div><p style="margin:6px 0 0">${verdict}</p>`;
+      <div class="muted small">${_t("Llega el {pct}% de la señal · {per} dB cada 100 m a {f} MHz", {pct: pct.toFixed(0), per: per.toFixed(1), f})}</div><p style="margin:6px 0 0">${verdict}</p>`;
   }
   function init() {
-    $("#antChips").innerHTML = CHIPS.map(([n, f]) => `<button data-f="${f}">${n} · ${f}</button>`).join("");
+    $("#antChips").innerHTML = CHIPS.map(([n, f]) => `<button data-f="${f}">${tr(n)} · ${f}</button>`).join("");
     $("#antChips").addEventListener("click", ev => { const b = ev.target.closest("[data-f]"); if (b) { $("#antF").value = b.dataset.f; render(); } });
     $("#antF").addEventListener("input", render);
     $("#antK").addEventListener("change", render);
-    $("#cabT").innerHTML = Object.keys(CABLES).map(n => `<option>${n}</option>`).join("");
+    $("#cabT").innerHTML = Object.keys(CABLES).map(n => `<option value="${n}">${tr(n)}</option>`).join("");
     $("#cabT").value = "RG-58";
     ["#cabT", "#cabL", "#cabF"].forEach(id => $(id).addEventListener("input", cable));
-    $("#antUse").innerHTML = "<thead><tr><th>Para</th><th>Antena</th><th>Posición</th></tr></thead><tbody>" +
-      USES.map(u => `<tr><td><b>${u[0]}</b></td><td>${u[1]}</td><td class="muted">${u[2]}</td></tr>`).join("") + "</tbody>";
+    $("#antUse").innerHTML = `<thead><tr><th>${_t("Para")}</th><th>${_t("Antena")}</th><th>${_t("Posición")}</th></tr></thead><tbody>` +
+      USES.map(u => `<tr><td><b>${tr(u[0])}</b></td><td>${tr(u[1])}</td><td class="muted">${tr(u[2])}</td></tr>`).join("") + "</tbody>";
     render(); cable();
   }
   return {init};

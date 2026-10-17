@@ -1,5 +1,5 @@
 [Unit]
-Description=SDR-Kit: WiFi conocida o hotspot automático
+Description=SDR-Kit known WiFi or automatic hotspot (WiFi conocida o hotspot automático)
 After=NetworkManager.service
 Wants=NetworkManager.service
 

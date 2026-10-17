@@ -123,7 +123,13 @@ const Help = (() => {
     ["canales", "#chServices"], ["guia", "#refTable"], ["tablas", "#ctcssGrid"], ["tablas", "#dcsGrid"], ["antenas", "#antF"], ["cable", "#cabT"],
     ["owrx", "#btnRxOpen"], ["wifi", "#btnHotspot"], ["sistema", "#tiles"], ["actualizar", "#btnUpdCheck"],
   ];
-  const btn = (k, cls) => `<button type="button" class="infobtn${cls ? " " + cls : ""}" data-info="${k}" aria-label="¿Qué es esto?">i</button>`;
+  // English sheets live in lang-en-help.js (I18N.data.help, same keys); missing fields fall back to Spanish
+  function entry(k) {
+    const es = H[k]; if (!es) return null;
+    const en = I18N.lang === "en" && I18N.data.help && I18N.data.help[k];
+    return en ? Object.assign({}, es, en) : es;
+  }
+  const btn = (k, cls) => `<button type="button" class="infobtn${cls ? " " + cls : ""}" data-info="${k}" aria-label="${_t("¿Qué es esto?")}">i</button>`;
   function attach() {
     for (const [k, sel] of ANCHORS) {
       const el = $(sel); if (!el) continue;
@@ -137,12 +143,12 @@ const Help = (() => {
     $(".legend").insertAdjacentHTML("beforeend", btn("espectro", "inl"));
     $(".readout").insertAdjacentHTML("beforeend", `<div class="roinfo">${btn("lecturas", "inl")}</div>`);
     const mk = $(".markerbar .mk"); if (mk) mk.insertAdjacentHTML("afterbegin", btn("marcadores", "abs"));
-    $(".brand").insertAdjacentHTML("afterend", `<button type="button" class="hbtn" data-info="inicio" aria-label="Ayuda">?</button>`);
+    $(".brand").insertAdjacentHTML("afterend", `<button type="button" class="hbtn" data-info="inicio" aria-label="${_t("Ayuda")}">?</button>`);
   }
   function open(k) {
-    const h = H[k]; if (!h) return;
+    const h = entry(k); if (!h) return;
     $("#helpTitle").textContent = h.t;
-    $("#helpBody").innerHTML = (h.p ? `<p>${h.p}</p>` : "") + (h.u ? `<h4>Cómo se usa</h4><ul>${h.u.map(x => `<li>${x}</li>`).join("")}</ul>` : "") +
+    $("#helpBody").innerHTML = (h.p ? `<p>${h.p}</p>` : "") + (h.u ? `<h4>${_t("Cómo se usa")}</h4><ul>${h.u.map(x => `<li>${x}</li>`).join("")}</ul>` : "") +
       (h.c ? `<div class="helptip">💡 ${h.c}</div>` : "");
     $("#helpSheet").classList.remove("hidden");
     $("#helpClose").focus();
