@@ -28,7 +28,9 @@ jobs:
           cat notes.md
       - name: Source tarball
         run: git archive --format=tar.gz --prefix="sdrkit-$VERSION/" -o "sdrkit-$VERSION.tar.gz" HEAD
+      - name: Checksum
+        run: sha256sum "sdrkit-$VERSION.tar.gz" > "sdrkit-$VERSION.tar.gz.sha256"
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "sdrkit-$VERSION.tar.gz" --title "SDR-Kit $VERSION" --notes-file notes.md
+        run: gh release create "$GITHUB_REF_NAME" "sdrkit-$VERSION.tar.gz" "sdrkit-$VERSION.tar.gz.sha256" --title "SDR-Kit $VERSION" --notes-file notes.md

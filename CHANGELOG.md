@@ -13,6 +13,7 @@ Update an installed kit with `sudo sdrkit update`.
 - The OpenWebRX+ apt key is stored in its own keyring (`/etc/apt/keyrings`) instead of the global trusted keys.
 
 ### Changed
+- GitHub Packages: demo image published to `ghcr.io/romartak/sdrkit`; GitHub Pages landing page (`site/`); releases now include a SHA256 checksum.
 - New `docs/resources.md` with related receive-only projects, credited to RFSec-ToolKit by @cn0xroot; `.github/CODEOWNERS` added.
 - The demo server no longer needs the POSIX-only `pwd` module at import time.
 - Added a `Dockerfile` (demo mode) and `requirements.txt`.

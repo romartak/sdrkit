@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SDR-Kit</title>
+<meta name="description" content="Pocket spectrum analyzer, multimode radio and signal decoder on a Raspberry Pi Zero 2 W and an RTL-SDR, controlled from your phone.">
+<style>
+  :root { --bg:#0b0e12; --fg:#e8edf2; --muted:#9aa7b4; --accent:#ffd400; --card:#141a21; }
+  @media (prefers-color-scheme: light) { :root { --bg:#fff; --fg:#14181d; --muted:#556270; --card:#f2f5f8; --accent:#b38f00; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.55 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 0 16px 48px; }
+  img.banner { width:100%; height:auto; display:block; margin: 16px 0; }
+  h1 { font-size: clamp(1.6rem, 5vw, 2.4rem); margin: .4em 0; }
+  p.lead { color: var(--muted); font-size: 1.1rem; }
+  .cta a { display:inline-block; margin: 6px 8px 6px 0; padding: 10px 16px; border-radius: 8px; background: var(--accent); color:#111; font-weight:600; text-decoration:none; }
+  .cta a.alt { background: var(--card); color: var(--fg); }
+  .shots { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 24px 0; }
+  .shots img { width:100%; border-radius: 10px; }
+  pre { background: var(--card); padding: 12px; border-radius: 8px; overflow-x:auto; }
+  footer { color: var(--muted); font-size: .9rem; margin-top: 32px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <img class="banner" src="media/banner.svg" alt="SDR-Kit">
+  <h1>Pocket spectrum analyzer, radio and decoder</h1>
+  <p class="lead">A Raspberry Pi Zero 2 W and an RTL-SDR, used from your phone's browser. Receive-only, no cloud, no telemetry. Version __VERSION__.</p>
+  <p class="cta">
+    <a href="https://github.com/romartak/sdrkit#readme">Install it</a>
+    <a class="alt" href="https://github.com/romartak/sdrkit/releases">Releases</a>
+    <a class="alt" href="https://github.com/romartak/sdrkit/pkgs/container/sdrkit">Try the demo image</a>
+  </p>
+  <div class="shots">
+    <img src="media/screenshots/analyzer.png" alt="Spectrum analyzer and waterfall">
+    <img src="media/screenshots/radio.png" alt="Multimode radio">
+    <img src="media/screenshots/decode-messages.png" alt="Decoded pager and APRS messages">
+    <img src="media/screenshots/aircraft-radar.png" alt="Offline aircraft radar">
+  </div>
+  <h2>Try it without hardware</h2>
+  <pre>docker run --rm -p 8080:8080 ghcr.io/romartak/sdrkit:latest
+# then open http://localhost:8080</pre>
+  <footer>MIT licensed · <a href="https://github.com/romartak/sdrkit">github.com/romartak/sdrkit</a> · Related projects: <a href="https://github.com/romartak/sdrkit/blob/main/docs/resources.md">resources</a></footer>
+</main>
+</body>
+</html>
