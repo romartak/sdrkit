@@ -13,6 +13,7 @@ Update an installed kit with `sudo sdrkit update`.
 - The OpenWebRX+ apt key is stored in its own keyring (`/etc/apt/keyrings`) instead of the global trusted keys.
 
 ### Changed
+- New `docs/resources.md` with related receive-only projects, credited to RFSec-ToolKit by @cn0xroot; `.github/CODEOWNERS` added.
 - The demo server no longer needs the POSIX-only `pwd` module at import time.
 - Added a `Dockerfile` (demo mode) and `requirements.txt`.
 - Documentation screenshots added; removed unused files (`GUIA.md` at the root, `profile/`).
@@ -24,6 +25,7 @@ Update an installed kit with `sudo sdrkit update`.
 - `sdrkit backup` / `sdrkit restore`: save and recover your settings and memories (recordings excluded); restore refuses archives with paths outside SDR-Kit.
 
 ### Changed
+- New `docs/resources.md` with related receive-only projects, credited to RFSec-ToolKit by @cn0xroot; `.github/CODEOWNERS` added.
 - Redesigned README in English and Spanish.
 
 ## [3.2.0] - 2026-10-16
@@ -54,6 +56,7 @@ Update an installed kit with `sudo sdrkit update`.
 - The railway AAR service has 91 channels, not 97.
 
 ### Changed
+- New `docs/resources.md` with related receive-only projects, credited to RFSec-ToolKit by @cn0xroot; `.github/CODEOWNERS` added.
 - Digital-signal classifier: a steady tone (test tone, warbling beacon, DTMF) is no longer reported as a
   digital mode, 2-level signals with heavy filtering (GMSK/D-Star, AIS) are no longer mistaken for 4FSK, and
   weak NXDN/dPMR signals are still recognized with about 2.5× more noise than before. Levels are now measured at

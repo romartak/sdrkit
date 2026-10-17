@@ -376,6 +376,8 @@ Built on the shoulders of [OpenWebRX+](https://github.com/luarvique/openwebrx),
 [multimon-ng](https://github.com/EliasOenal/multimon-ng), [DSD-FME](https://github.com/lwvmobile/dsd-fme),
 [mbelib](https://github.com/lwvmobile/mbelib), [codec2](https://github.com/drowe67/codec2) and the
 [M17 Project](https://m17project.org), and inspired by the wonderful [tinySA](https://tinysa.org).
+The curated list of related projects in [docs/resources.md](docs/resources.md) was put together with the help of
+[RFSec-ToolKit](https://github.com/cn0xroot/RFSec-ToolKit) by [@cn0xroot](https://github.com/cn0xroot) (雪碧 / 0x0root).
 
 </details>
 
