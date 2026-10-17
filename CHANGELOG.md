@@ -6,6 +6,8 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-10-17
+
 ### Added
 - Animated demo GIFs in the README (analyzer, radio, aircraft radar, pagers), recorded with `tools/gifs.mjs` + `tools/make_gifs.py`.
 - **More → Channels → Your country**: pick any of 244 countries and see its license-free walkie-talkie services, ham bands,
@@ -107,6 +109,7 @@ Update an installed kit with `sudo sdrkit update`.
 ### Added
 - tinySA-style spectrum analyzer, automatic hotspot, OpenWebRX+ and Tailscale.
 
+[3.4.0]: https://github.com/romartak/sdrkit/releases/tag/v3.4.0
 [3.3.1]: https://github.com/romartak/sdrkit/releases/tag/v3.3.1
 [3.2.0]: https://github.com/romartak/sdrkit/releases/tag/v3.2.0
 [3.1.0]: https://github.com/romartak/sdrkit/tree/v3.1.0
