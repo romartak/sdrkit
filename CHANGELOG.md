@@ -6,6 +6,8 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.3.1] - 2026-10-17
+
 ### Security
 - The server refuses to start without `ADMIN_PASSWORD` (except `--demo`); minimum password length is now 8 (installer and `sdrkit password`).
 - Login lockout: 5 wrong passwords lock the client IP for 5 minutes (HTTP 429).
@@ -95,5 +97,6 @@ Update an installed kit with `sudo sdrkit update`.
 ### Added
 - tinySA-style spectrum analyzer, automatic hotspot, OpenWebRX+ and Tailscale.
 
+[3.3.1]: https://github.com/romartak/sdrkit/releases/tag/v3.3.1
 [3.2.0]: https://github.com/romartak/sdrkit/releases/tag/v3.2.0
 [3.1.0]: https://github.com/romartak/sdrkit/tree/v3.1.0
