@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="banner.svg" width="100%" alt="romartak — médico y desarrollador">
+<img src="banner.svg" width="100%" alt="romartak — médico y programador">
 
-**🩺 Médico · 💻 programador · 🛠️ constructor de proyectos**
+**🩺 Médico · 💻 Programador**
 <br>
-*Physician · programmer · project builder*
+*Physician · Programmer*
 
 [![SDR-Kit](https://img.shields.io/badge/proyecto%20estrella-SDR--Kit-ffd400?labelColor=0b0e12)](https://github.com/romartak/sdrkit)
 ![Español](https://img.shields.io/badge/idioma-Espa%C3%B1ol-2dd4bf?labelColor=0b0e12)
