@@ -4,6 +4,18 @@ All notable changes to SDR-Kit are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Update an installed kit with `sudo sdrkit update`.
 
+## [Unreleased]
+
+### Security
+- The server refuses to start without `ADMIN_PASSWORD` (except `--demo`); minimum password length is now 8 (installer and `sdrkit password`).
+- Login lockout: 5 wrong passwords lock the client IP for 5 minutes (HTTP 429).
+- Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`).
+- The OpenWebRX+ apt key is stored in its own keyring (`/etc/apt/keyrings`) instead of the global trusted keys.
+
+### Changed
+- The demo server no longer needs the POSIX-only `pwd` module at import time.
+- Documentation screenshots added; removed unused files (`GUIA.md` at the root, `profile/`).
+
 ## [3.3.0] - 2026-10-17
 
 ### Added

@@ -21,7 +21,6 @@ import hmac
 import json
 import math
 import os
-import pwd
 import re
 import secrets
 import select
@@ -102,6 +101,12 @@ DEFAULTS = {
 # ----------------------------------------------------------------------------
 # Utilidades
 # ----------------------------------------------------------------------------
+
+try:
+    import pwd  # POSIX only: the demo also runs on Windows without it
+except ImportError:  # pragma: no cover
+    pwd = None
+
 
 def log(*args):
     print(time.strftime("%H:%M:%S"), *args, flush=True)
@@ -189,6 +194,8 @@ def write_json_atomic(path, data, owner=None, mode=0o644):
     os.chmod(tmp, mode)
     if owner:
         try:
+            if pwd is None:
+                raise KeyError(owner)
             pw = pwd.getpwnam(owner)
             os.chown(tmp, pw.pw_uid, pw.pw_gid)
         except (KeyError, PermissionError):
@@ -1898,6 +1905,8 @@ class App:
         self.sys = SysInfo()
         self.wifi = WiFi(conf, demo)
         self.password = conf.get("ADMIN_PASSWORD", "")
+        self._login_fails = {}
+        self._login_lock = threading.Lock()
         self.secret = self._secret()
         self.started = time.time()
 
@@ -1918,6 +1927,28 @@ class App:
         except OSError:
             pass
         return s
+
+    # -- límite de intentos de login (por IP, en memoria) --
+    LOGIN_MAX_FAILS = 5
+    LOGIN_WINDOW = 300
+
+    def login_locked(self, ip):
+        """Segundos que faltan para poder reintentar, o 0 si la IP puede probar."""
+        now = time.time()
+        with self._login_lock:
+            fails = [t for t in self._login_fails.get(ip, []) if now - t < self.LOGIN_WINDOW]
+            self._login_fails[ip] = fails
+            if len(fails) >= self.LOGIN_MAX_FAILS:
+                return max(1, int(self.LOGIN_WINDOW - (now - fails[0])))
+        return 0
+
+    def login_failed(self, ip):
+        with self._login_lock:
+            self._login_fails.setdefault(ip, []).append(time.time())
+
+    def login_ok(self, ip):
+        with self._login_lock:
+            self._login_fails.pop(ip, None)
 
     def token(self):
         return hmac.new(self.secret, ("v1:" + self.password).encode(), hashlib.sha256).hexdigest()
@@ -2041,6 +2072,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("Referrer-Policy", "same-origin")
         for k, v in (headers or {}).items():
             self.send_header(k, v)
         self.end_headers()
@@ -2177,9 +2211,17 @@ class Handler(BaseHTTPRequestHandler):
         app = self.app
         if path == "/login":
             pw = str(body.get("password", ""))
+            ip = self.client_address[0]
+            wait = app.login_locked(ip)
+            if wait:
+                err = '<div class="e" data-en="Too many attempts. Try again in a few minutes.">Demasiados intentos. Prueba de nuevo en unos minutos.</div>'
+                return self._send(429, LOGIN_HTML.replace("__ERR__", err), "text/html; charset=utf-8",
+                                  headers={"Retry-After": str(wait)})
             if app.password and hmac.compare_digest(pw.encode(), app.password.encode()):
+                app.login_ok(ip)
                 cookie = "sdrkit_auth=%s; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax" % app.token()
                 return self._send(303, "", headers={"Location": "/", "Set-Cookie": cookie})
+            app.login_failed(ip)
             time.sleep(1.0)
             err = '<div class="e" data-en="Wrong password.">Clave incorrecta.</div>'
             return self._send(200, LOGIN_HTML.replace("__ERR__", err), "text/html; charset=utf-8")
@@ -2588,6 +2630,12 @@ def main():
         STATE_DIR = os.environ.get("SDRKIT_STATE", os.path.join(os.path.expanduser("~"), ".sdrkit-demo"))
         conf.setdefault("ADMIN_PASSWORD", "")
     port = args.port or cint(conf.get("PANEL_PORT"), 80)
+    if not args.demo and not conf.get("ADMIN_PASSWORD"):
+        print("ADMIN_PASSWORD is empty: refusing to start an unprotected panel. "
+              "Set it in %s (or run: sudo sdrkit password).\n"
+              "ADMIN_PASSWORD está vacía: no se inicia un panel sin protección. "
+              "Defínela en %s (o ejecuta: sudo sdrkit clave)." % (args.conf, args.conf), file=sys.stderr)
+        return 1
 
     app = App(conf, demo=args.demo)
     Handler.app = app

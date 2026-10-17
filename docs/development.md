@@ -21,7 +21,6 @@ SDR-Kit is small on purpose: Python 3 + numpy on the Pi, vanilla JavaScript in t
 ├── VERSION                 Version shown by the panel and the CLI
 ├── CHANGELOG.md            Keep a Changelog format
 ├── README.md, README.es.md Project front pages (English, Spanish)
-├── GUIA.md                 Spanish user guide (also in docs/es/)
 ├── LICENSE                 MIT
 ├── CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
 ├── docs/                   This documentation (+ docs/es/, docs/media/screenshots/)
