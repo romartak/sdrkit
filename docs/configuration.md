@@ -48,6 +48,7 @@ The **Applied** column in the tables below uses: **panel**, **netwatch**, **inst
 
 | Key | Default | Applied | Meaning |
 |---|---|---|---|
+| `sdrkit backup` / `restore` | — | CLI | `sudo sdrkit backup [file]` saves `/etc/sdrkit` and `/var/lib/sdrkit` (settings, memories; not recordings) to a `.tar.gz`; `sudo sdrkit restore file` brings them back |
 | `SDRKIT_LANG` | `""` | installer, CLI, panel | Language of the installer, updater and `sdrkit` command, and of the example memories the panel creates on first start: `en` or `es`. Empty = the installer asks first. When unset, the system language (`LANG`) decides; a `SDRKIT_LANG` environment variable overrides it. Configurations from versions before this key existed are set to `es` on update. The web panel chooses its language per browser ([Language](user-guide.md#language)) |
 
 ### Hotspot

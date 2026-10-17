@@ -29,3 +29,15 @@ def test_scripts_have_valid_syntax():
     root = os.path.dirname(FILES)
     for name in ("install.sh", "get.sh"):
         assert subprocess.run(["bash", "-n", os.path.join(root, name)]).returncode == 0
+
+
+def test_cli_has_doctor_backup_restore_in_both_languages():
+    cli = open(os.path.join(FILES, "sdrkit-cli.sh"), encoding="utf-8").read()
+    for word in ("doctor|diagnóstico", "backup|copia", "restore|restaurar"):
+        assert word in cli
+
+
+def test_version_matches_server():
+    root = os.path.dirname(FILES)
+    ver = open(os.path.join(root, "VERSION")).read().strip()
+    assert 'return "%s"' % ver in open(os.path.join(FILES, "sdrkit_server.py"), encoding="utf-8").read()

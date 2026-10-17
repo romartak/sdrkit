@@ -4,6 +4,15 @@ All notable changes to SDR-Kit are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 Update an installed kit with `sudo sdrkit update`.
 
+## [3.3.0] - 2026-10-17
+
+### Added
+- `sdrkit doctor`: a full check-up (service, panel, RTL-SDR/HackRF, power, temperature, disk, network) with ✔/✖/! per item and the fix for each failure.
+- `sdrkit backup` / `sdrkit restore`: save and recover your settings and memories (recordings excluded); restore refuses archives with paths outside SDR-Kit.
+
+### Changed
+- Redesigned README in English and Spanish.
+
 ## [3.2.0] - 2026-10-16
 
 ### Added
