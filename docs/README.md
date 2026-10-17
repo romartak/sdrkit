@@ -16,6 +16,7 @@ SDR-Kit turns a **Raspberry Pi Zero 2 W**, an **RTL-SDR** dongle and a **power b
 | Update to a new version or go back | [Updating](updating.md) |
 | Fix something that does not work | [Troubleshooting](troubleshooting.md) |
 | Look up a quick answer | [FAQ](faq.md) |
+| Find related projects and learning material | [Resources](resources.md) |
 
 ## Reference
 

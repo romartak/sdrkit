@@ -353,6 +353,16 @@ Sin nube, sin cuentas, sin telemetría.
 La voz digital opcional (DSD-FME + mbelib) implementa códecs AMBE/IMBE **patentados**, por eso el instalador la
 deja desactivada salvo que la aceptes explícitamente. Más en [docs/legal.md](docs/legal.md).
 
+## 🙏 Agradecimientos
+
+Construido sobre [OpenWebRX+](https://github.com/luarvique/openwebrx), [rtl-sdr](https://github.com/osmocom/rtl-sdr) y los
+drivers de [RTL-SDR Blog](https://www.rtl-sdr.com), [rtl_433](https://github.com/merbanan/rtl_433),
+[dump1090](https://github.com/flightaware/dump1090), [multimon-ng](https://github.com/EliasOenal/multimon-ng),
+[DSD-FME](https://github.com/lwvmobile/dsd-fme), [mbelib](https://github.com/lwvmobile/mbelib),
+[codec2](https://github.com/drowe67/codec2) y el [Proyecto M17](https://m17project.org); inspirado en el
+[tinySA](https://tinysa.org). La lista de proyectos relacionados de [docs/resources.md](docs/resources.md) se armó con ayuda de
+[RFSec-ToolKit](https://github.com/cn0xroot/RFSec-ToolKit) de [@cn0xroot](https://github.com/cn0xroot) (雪碧 / 0x0root).
+
 ## 📄 Licencia
 
 [MIT](LICENSE) © romartak y colaboradores de SDR-Kit. Los programas de terceros que instala el kit conservan sus propias licencias.
