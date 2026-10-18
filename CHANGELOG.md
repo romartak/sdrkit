@@ -7,6 +7,10 @@ Update an installed kit with `sudo sdrkit update`.
 ## [Unreleased]
 
 ### Changed
+- **"Instrumento" look for the whole panel** (`files/web/app.css`, a CSS-only layer, no logic touched): deeper graphite
+  surfaces with hairline borders and soft depth, rounder cards, tuned buttons and segmented controls, a glowing yellow
+  active indicator on the tab bar, custom sliders, tabular numbers on every readout, blurred header, tab bar and sheets,
+  and a short fade between tabs. System fonts only, so it still works fully offline.
 - **Premium sign-in page**: logo and tagline, glass card with a labelled password field, show/hide button, Caps Lock hint,
   loading state on the button, shake and focus on a wrong password, and a quiet animated spectrum in the background
   (stops with "reduce motion"). Still a single self-contained page with no external requests; Spanish/English as before.
