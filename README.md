@@ -405,6 +405,8 @@ HTTP API: [docs/api.md](docs/api.md).
 
 ## 🗺️ Roadmap
 
+📅 **Daily feature plan:** [ROADMAP.md](ROADMAP.md) lists 34 new features, one shipped per day, with what's done and what's next.
+
 - [ ] HackRF One sweeps up to 6 GHz in the analyzer (detected automatically; needs more field testing)
 - [ ] Second-dongle profiles: aircraft radar or sensors 24/7 while using the analyzer
 - [ ] Weather-satellite images (Meteor-M, 137 MHz) on a Pi 4/5

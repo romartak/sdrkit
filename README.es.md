@@ -405,6 +405,7 @@ Sin nube, sin cuentas, sin telemetría.
 | [Guía completa en español](docs/es/GUIA.md) | Compras, montaje, instalación, cada pestaña, antenas, voz digital, actualizaciones y problemas |
 | [Documentación técnica (inglés)](docs/README.md) | Arquitectura, API HTTP, configuración, desarrollo |
 | [Historial de versiones](CHANGELOG.md) · [Cómo contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md) | Proyecto |
+| [Plan diario de funciones](ROADMAP.md) | 34 funciones nuevas, una por día: qué viene y qué ya está hecho |
 
 ## ⚖️ Legal
 
