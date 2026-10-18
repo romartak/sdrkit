@@ -10,6 +10,8 @@ Update an installed kit with `sudo sdrkit update`.
 - RTL-SDR Blog **V3 support is now tested in CI**: `tests/test_rtl_models.py` runs the panel's driver code against a fake
   librtlsdr that reports a V3 (R820T) or a V4 (R828D) and checks detection, gains, direct sampling below 24 MHz on the V3
   only, sample delivery and the advanced receiver's HF profiles. The README says the V3 works.
+- README (EN/ES): "Monitor your business from anywhere" use case — leave the kit at a business that runs on
+  walkie-talkies and listen, record and check the activity log from abroad over Tailscale (needs internet at the business).
 
 ## [3.5.0] - 2026-10-17
 

@@ -47,7 +47,7 @@ lugar entras con [Tailscale](https://tailscale.com).
 
 ## 📑 Contenido
 
-[Qué hace](#-lo-que-hace) · [De un vistazo](#-de-un-vistazo) · [Lo que necesitas](#-lo-que-necesitas) · [Instalación](#-instalación-paso-a-paso) · [Actualizaciones](#-actualizaciones-que-no-rompen-nada) · [Demo](#-probar-sin-hardware) · [Idiomas](#-dos-idiomas) · [Cómo funciona](#-cómo-funciona) · [Documentación](#-documentación) · [Legal](#-legal)
+[Qué hace](#-lo-que-hace) · [De un vistazo](#-de-un-vistazo) · [Vigila tu negocio](#-caso-de-uso-vigila-tu-negocio-desde-cualquier-país) · [Lo que necesitas](#-lo-que-necesitas) · [Instalación](#-instalación-paso-a-paso) · [Actualizaciones](#-actualizaciones-que-no-rompen-nada) · [Demo](#-probar-sin-hardware) · [Idiomas](#-dos-idiomas) · [Cómo funciona](#-cómo-funciona) · [Documentación](#-documentación) · [Legal](#-legal)
 
 ## ✨ Lo que hace
 
@@ -107,6 +107,51 @@ flowchart LR
 | Seguir aviones sin internet | **Radar** | dump1090 |
 | Oír voz digital (DMR, P25, M17…) | **Radio → Digital** | DSD-FME *(opcional)* |
 | FT8, WSPR, SSTV, ACARS… | **Receptor avanzado** | OpenWebRX+ |
+
+## 🏪 Caso de uso: vigila tu negocio desde cualquier país
+
+Imagina un restaurante, un hotel, un almacén o una obra que se coordina con walkie-talkies (FRS/PMR, radios comerciales
+VHF/UHF o de radioaficionado). Viajas fuera del país y quieres saber que todo fluye bien. Deja SDR-Kit en el negocio y
+escucha desde tu celular, estés donde estés.
+
+```mermaid
+flowchart LR
+  W["📻 Walkie-talkies<br/>de tu equipo"] -. radio .-> Z["🥧 SDR-Kit en el negocio<br/>conectado a su WiFi"]
+  Z <-->|"Tailscale<br/>(cifrado)"| P["📱 Tu celular<br/>en otro país"]
+```
+
+**Qué necesitas**
+
+- **Internet en el negocio.** Tailscale funciona por internet, así que la Pi tiene que estar conectada al WiFi del local (o a
+  un router 4G). El hotspot propio de la Pi es para el campo y no tiene internet: para esto no sirve.
+- **Energía fija**: un cargador USB en vez del power bank, para que funcione 24/7.
+- **Tailscale en los dos lados**, con la misma cuenta.
+
+**Configúralo (una vez, antes de viajar)**
+
+1. Conecta la Pi al WiFi del negocio (**Más → WiFi**).
+2. En la Pi ejecuta `sudo tailscale up` y abre el enlace que muestra para iniciar sesión (o define `TAILSCALE_AUTHKEY`
+   antes de instalar).
+3. Instala la app de Tailscale en tu celular, entra con la misma cuenta y actívala.
+4. Abre `http://sdrpi` (o la IP de Tailscale de la Pi, en **Más → Sistema → Direcciones para entrar**). Es el mismo panel de
+   siempre.
+5. Guarda los canales de tu equipo como un grupo de memorias (**Más → Canales → ★ Guardar como grupo**, o agrégalos a mano)
+   y arranca el **escáner** con ese grupo.
+
+**Qué puedes hacer desde lejos**
+
+- **Escuchar en vivo** los canales de tu equipo: el escáner se detiene en quien esté hablando.
+- **Activar la grabación automática** en el Radio («Grabar automáticamente cada transmisión»): sigue grabando aunque
+  cierres el celular, para escuchar después lo que pasó mientras dormías.
+- Revisar el **registro de actividad** (hora, canal, duración, subtono) o descargarlo en CSV.
+- Ver **qué subtono o código** usa cada radio, para comprobar que nadie ajeno está en tu canal.
+- O, en vez de escuchar, usar **Analizador → Vigilancia 24/7** para recibir un **aviso en el celular** (ntfy, define
+  `NTFY_TOPIC`) cuando aparezca una señal en tus canales. El dongle hace una cosa a la vez: o el radio o la vigilancia.
+
+> [!IMPORTANT]
+> Escucha sólo **tus propios** canales e informa a tu personal que los radios se monitorean y graban. Grabar conversaciones
+> está regulado distinto en cada país. Los radios digitales cifrados no se pueden escuchar. Nunca abras el panel a internet
+> con port-forwarding: usa Tailscale, que cifra la conexión de punta a punta.
 
 ## 🧰 Lo que necesitas
 

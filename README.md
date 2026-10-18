@@ -47,7 +47,7 @@ internet required. At home it joins your WiFi; in the field it creates its own h
 
 ## 📑 Contents
 
-[Highlights](#-highlights) · [At a glance](#-at-a-glance) · [Hardware](#-hardware) · [Installation](#-installation-step-by-step) · [Updates](#-updates-that-cannot-brick-your-kit) · [Demo](#-try-it-without-hardware) · [Languages](#-two-languages) · [How it works](#-how-it-works) · [Docs](#-documentation) · [Roadmap](#-roadmap) · [Contributing](#-contributing) · [Legal](#-legal)
+[Highlights](#-highlights) · [At a glance](#-at-a-glance) · [Monitor your business](#-use-case-keep-an-ear-on-your-business-from-anywhere) · [Hardware](#-hardware) · [Installation](#-installation-step-by-step) · [Updates](#-updates-that-cannot-brick-your-kit) · [Demo](#-try-it-without-hardware) · [Languages](#-two-languages) · [How it works](#-how-it-works) · [Docs](#-documentation) · [Roadmap](#-roadmap) · [Contributing](#-contributing) · [Legal](#-legal)
 
 ## ✨ Highlights
 
@@ -107,6 +107,49 @@ flowchart LR
 | Track aircraft offline | **Radar** | dump1090 |
 | Hear digital voice (DMR, P25, M17…) | **Radio → Digital** | DSD-FME *(optional)* |
 | FT8, WSPR, SSTV, ACARS… | **Advanced receiver** | OpenWebRX+ |
+
+## 🏪 Use case: keep an ear on your business from anywhere
+
+Picture a restaurant, a hotel, a warehouse or a building site that runs on walkie-talkies (FRS/PMR, business VHF/UHF or
+ham radios). You travel abroad and want to know the day is going well. Leave SDR-Kit at the business and listen in from your
+phone, from any country.
+
+```mermaid
+flowchart LR
+  W["📻 Your team's<br/>walkie-talkies"] -. radio .-> Z["🥧 SDR-Kit at the business<br/>on its WiFi"]
+  Z <-->|"Tailscale<br/>(encrypted)"| P["📱 Your phone<br/>in another country"]
+```
+
+**What you need**
+
+- **Internet at the business.** Tailscale works over the internet, so the Pi has to be on the business WiFi (or a 4G
+  router). The Pi's own hotspot is for the field and does not reach the internet, so it is not enough for this.
+- **Fixed power**: a USB charger instead of the power bank, so it runs 24/7.
+- **Tailscale on both ends**, signed in to the same account.
+
+**Set it up (once, before you travel)**
+
+1. Connect the Pi to the business WiFi (**More → WiFi**).
+2. On the Pi run `sudo tailscale up` and open the link it prints to sign in (or set `TAILSCALE_AUTHKEY` before installing).
+3. Install the Tailscale app on your phone, sign in with the same account and turn it on.
+4. Open `http://sdrpi` (or the Pi's Tailscale IP from **More → System → Access addresses**). It's the same panel as at home.
+5. Save your team's channels as a memory group (**More → Channels → ★ Save as group**, or add them by hand) and start the
+   **scanner** on that group.
+
+**What you can do from abroad**
+
+- **Listen live** to your team's channels: the scanner stops on whoever is talking.
+- **Turn on auto-record** in the Radio (“Record every transmission automatically”): it keeps going with your phone closed, so
+  you can play back what happened while you slept.
+- Check the **activity log** (time, channel, duration, tone) or download it as CSV.
+- See **which tone/code** each radio uses, to check nobody else is on your channel.
+- Or, instead of listening, use **Analyzer → 24/7 monitor** to get a **phone alert** (ntfy, set `NTFY_TOPIC`) when a signal
+  shows up on your channels. The dongle does one thing at a time: either the radio or the 24/7 monitor.
+
+> [!IMPORTANT]
+> Only listen to **your own** channels, and tell your staff the radios are monitored and recorded. Recording conversations
+> is regulated differently in each country. Encrypted digital radios can't be heard. Never port-forward the panel to the
+> internet: use Tailscale, which encrypts the connection end to end.
 
 ## 🧰 Hardware
 
