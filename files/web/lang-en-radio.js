@@ -399,3 +399,12 @@ I18N.addPatterns([
   [/^Canal (\d+[A-Z]?)$/, "Channel $1"],                                   // marine and FRS channel names
   [/^Entrada repetidora (\d+)R$/, "Repeater input $1R"],                   // GMRS repeater inputs (canales.js)
 ]);
+I18N.add({
+  "Voz con scrambler": "Scrambled voice",
+  "Desinvertir voz": "Descramble voice",
+  "Apagado": "Off",
+  "Si la voz suena «de pato», el walkie tiene activado el scrambler por inversión. Prueba valores hasta que se entienda. También desinvierte las grabaciones.":
+    "If the voice sounds like a duck, the walkie-talkie has its inversion scrambler on. Try values until it's clear. Recordings are descrambled too.",
+  "Desinvirtiendo la voz en {f} Hz. Si aún no se entiende, prueba otro valor.": "Descrambling the voice at {f} Hz. If it's still unclear, try another value.",
+  "Desinversión de voz apagada.": "Voice descrambling off.",
+});

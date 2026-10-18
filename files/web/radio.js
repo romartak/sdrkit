@@ -137,6 +137,7 @@ const Radio = (() => {
     $("#rRec").textContent = manual ? _t("■ Detener grabación · {t}", {t: SDR.fmtDur(rec.secs)}) : _t("⏺ Grabar ahora");
     $("#rRec").classList.toggle("recon", !!manual);
     $("#rAuto").checked = !!d.autorec;
+    syncInv(d.inv);
     $("#rRecInfo").textContent = rec ? (rec.kind === "auto" ? _t("● Grabando esta transmisión… {f}", {f: rec.file}) : _t("● Grabando… {f}", {f: rec.file}))
       : d.autorec ? _t("Esperando transmisiones para grabarlas (se activa cuando se abre el squelch).") : _t("Se guardan en carpetas por fecha. Míralas en la pestaña Grabaciones.");
     // escáner
@@ -351,6 +352,13 @@ const Radio = (() => {
       renderMemories();
     } catch (e) {}
   }
+  // selector del desinversor de voz: muestra el valor del servidor aunque no esté en la lista
+  function syncInv(v) {
+    const sel = $("#rInv"); if (!sel || document.activeElement === sel) return;
+    v = String(v || 0);
+    if (![...sel.options].some(o => o.value === v)) sel.insertAdjacentHTML("beforeend", `<option value="${v}">${v} Hz</option>`);
+    sel.value = v;
+  }
   // subtono y desplazamiento de repetidora guardados en la memoria (Más → Canales → Tu país)
   function memExtra(m) {
     let t = "";
@@ -475,6 +483,11 @@ const Radio = (() => {
         if (on) SDR.toast(_t("Grabando… pulsa otra vez para detener."));
       } catch (e) { SDR.toast(e.message, true); }
     });
+    $("#rInv").addEventListener("change", ev => {
+      const f = +ev.target.value;
+      setParams({inv: f});
+      SDR.toast(f ? _t("Desinvirtiendo la voz en {f} Hz. Si aún no se entiende, prueba otro valor.", {f}) : _t("Desinversión de voz apagada."));
+    });
     $("#rAuto").addEventListener("change", ev => {
       setParams({autorec: ev.target.checked});
       SDR.toast(ev.target.checked ? _t("Cada transmisión se guardará en su propio archivo.") : _t("Grabación automática desactivada."));
@@ -566,6 +579,7 @@ const Radio = (() => {
       g.value = R.params.gain === "auto" ? "auto" : String(R.params.gain);
       if (!g.value && gains.length) { const o = document.createElement("option"); o.value = String(R.params.gain); o.textContent = R.params.gain + " dB"; g.appendChild(o); g.value = o.value; }
       $("#rAuto").checked = !!R.params.autorec;
+      syncInv(R.params.inv);
       renderFreq(); renderSq(); renderDataChips();
     } catch (e) {}
   }

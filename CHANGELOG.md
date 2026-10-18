@@ -6,7 +6,12 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-10-18
+
 ### Added
+- **Voice descrambler** (Radio → Scrambled voice): undoes the frequency-inversion "scrambler" / "voice privacy" of many
+  cheap walkie-talkies. Pick the inversion point (2600–3500 Hz, 2632 and 3300 are common); recordings and the scanner get the
+  descrambled voice. Covered by `tests/test_voice_inverter.py`. It does not defeat digital encryption or rolling scramblers.
 - RTL-SDR Blog **V3 support is now tested in CI**: `tests/test_rtl_models.py` runs the panel's driver code against a fake
   librtlsdr that reports a V3 (R820T) or a V4 (R828D) and checks detection, gains, direct sampling below 24 MHz on the V3
   only, sample delivery and the advanced receiver's HF profiles. The README says the V3 works.
@@ -128,6 +133,7 @@ Update an installed kit with `sudo sdrkit update`.
 ### Added
 - tinySA-style spectrum analyzer, automatic hotspot, OpenWebRX+ and Tailscale.
 
+[3.6.0]: https://github.com/romartak/sdrkit/releases/tag/v3.6.0
 [3.5.0]: https://github.com/romartak/sdrkit/releases/tag/v3.5.0
 [3.4.0]: https://github.com/romartak/sdrkit/releases/tag/v3.4.0
 [3.3.1]: https://github.com/romartak/sdrkit/releases/tag/v3.3.1

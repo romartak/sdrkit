@@ -158,6 +158,28 @@ class FirDecim:
         return y
 
 
+INV_RANGE = (2000, 4000)   # puntos de inversión de los scramblers de walkie-talkies (Hz)
+
+
+class VoiceInverter:
+    """Deshace el «scrambler» por inversión de frecuencia de muchos walkie-talkies: refleja el espectro de la voz
+    alrededor de f/2 (lo grave pasa a agudo y viceversa). Aplicarlo dos veces devuelve el audio original."""
+
+    def __init__(self, f, fs=AUDIO_RATE):
+        self.f, self.fs = float(f), fs
+        cut = min(self.f - 150.0, 3400.0)
+        self.pre = FirDecim(lowpass(127, cut, fs), 1, np.float32)
+        self.post = FirDecim(lowpass(127, cut, fs), 1, np.float32)
+        self.phase = 0.0
+
+    def __call__(self, a):
+        y = self.pre(np.asarray(a, dtype=np.float32))
+        w = 2 * np.pi * self.f / self.fs
+        lo = (self.phase + w * np.arange(len(y))).astype(np.float64)
+        self.phase = (self.phase + w * len(y)) % (2 * np.pi)
+        return self.post((2.0 * y * np.cos(lo)).astype(np.float32))
+
+
 class Chain:
     """Cadena completa de un modo: canal → demodulación → audio a 24 kHz (+ sub-audible para FM)."""
 
@@ -857,12 +879,13 @@ class RadioManager:
         self.decoded = ActivityLog(os.path.join(folder, "decodificados.jsonl"), keep=2000)
         self._dec = None
         self._dsd = None
+        self._inv = None
         self._cls_buf = []
         self._dec_seq = 0
         self._dec_recent = collections.deque(maxlen=8)
         self.memories = MemoryStore(os.path.join(folder, "memorias.json"), self.region, ui_lang(conf))
         p = {"freq": 462.5625e6 if not str(self.region).lower().startswith("eu") else 446.00625e6,
-             "mod": "nfm", "squelch": -45.0, "gain": 29.7, "autorec": False, "name": "", "data": [], "dsd": "auto"}
+             "mod": "nfm", "squelch": -45.0, "gain": 29.7, "autorec": False, "name": "", "data": [], "dsd": "auto", "inv": 0}
         p.update(state.get("radio") or {})
         self.params = self._validate(p)
         self.recorder.auto_enabled = bool(self.params["autorec"])
@@ -893,13 +916,18 @@ class RadioManager:
         kinds = dec_mod.MULTIMON_KINDS if dec_mod else {}
         data = [k for k in (p.get("data") or []) if k in kinds]
         dsd = p.get("dsd") if dec_mod and p.get("dsd") in dec_mod.DSD_MODES else "auto"
+        try:
+            inv = int(round(float(p.get("inv") or 0)))
+        except (TypeError, ValueError):
+            inv = 0
+        inv = inv if INV_RANGE[0] <= inv <= INV_RANGE[1] else 0
         return {"freq": round(freq), "mod": mod, "squelch": sq, "gain": gain, "autorec": bool(p.get("autorec")),
-                "name": str(p.get("name") or "")[:40], "data": data, "dsd": dsd}
+                "name": str(p.get("name") or "")[:40], "data": data, "dsd": dsd, "inv": inv}
 
     def set_params(self, p, from_scan=False):
         merged = dict(self.params)
         merged.update({k: v for k, v in p.items() if k in ("freq", "mod", "squelch", "gain", "autorec", "name", "data",
-                                                           "dsd")})
+                                                           "dsd", "inv")})
         if "freq" in p and "name" not in p:
             merged["name"] = ""
         with self.cv:
@@ -1168,6 +1196,11 @@ class RadioManager:
         if self._dsd is not None:
             self._dsd.feed(self.chain.last_hz)
             audio = self._dsd.pull(len(audio))
+        inv = self.params.get("inv")
+        if inv and self.chain.mod in ("nfm", "nfmw", "am"):   # voz con scrambler: también se graba ya desinvertida
+            if self._inv is None or self._inv.f != inv:
+                self._inv = VoiceInverter(inv)
+            audio = np.clip(self._inv(audio), -1.0, 1.0)
         db = pdb + self.level_offset
         now = time.time()
         p = self.params
@@ -1293,7 +1326,7 @@ class RadioManager:
         obj = {"freq": self.params["freq"], "mod": self.params["mod"], "name": self.params.get("name", ""),
                "db": self.live["db"], "noise": self.live["noise"], "sq": self.live["sq"],
                "squelch": self.params["squelch"], "ctcss": self.live["ctcss"], "dcs": self.live["dcs"],
-               "dtmf": self._tx_dtmf, "rec": self.recorder.status(), "autorec": self.params["autorec"],
+               "dtmf": self._tx_dtmf, "rec": self.recorder.status(), "autorec": self.params["autorec"], "inv": self.params["inv"],
                "scan": self._scan_info(s), "device": self.info.get("device"),
                "data": self.params.get("data", []), "data_error": self.info.get("data_error"),
                "decoded": list(self._dec_recent), "digital": self.live.get("digital"),
