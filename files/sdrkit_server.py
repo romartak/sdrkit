@@ -55,7 +55,7 @@ def _read_version():
                     return v
         except OSError:
             pass
-    return "3.9.0"
+    return "3.10.0"
 
 
 VERSION = _read_version()
@@ -2078,20 +2078,78 @@ class App:
 
 
 LOGIN_HTML = """<!doctype html><html lang="es"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>SDR-Kit · Entrar</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0e12"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>SDR-Kit · Entrar</title>
 <style>
-:root{color-scheme:dark}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0e12;
-color:#e8edf2;font:16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-form{width:min(340px,calc(100vw - 32px));background:#141a21;border:1px solid #243040;border-radius:14px;padding:24px}
-h1{font-size:20px;margin:0 0 4px}p{color:#8a98a8;margin:0 0 18px;font-size:14px}
-input{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #2c3a4b;background:#0b0e12;
-color:inherit;font-size:16px}button{margin-top:14px;width:100%;padding:12px;border:0;border-radius:10px;
-background:#ffd400;color:#111;font-weight:700;font-size:16px}.e{color:#ff6b6b;font-size:14px;margin-top:10px}
-</style></head><body><form method="post" action="/login"><h1>SDR-Kit</h1>
-<p data-en="Enter the panel password (ADMIN_PASSWORD).">Escribe la clave del panel (ADMIN_PASSWORD).</p>
-<input type="password" name="password" autocomplete="current-password" autofocus placeholder="Clave"
-data-en-ph="Password">
-<button type="submit" data-en="Sign in">Entrar</button>__ERR__</form>
+:root{color-scheme:dark;--bg:#0b0e12;--panel:#121820;--line:#243041;--line2:#2f3d50;--text:#e6edf3;--muted:#8b9bb0;
+--accent:#ffd400;--err:#ff6b6b}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 16px;overflow:hidden;
+background:radial-gradient(900px 520px at 50% -8%,rgba(255,212,0,.10),transparent 62%),var(--bg);color:var(--text);
+font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/48px 48px,
+linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/48px 48px;
+-webkit-mask-image:radial-gradient(ellipse at 50% 40%,#000 15%,transparent 70%);mask-image:radial-gradient(ellipse at 50% 40%,#000 15%,transparent 70%)}
+#bg{position:fixed;left:0;bottom:0;width:100%;height:38vh;pointer-events:none;opacity:.9}
+main{position:relative;width:min(380px,100%);animation:in .5s cubic-bezier(.2,.8,.2,1) both}
+.brand{display:flex;flex-direction:column;align-items:center;margin-bottom:22px;text-align:center}
+.logo{width:64px;height:64px;border-radius:18px;box-shadow:0 0 0 1px var(--line2),0 10px 36px rgba(255,212,0,.16)}
+.brand h1{margin:14px 0 2px;font-size:26px;font-weight:800;letter-spacing:.2px}
+.brand p{margin:0;color:var(--muted);font-size:14px}
+form{background:linear-gradient(180deg,rgba(24,32,42,.82),rgba(18,24,32,.82));border:1px solid var(--line);
+border-radius:18px;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);
+-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+form.shake{animation:shake .4s}
+label{display:block;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.field{position:relative}
+input{width:100%;padding:14px 48px 14px 14px;border-radius:12px;border:1px solid var(--line2);background:#080b0f;
+color:var(--text);font-size:16px;outline:0;transition:border-color .15s,box-shadow .15s}
+input::placeholder{color:#55657a}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,212,0,.16)}
+.eye{position:absolute;top:50%;right:6px;transform:translateY(-50%);width:40px;height:40px;border:0;border-radius:10px;
+background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.eye:hover,.eye:focus-visible{color:var(--text);background:rgba(255,255,255,.06);outline:0}
+.eye svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.eye .off{display:none}.eye.on .off{display:block}.eye.on .see{display:none}
+.hint{min-height:18px;margin:8px 2px 0;font-size:13px;color:var(--warn,#ffb020)}
+button.go{margin-top:12px;width:100%;padding:14px;border:0;border-radius:12px;background:var(--accent);color:#141100;
+font-weight:800;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
+box-shadow:0 8px 24px rgba(255,212,0,.22);transition:transform .1s,filter .15s,box-shadow .15s}
+button.go:hover{filter:brightness(1.06)}button.go:active{transform:scale(.985)}
+button.go:focus-visible{outline:2px solid #fff;outline-offset:2px}
+button.go:disabled{opacity:.75;cursor:progress}
+.spin{display:none;width:16px;height:16px;border-radius:50%;border:2.5px solid rgba(20,17,0,.3);border-top-color:#141100;animation:sp .7s linear infinite}
+.busy .spin{display:block}
+.e{display:flex;gap:8px;align-items:center;margin-top:14px;padding:10px 12px;border-radius:10px;font-size:14px;
+color:var(--err);background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.28)}
+.foot{margin:18px 0 0;text-align:center;font-size:12px;color:#5d6d82}
+@keyframes in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style></head><body><canvas id="bg" aria-hidden="true"></canvas>
+<main>
+<div class="brand">
+<svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0b0e12"/><path d="M6 46h8l5-22 8 32 8-44 8 28 5-10h10" fill="none" stroke="#ffd400" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<h1>SDR-Kit</h1>
+<p data-en="Your pocket radio lab">Tu laboratorio de radio de bolsillo</p>
+</div>
+<form method="post" action="/login" id="f">
+<label for="pw" data-en="Panel password">Clave del panel</label>
+<div class="field">
+<input id="pw" type="password" name="password" autocomplete="current-password" autofocus required
+autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Clave" data-en-ph="Password">
+<button type="button" class="eye" id="eye" aria-label="Mostrar clave" data-en-label="Show password">
+<svg class="see" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+<svg class="off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A9.7 9.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4.4-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+</button></div>
+<div class="hint" id="caps" role="status" aria-live="polite"></div>
+<button type="submit" class="go" id="go"><span class="spin" aria-hidden="true"></span><span id="gol" data-en="Sign in">Entrar</span></button>__ERR__</form>
+<p class="foot" data-en="Receive-only · your connection stays on your network">Sólo recepción · tu conexión se queda en tu red</p>
+</main>
 <script>
 /* idioma: ?lang= → localStorage sdrkit.lang (el mismo que usa el panel) → idioma del navegador */
 (function () {
@@ -2103,12 +2161,65 @@ data-en-ph="Password">
     l = /^es\\b/i.test(n) ? "es" : "en";
   }
   document.documentElement.lang = l;
-  if (l !== "en") return;
-  document.title = "SDR-Kit \\u00b7 Sign in";
-  var els = document.querySelectorAll("[data-en]");
-  for (var i = 0; i < els.length; i++) els[i].textContent = els[i].getAttribute("data-en");
-  els = document.querySelectorAll("[data-en-ph]");
-  for (i = 0; i < els.length; i++) els[i].setAttribute("placeholder", els[i].getAttribute("data-en-ph"));
+  if (l === "en") {
+    document.title = "SDR-Kit \\u00b7 Sign in";
+    var els = document.querySelectorAll("[data-en]");
+    for (var i = 0; i < els.length; i++) els[i].textContent = els[i].getAttribute("data-en");
+    els = document.querySelectorAll("[data-en-ph]");
+    for (i = 0; i < els.length; i++) els[i].setAttribute("placeholder", els[i].getAttribute("data-en-ph"));
+    els = document.querySelectorAll("[data-en-label]");
+    for (i = 0; i < els.length; i++) els[i].setAttribute("aria-label", els[i].getAttribute("data-en-label"));
+  }
+  var en = l === "en", pw = document.getElementById("pw"), f = document.getElementById("f"),
+      eye = document.getElementById("eye"), caps = document.getElementById("caps");
+  eye.onclick = function () {
+    var show = pw.type === "password";
+    pw.type = show ? "text" : "password";
+    eye.classList.toggle("on", show);
+    eye.setAttribute("aria-label", show ? (en ? "Hide password" : "Ocultar clave") : (en ? "Show password" : "Mostrar clave"));
+    pw.focus();
+  };
+  function capsCheck(e) {
+    var on = e.getModifierState && e.getModifierState("CapsLock");
+    caps.textContent = on ? (en ? "Caps Lock is on" : "Bloq Mayús está activado") : "";
+  }
+  pw.addEventListener("keydown", capsCheck); pw.addEventListener("keyup", capsCheck);
+  pw.addEventListener("blur", function () { caps.textContent = ""; });
+  f.addEventListener("submit", function () {
+    var b = document.getElementById("go"); if (b.disabled) return;
+    setTimeout(function () { b.disabled = true; b.classList.add("busy"); }, 0);
+  });
+  window.addEventListener("pageshow", function () { var b = document.getElementById("go"); b.disabled = false; b.classList.remove("busy"); });
+  var err = document.querySelector(".e");
+  if (err) { err.setAttribute("role", "alert"); f.classList.add("shake"); pw.focus(); pw.select(); }
+  /* espectro de fondo: un piso de ruido con picos que derivan; se detiene con "reducir movimiento" */
+  var cv = document.getElementById("bg"), c = cv.getContext && cv.getContext("2d");
+  if (!c) return;
+  var W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2), t = 0,
+      peaks = [[.16,.55,.012],[.38,.9,.008],[.52,.4,.015],[.71,.7,.01],[.88,.45,.012]];
+  function size() { W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; c.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function y(x, k) {
+    var v = .08 + .03 * Math.sin(x * 40 + k * 1.3) + .02 * Math.sin(x * 97 - k * 2.1);
+    for (var i = 0; i < peaks.length; i++) {
+      var p = peaks[i], d = (x - p[0] - .02 * Math.sin(k * .25 + i)) / p[2];
+      v += p[1] * (.75 + .25 * Math.sin(k * (.9 + i * .17) + i * 2)) * Math.exp(-d * d);
+    }
+    return H - v * H * .85;
+  }
+  function draw() {
+    c.clearRect(0, 0, W, H);
+    var g = c.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "rgba(255,212,0,.20)"); g.addColorStop(1, "rgba(255,212,0,0)");
+    c.beginPath(); c.moveTo(0, H);
+    for (var x = 0; x <= W; x += 3) c.lineTo(x, y(x / W, t));
+    c.lineTo(W, H); c.closePath(); c.fillStyle = g; c.fill();
+    c.beginPath();
+    for (x = 0; x <= W; x += 3) { var yy = y(x / W, t); if (x) c.lineTo(x, yy); else c.moveTo(x, yy); }
+    c.strokeStyle = "rgba(255,212,0,.55)"; c.lineWidth = 1.5; c.stroke();
+  }
+  size(); window.addEventListener("resize", function () { size(); draw(); });
+  var still = window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches;
+  (function tick() { draw(); if (still) return; t += .02; requestAnimationFrame(tick); })();
 })();
 </script></body></html>"""
 
