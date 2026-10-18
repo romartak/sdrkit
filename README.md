@@ -113,12 +113,17 @@ flowchart LR
 | Part | Recommended | ≈ Price |
 |---|---|---|
 | 🥧 Computer | Raspberry Pi Zero 2 W | US$15 |
-| 📡 SDR | **RTL-SDR Blog V4** (kit with the adjustable dipole antennas) | US$40 |
+| 📡 SDR | **RTL-SDR Blog V4** (kit with the adjustable dipole antennas) · the **V3 works too** | US$40 |
 | 💾 Storage | 32 GB microSD, A1/A2 (SanDisk, Samsung) | US$8 |
 | 🔋 Power | 10 000–20 000 mAh power bank (5 V / 2.4 A) + short, thick micro-USB cable | US$20 |
 | 🔌 Adapter | Short micro-USB OTG → USB-A adapter (+ a short USB extension with ferrite) | US$5 |
 
 Runtime is about **6–10 h** on a 10 000 mAh bank.
+
+> [!NOTE]
+> **Got an RTL-SDR Blog V3?** It's supported: plug it in and the panel recognizes it by its R820T tuner. Everything from
+> VHF up works the same as on the V4. Below 24 MHz (AM, shortwave, CB) it switches to direct sampling on its own, with
+> less sensitivity than the V4's built-in upconverter. CI checks both dongles on every change — see [hardware](docs/hardware.md#rtl-sdr-blog-v3-and-other-rtl2832u-dongles).
 
 <details>
 <summary>➕ <b>Optional extras</b> (HackRF, AMBE3000, discone, second dongle)</summary>

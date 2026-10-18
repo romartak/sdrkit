@@ -91,6 +91,7 @@ How to check power health:
 - **V3 (R820T/R820T2):** below 24 MHz the panel switches to **direct sampling (Q branch)** automatically, and the OpenWebRX+ HF profiles enable it when `RTL_MODEL="v3"`. Reception starts at about 100 kHz but sensitivity is lower than the V4.
 - **Other tuners (E4000, FC0012/13, FC2580):** the panel's lower limit is 24 MHz.
 - All RTL2832U dongles top out at **1766 MHz**.
+- V3 and V4 support is checked on every change: `tests/test_rtl_models.py` runs the panel's driver code against a fake librtlsdr that reports each dongle's tuner. It verifies the software side (detection, gains, direct-sampling switching); real-world sensitivity still depends on the hardware.
 
 ### Using an upconverter or LNB
 
