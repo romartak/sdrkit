@@ -109,10 +109,10 @@ def test_replay_end_to_end(server):  # noqa: F811
     stop.set()
     assert wav, "the replay buffer stayed empty"
     with wave.open(io.BytesIO(wav)) as w:
-        assert w.getframerate() == FS and w.getnframes() >= 2 * FS
+        assert w.getframerate() == FS and w.getnframes() >= 1.9 * FS   # X-Replay-Secs is rounded to 0.1 s
         assert np.abs(np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16)).max() > 1000
     code, body = post(server, "/api/radio/replay", {"id": clip_id})
-    assert code == 200 and body["saved"]["kind"] == "replay" and body["saved"]["duration"] >= 2
+    assert code == 200 and body["saved"]["kind"] == "replay" and body["saved"]["duration"] >= 1.9
     with urllib.request.urlopen(server + "/api/recordings", timeout=10) as r:
         files = [m["file"] for m in json.load(r)["items"] if m.get("kind") == "replay"]
     assert body["saved"]["file"] in files
