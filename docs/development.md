@@ -66,6 +66,8 @@ Open <http://localhost:8080>. Append `?lang=en` or `?lang=es` to force a languag
 | `--seed-owrx [--force]` | Write the band profiles into OpenWebRX+ settings and exit (used by the installer and `sdrkit profiles`) |
 
 The demo keeps its state in `~/.sdrkit-demo` (override with `SDRKIT_STATE`). `SDRKIT_LANG=en` makes the example memories English.
+`SDRKIT_DEMO_LATEST=9.9.9` pretends GitHub has a newer version (to see the update notice and the orange version dot).
+Add `&nointro=1` to the URL to skip the first-visit welcome tour (the screenshot tools do).
 
 Optional tools make the demo more complete: **multimon-ng** decodes the simulated POCSAG and APRS traffic, and **dsd-fme** decodes the recorded M17 transmission. rtl_433 and dump1090 are not needed (their output is simulated).
 

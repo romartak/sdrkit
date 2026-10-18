@@ -55,7 +55,7 @@ def _read_version():
                     return v
         except OSError:
             pass
-    return "3.7.0"
+    return "3.8.0"
 
 
 VERSION = _read_version()
@@ -1909,6 +1909,9 @@ class App:
         self._login_lock = threading.Lock()
         self.secret = self._secret()
         self.started = time.time()
+        self.upd = {}                      # resultado de la última consulta a GitHub (para el punto de color de la versión)
+        self._upd_lock = threading.Lock()
+        threading.Thread(target=self._update_watcher, name="update-watch", daemon=True).start()
 
     def _secret(self):
         path = os.path.join(STATE_DIR, "secret")
@@ -1962,9 +1965,22 @@ class App:
             return None
 
     def update_check(self):
+        with self._upd_lock:
+            res = self._update_query()
+        keep = ("ok", "online", "current", "latest", "behind", "full", "changes", "error")
+        self.upd = dict({k: res[k] for k in keep if k in res}, checked=time.time())
+        if isinstance(self.upd.get("changes"), list):
+            self.upd["changes"] = self.upd["changes"][:12]
+        return res
+
+    def _update_query(self):
         if self.demo:
-            return {"ok": True, "online": True, "demo": True, "current": VERSION, "latest": VERSION, "behind": 0,
-                    "changes": [], "current_commit": "demo", "latest_commit": "demo"}
+            # SDRKIT_DEMO_LATEST=3.9.0 simula una versión nueva para probar el aviso sin una Raspberry
+            latest = os.environ.get("SDRKIT_DEMO_LATEST") or VERSION
+            behind = 0 if latest == VERSION else 2
+            changes = ["Demo: una función nueva", "Demo: correcciones"] if behind else []
+            return {"ok": True, "online": True, "demo": True, "current": VERSION, "latest": latest, "behind": behind,
+                    "changes": changes, "current_commit": "demo", "latest_commit": "demo"}
         if not os.path.exists(UPDATER):
             return {"ok": False, "online": None, "error": "Falta el actualizador: reinstala el kit."}
         rc, out, err = run(["bash", UPDATER, "--buscar", "--json"], timeout=60)
@@ -1972,6 +1988,47 @@ class App:
             return json.loads(out.strip().splitlines()[-1])
         except (ValueError, IndexError):
             return {"ok": False, "online": None, "error": (err or out or "sin respuesta").strip()[-300:]}
+
+    # -- aviso de versiones nuevas: opcional, el usuario lo elige en el panel ----
+    UPD_EVERY = 6 * 3600   # con el aviso activado: al conectarse a la WiFi y luego cada 6 horas
+    UPD_MIN_GAP = 600      # nunca más de una consulta automática cada 10 minutos
+
+    def update_notify(self):
+        """None = todavía no se le preguntó al usuario; True/False = su elección."""
+        v = self.state.get("update_notify")
+        return v if isinstance(v, bool) else None
+
+    def set_update_notify(self, on):
+        self.state.update(update_notify=bool(on))
+        if on:
+            threading.Thread(target=self._update_auto, args=(True,), daemon=True).start()
+        return bool(on)
+
+    def _update_auto(self, now=False):
+        """Consulta GitHub sólo si el aviso está activado y la Raspberry está en una WiFi (no en su hotspot)."""
+        if self.update_notify() is not True or self.wifi.summary().get("mode") != "client":
+            return False
+        last = self.upd.get("checked", 0)
+        if not now and time.time() - last < self.UPD_EVERY:
+            return False
+        if time.time() - last < self.UPD_MIN_GAP and self.upd.get("ok"):
+            return False
+        if not self.demo and run(["systemctl", "is-active", "--quiet", "sdrkit-update"], timeout=5)[0] == 0:
+            return False   # hay una actualización en curso
+        self.update_check()
+        return True
+
+    def _update_watcher(self):
+        last_mode = None
+        while True:
+            time.sleep(20)
+            try:
+                mode = self.wifi.summary().get("mode")
+                joined = mode == "client" and last_mode != "client"   # se acaba de conectar a la WiFi
+                last_mode = mode
+                self._update_auto(now=joined)
+            except Exception as e:  # nunca debe tumbar el panel
+                log("Aviso de actualizaciones:", e)
 
     def update_apply(self):
         if self.demo:
@@ -2016,6 +2073,7 @@ class App:
             "sensors": {"running": self.sensors.info.get("running"), "error": self.sensors.info.get("error")},
             "adsb": {"running": self.adsb.info.get("running"), "error": self.adsb.info.get("error")},
             "monitor": self.sweep.monitor,
+            "update": dict(self.upd, notify=self.update_notify()),
         }
 
 
@@ -2368,6 +2426,8 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/wifi/mode":
                 app.wifi.set_mode(body.get("mode"))
                 return self._send(200, {"ok": True})
+            if path == "/api/system/autoupdate":
+                return self._send(200, {"ok": True, "notify": app.set_update_notify(cbool(body.get("on")))})
             if path == "/api/system/update":
                 return self._send(200, app.update_apply())
             if path in ("/api/system/reboot", "/api/system/poweroff"):

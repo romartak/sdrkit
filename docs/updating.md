@@ -22,6 +22,25 @@ The Pi needs **internet access**: connect it to your home WiFi, or add your phon
 2. **⬇ Update now** and confirm. The updater runs in its own systemd unit (`sdrkit-update`), so it survives the panel restarting.
 3. The card shows the live update log. When it ends with success the page reloads (about one minute for a quick update).
 
+## New-version notices (optional)
+
+The first time someone opens the panel, a short welcome tour explains what the kit does and asks whether to turn on
+**new-version notices**. The choice is stored on the Pi and can be changed any time in **More → System → Updates →
+Tell me when a new version is out**.
+
+- **Off by default** (nothing is checked until the user says yes).
+- When on, the panel checks GitHub only while the Pi is connected to a WiFi network as a client (your home WiFi, the
+  one you use for SSH, or your phone's hotspot) — never on its own `SDR-Pi` hotspot: right after joining the WiFi and
+  then every 6 hours (at most once every 10 minutes).
+- The check is the same as **🔎 Check for updates** (`sdrkit update --check`): it fetches the public repository to read
+  the version number and the commit messages. Nothing is uploaded; GitHub sees the Pi's IP address as with any web visit.
+- If there is a new version, opening the panel shows a notice with the changes and two buttons: **⬇ Update now** or
+  **Later** (asks again the next day). **Only the notice is automatic: the update always needs a tap.**
+- The version next to **SDR-Kit** at the top shows the result: 🟢 up to date, 🟠 new version, ⚪ not checked. Tap it for
+  the details and the last check time.
+
+In demo mode set `SDRKIT_DEMO_LATEST=9.9.9` to pretend GitHub has a newer version.
+
 ## Update from the command line
 
 ```sh

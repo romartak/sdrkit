@@ -462,6 +462,13 @@ Cuando haya una versión nueva en GitHub (porque mejoraste algo o salió una act
 1. Conecta la Raspberry a **internet**: el WiFi de casa o el hotspot de tu celular.
 2. Por SSH ejecuta `sudo sdrkit actualizar`. También puedes usar el panel: **Más → Sistema → 🔎 Buscar actualizaciones → ⬇ Actualizar ahora**.
 
+**Avisos de versiones nuevas (opcional).** La primera vez que abres el panel te pregunta si quieres que te avise. Si
+dices que sí, con la Raspberry conectada a tu WiFi (la de casa, la misma que usas para SSH, o el hotspot del celular)
+revisa GitHub al conectarse y cada 6 horas. Si hay una versión nueva te aparece un aviso con los cambios y tú eliges
+«Actualizar ahora» o «Más tarde»: **lo único automático es el aviso, nunca la instalación**. No se envía ningún dato
+tuyo; sólo se lee información pública del repositorio. Se cambia en **Más → Sistema → Actualizaciones**. Arriba, junto a
+«SDR-Kit», ves tu versión con un punto: verde = al día, naranja = hay una nueva, gris = sin revisar.
+
 Qué hace:
 - Muestra la versión nueva y la lista de cambios, y pide confirmación.
 - Guarda una copia de la versión actual.

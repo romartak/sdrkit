@@ -344,6 +344,12 @@ sudo sdrkit actualizar        # o en inglés: sudo sdrkit update
 opciones nuevas se agregan solas. Después de instalar, SDR-Kit comprueba que el panel responde — **si no,
 vuelve sola a la versión anterior**. Para regresar a mano: `sudo sdrkit volver`.
 
+La versión que usas aparece junto a **SDR-Kit**, arriba en el panel, con un punto: 🟢 al día, 🟠 hay una versión nueva,
+⚪ todavía sin revisar. La primera vez que abres el panel te pregunta si quieres **avisos de versiones nuevas**: con la
+Raspberry en tu WiFi revisa GitHub al conectarse y cada 6 horas, y cuando hay una versión nueva te aparece un aviso para
+que **tú** decidas si instalarla. Nunca se instala nada sin tu confirmación y no se envía ningún dato tuyo (sólo se lee
+información pública del repositorio).
+
 ```mermaid
 flowchart LR
   U["sudo sdrkit actualizar"] --> S["Muestra los cambios"] --> I["Instala"] --> H{"¿Responde<br/>el panel?"}

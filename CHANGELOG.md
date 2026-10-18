@@ -6,6 +6,21 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-10-18
+
+### Added
+- **Welcome tour** the first time the panel is opened: what SDR-Kit is, what each tab does, the new-version notices
+  question and a link to support the project on GitHub. **More → System → About SDR-Kit** shows it again.
+- **New-version notices** (optional, asked on the first visit, off until the user says yes): while the Pi is on a WiFi
+  network (not its own hotspot) it checks GitHub when it connects and every 6 hours; when a new version is out a notice
+  shows the changes with **Update now** / **Later**. Only the notice is automatic — installing always needs a tap — and
+  no data is sent (only public repository information is read). Setting in **More → System → Updates**;
+  API `POST /api/system/autoupdate`, `update` in `/api/status`.
+- **Version in the header** next to "SDR-Kit", with a dot: green = up to date, orange = new version, grey = not checked.
+  Tap it for details, the last check time and the repository link.
+- `SDRKIT_DEMO_LATEST` simulates a newer version in demo mode; `&nointro=1` skips the tour (used by the screenshot tools).
+  Covered by `tests/test_update_notify.py` and the browser smoke test.
+
 ## [3.7.0] - 2026-10-18
 
 ### Added

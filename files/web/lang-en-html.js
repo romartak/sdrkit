@@ -227,6 +227,14 @@ I18N.add({
   "Un archivo por transmisión, aunque cierres el celular.": "One file per transmission, even with your phone locked.",
   "Se guardan en carpetas por fecha. Míralas en la pestaña Grabaciones.": "Saved in folders by date. See them in the Recordings tab.",
   "Repetición instantánea": "Instant replay",
+  "Avisarme cuando haya una versión nueva": "Tell me when a new version is out",
+  "Revisa GitHub sólo cuando la Raspberry está en tu WiFi. Nunca instala nada sin preguntarte.":
+    "Checks GitHub only while the Raspberry is on your WiFi. It never installs anything without asking you.",
+  "Acerca de SDR-Kit": "About SDR-Kit",
+  "SDR-Kit es un proyecto libre y gratuito (licencia MIT). Si te sirve, apóyalo con una ⭐ en GitHub, cuéntale a alguien o reporta lo que falle: así sigue creciendo.":
+    "SDR-Kit is a free, open-source project (MIT license). If it helps you, support it with a ⭐ on GitHub, tell someone about it or report what breaks: that keeps it growing.",
+  "⭐ Apoyar en GitHub": "⭐ Support on GitHub",
+  "👋 Ver la introducción": "👋 Show the introduction",
   "⏪ ¿Qué dijo?": "⏪ What did they say?",
   "💾 Guardar": "💾 Save",
   "El radio guarda siempre lo último que se oyó. Si no entendiste, tócalo y se repite.":
@@ -391,6 +399,8 @@ I18N.addHtml({
     'Monitor even with the panel closed<br><span class="muted small">The Raspberry keeps sweeping, logs occupancy and records alarms.</span>',
   'Panorama <span id="panSpan">±96 kHz</span> <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· toca para sintonizar</span>':
     'Panorama <span id="panSpan">±96 kHz</span> <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· tap to tune</span>',
+  'Avisarme cuando haya una versión nueva<br><span class="muted small" id="updNotifyInfo">Revisa GitHub sólo cuando la Raspberry está en tu WiFi. Nunca instala nada sin preguntarte.</span>':
+    'Tell me when a new version is out<br><span class="muted small" id="updNotifyInfo">Checks GitHub only while the Raspberry is on your WiFi. It never installs anything without asking you.</span>',
   'Grabar automáticamente cada transmisión<br><span class="muted small">Un archivo por transmisión, aunque cierres el celular.</span>':
     'Automatically record every transmission<br><span class="muted small">One file per transmission, even with your phone locked.</span>',
 

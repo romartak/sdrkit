@@ -24,6 +24,7 @@
   <div class="brand">
     <svg viewBox="0 0 24 24" fill="none" stroke="#ffd400" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 18h3l2-9 3 13 3-17 3 11 2-4h4"/></svg>
     SDR-Kit
+    <button type="button" class="verchip" id="verChip" aria-label="Versión"><span id="verTxt">v—</span><i class="vdot" id="verDot"></i></button>
   </div>
   <div class="chips">
     <span id="chipRec" class="chip recchip hidden blink">● REC</span>
@@ -769,7 +770,16 @@
       </div>
       <div id="updInfo" class="small" style="margin-top:10px"></div>
       <pre class="logs hidden" id="updLog"></pre>
+      <label class="switch"><span>Avisarme cuando haya una versión nueva<br><span class="muted small" id="updNotifyInfo">Revisa GitHub sólo cuando la Raspberry está en tu WiFi. Nunca instala nada sin preguntarte.</span></span><input type="checkbox" id="updNotify"></label>
       <p class="muted small" style="margin:10px 0 0">Necesita internet (WiFi de casa o hotspot del celular). Tu configuración, grabaciones y memorias no se tocan. Si la versión nueva falla, vuelve sola a la anterior.</p>
+    </div>
+    <div class="card" id="aboutCard">
+      <h3>Acerca de SDR-Kit</h3>
+      <p class="small" style="margin:0 0 10px">SDR-Kit es un proyecto libre y gratuito (licencia MIT). Si te sirve, apóyalo con una ⭐ en GitHub, cuéntale a alguien o reporta lo que falle: así sigue creciendo.</p>
+      <div class="row">
+        <a class="btn primary" id="repoLink" href="https://github.com/romartak/sdrkit" target="_blank" rel="noopener">⭐ Apoyar en GitHub</a>
+        <button class="btn" id="btnIntro">👋 Ver la introducción</button>
+      </div>
     </div>
     <div class="card">
       <h3>Idioma · Language</h3>
@@ -818,6 +828,14 @@
   </div>
 </div>
 
+<div id="wSheet" class="sheet wsheet hidden" role="dialog" aria-modal="true" aria-labelledby="wTitle">
+  <div class="sheet-card wcard">
+    <div class="sheet-head"><h2 id="wTitle">SDR-Kit</h2><button class="btn sm" id="wClose" aria-label="Cerrar">✕</button></div>
+    <div class="sheet-body" id="wBody"></div>
+    <div class="wfoot"><div class="wdots" id="wDots"></div><div class="row" id="wBtns"></div></div>
+  </div>
+</div>
+
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="busy" class="busy hidden"><div class="spinner"></div><div id="busyText">Un momento…</div><button class="btn sm" id="busyCancel">Cancelar</button></div>
 
@@ -832,6 +850,7 @@
 <script src="/recs.js"></script>
 <script src="/antenas.js"></script>
 <script src="/guia.js"></script>
+<script src="/welcome.js"></script>
 <script>SDR.init();</script>
 </body>
 </html>

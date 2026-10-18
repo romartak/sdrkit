@@ -342,3 +342,34 @@ details.card > summary .infobtn{margin-left:auto;margin-right:6px}
 .sheet-body li{margin-bottom:7px;line-height:1.45}
 .helptip{margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(255,212,0,.08);border:1px solid #5c5214;font-size:14px;line-height:1.45}
 @media (max-width:600px){#wf{height:clamp(80px,13vh,200px)}#spec{height:clamp(190px,32vh,420px)}}
+
+/* versión en la cabecera: punto verde = al día, naranja = hay versión nueva, gris = sin saber */
+.verchip{display:inline-flex;align-items:center;gap:5px;font:600 11px/1 var(--mono);color:var(--muted);background:var(--panel2);
+  border:1px solid var(--line);border-radius:99px;padding:4px 7px;cursor:pointer;letter-spacing:0}
+.verchip .vdot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.verchip.ok .vdot{background:var(--ok)}
+.verchip.old{color:var(--text);border-color:var(--warn)}
+.verchip.old .vdot{background:var(--warn);box-shadow:0 0 0 0 var(--warn);animation:vpulse 1.8s ease-out infinite}
+@keyframes vpulse{0%{box-shadow:0 0 0 0 rgba(255,176,32,.7)}100%{box-shadow:0 0 0 7px rgba(255,176,32,0)}}
+@media (prefers-reduced-motion:reduce){.verchip.old .vdot{animation:none}}
+
+/* bienvenida y avisos de versión */
+.wsheet{z-index:95}
+.wcard{display:flex;flex-direction:column}
+.wfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:12px;margin-top:8px;border-top:1px solid var(--line)}
+.wfoot .row{margin-left:auto}
+.wdots{display:flex;gap:6px}
+.wdots i{width:8px;height:8px;border-radius:50%;background:var(--line2)}
+.wdots i.on{background:var(--accent);width:20px;border-radius:99px}
+.whero{text-align:center;padding:8px 0 4px}
+.whero svg{width:64px;height:64px;filter:drop-shadow(0 0 18px rgba(255,212,0,.35))}
+.whero h3{font-size:24px;margin:10px 0 4px;letter-spacing:.2px;text-transform:none;color:var(--text)}
+.whero .wver{display:inline-block;font:600 12px var(--mono);color:var(--accent);border:1px solid #5c5214;border-radius:99px;padding:3px 9px}
+.whero p{color:var(--muted);max-width:440px;margin:12px auto 0}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.wgrid div{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.wgrid b{display:block;margin-bottom:2px}
+.wgrid span{color:var(--muted);font-size:13px;line-height:1.35}
+.wnote{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px}
+.wnote.y{border-left-color:var(--accent)}
+.wchanges{margin:8px 0 0;padding-left:20px;font-size:14px}

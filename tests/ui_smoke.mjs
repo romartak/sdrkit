@@ -26,6 +26,20 @@ for (const lang of ["en", "es"]) {
   await page.goto(`${base}/?lang=${lang}&i18n=debug`);
   await page.waitForTimeout(1500);
 
+  // first visit: the welcome tour (and, the first time, the question about new-version notices)
+  try {
+    await page.waitForSelector("#wSheet:not(.hidden)", { timeout: 5000 });
+    for (let i = 0; i < 6 && !(await page.$('[data-w="done"]')); i++) {
+      await page.click('[data-w="next"], [data-w="yes"]', { timeout: 3000 });
+      await page.waitForTimeout(300);
+    }
+    await page.click('[data-w="done"]', { timeout: 3000 });
+    await page.waitForSelector("#wSheet.hidden", { state: "attached", timeout: 3000 });
+    const ver = await page.textContent("#verTxt");
+    if (!/^v\d+\.\d+\.\d+$/.test(ver)) fail(`${lang}: version chip shows "${ver}"`);
+    await page.click("#verChip"); await page.waitForTimeout(300); await page.click("#wClose");
+  } catch (e) { fail(`${lang}: welcome tour: ${e.message.split("\n")[0]}`); }
+
   const htmlLang = await page.evaluate(() => document.documentElement.lang);
   if (htmlLang !== lang) fail(`${lang}: <html lang> is "${htmlLang}"`);
   const tabs = (await page.locator(".tabbar button").allInnerTexts()).map((t) => t.trim());

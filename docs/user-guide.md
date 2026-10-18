@@ -415,7 +415,11 @@ Dimensioned drawings for dipole, ground-plane, J-pole, 3-element Yagi, satellite
 
 - **Tiles:** temperature (red above 75 °C), CPU and load, memory, disk, power (undervoltage now or since boot), uptime, detected SDR and analyzer engine, version.
 - **Access addresses:** `http://<hostname>.local`, and the panel and advanced-receiver URLs for every IP, including Tailscale.
-- **Updates:** **🔎 Check for updates**, then **⬇ Update now**. See [Updating](updating.md).
+- **Updates:** **🔎 Check for updates**, then **⬇ Update now**. **Tell me when a new version is out** turns on the
+  optional new-version notices (checked only while the Pi is on your WiFi; nothing is installed without a tap). The
+  version and its dot (🟢 up to date, 🟠 new version, ⚪ not checked) are always at the top next to **SDR-Kit**. See
+  [Updating](updating.md#new-version-notices-optional).
+- **About SDR-Kit:** link to the GitHub repository (a ⭐ helps the project) and **👋 Show the introduction** again.
 - **Language:** English / Español.
 - **Maintenance:** **📄 View logs** (last 200 lines of the SDR-Kit services), **🔄 Restart** (reboots the Pi), **⏻ Shut down**, **Log out** (shown only when a password is set).
 

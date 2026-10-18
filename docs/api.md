@@ -330,10 +330,15 @@ Messages are produced by the radio's `data` decoders ([`POST /api/radio`](#post-
 |---|---|---|
 | `GET` | `/api/system/update` | Runs the updater in check mode (up to 60 s): `{"ok", "online", "current", "current_commit", "latest", "latest_commit", "behind", "full", "changes": [subjects], "repo", "branch"}` or `{"ok": false, "online", "error"}` |
 | `POST` | `/api/system/update` | Starts the update in the transient unit `sdrkit-update` → `{"ok": true}`; `400` if one is running |
+| `POST` | `/api/system/autoupdate` | `{"on": true \| false}` — new-version notices (the panel asks on first visit) → `{"ok": true, "notify": bool}`; turning it on checks GitHub right away |
 | `GET` | `/api/system/update/log` | Last 40 lines of `/var/log/sdrkit-update.log` (`text/plain`) |
 | `GET` | `/api/logs` | Last 200 journal lines of `sdrkit`, `sdrkit-netwatch`, `openwebrx` (`text/plain`) |
 | `POST` | `/api/system/reboot` | Reboots after 1.5 s |
 | `POST` | `/api/system/poweroff` | Powers off after 1.5 s |
+
+`GET /api/status` includes `update`: `{"notify": null | bool, "checked", "ok", "online", "current", "latest", "behind",
+"full", "changes"}` — the last check (manual or automatic), used for the dot next to the version. `notify` is `null`
+until the user answers.
 
 In demo mode the update, reboot and power-off routes return `{"ok": true, "demo": true}` without doing anything.
 
@@ -386,5 +391,6 @@ curl -s -b jar.txt $PI/api/system/update | python3 -m json.tool
 | GET | `/api/wifi` | [WiFi](#wifi) |
 | POST | `/api/wifi/scan`, `/api/wifi/add`, `/api/wifi/connect`, `/api/wifi/delete`, `/api/wifi/mode` | [WiFi](#wifi) |
 | GET/POST | `/api/system/update` | [System](#system-and-updates) |
+| POST | `/api/system/autoupdate` | [System](#system-and-updates) |
 | GET | `/api/system/update/log`, `/api/logs` | [System](#system-and-updates) |
 | POST | `/api/system/reboot`, `/api/system/poweroff` | [System](#system-and-updates) |

@@ -23,7 +23,7 @@ async function phone(lang = "en") {
   const page = await ctx.newPage();
   page.on("pageerror", (e) => errors.push(`${lang}: ${e.message}`));
   page.on("dialog", (d) => d.accept(d.type() === "prompt" ? "Demo" : undefined));
-  await page.goto(`${base}/?lang=${lang}`);
+  await page.goto(`${base}/?lang=${lang}&nointro=1`);
   await page.waitForTimeout(2500);
   return page;
 }
@@ -138,7 +138,7 @@ const tab = async (page, t, sub) => {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1.5, locale: "en-US" });
   const dp = await ctx.newPage();
   dp.on("pageerror", (e) => errors.push(`desktop: ${e.message}`));
-  await dp.goto(`${base}/?lang=en`); await dp.waitForTimeout(2000);
+  await dp.goto(`${base}/?lang=en&nointro=1`); await dp.waitForTimeout(2000);
   await preset(dp, 0); await dp.waitForTimeout(4000);
   await dp.click("#tnNext"); await dp.waitForTimeout(1500);
   await shot(dp, "desktop");

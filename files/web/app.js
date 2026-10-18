@@ -351,9 +351,10 @@ const Upd = {
       }
     } catch (e) { $("#updInfo").textContent = "⚠ " + _t(e.message); }
     b.disabled = false; b.textContent = _t("🔎 Buscar actualizaciones");
+    SDR.pollStatus();   // el punto de color junto a la versión refleja esta consulta
   },
-  async apply() {
-    if (!confirm(_t("¿Actualizar ahora? El panel se reiniciará (≈1 minuto). Tu configuración y tus grabaciones se conservan."))) return;
+  async apply(confirmed) {
+    if (confirmed !== true && !confirm(_t("¿Actualizar ahora? El panel se reiniciará (≈1 minuto). Tu configuración y tus grabaciones se conservan."))) return;
     try {
       const r = await SDR.api("/api/system/update", {});
       if (r.demo) { SDR.toast(_t("Modo demo: no se actualiza nada.")); return; }
@@ -379,7 +380,7 @@ const Upd = {
   },
 };
 $("#btnUpdCheck").addEventListener("click", Upd.check);
-$("#btnUpdApply").addEventListener("click", Upd.apply);
+$("#btnUpdApply").addEventListener("click", () => Upd.apply());
 
 $("#btnLogs").addEventListener("click", async () => {
   const pre = $("#logs");

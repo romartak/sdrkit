@@ -332,6 +332,12 @@ settings are merged in automatically. After installing, SDR-Kit checks that the 
 not, it rolls back to the previous version by itself**. `sudo sdrkit rollback` goes back by hand.
 Details: [docs/updating.md](docs/updating.md).
 
+The version you run is shown next to **SDR-Kit** at the top of the panel, with a dot: 🟢 up to date, 🟠 a new version is
+out, ⚪ not checked yet. The first time you open the panel it asks whether you want **new-version notices**: while the
+Pi is on your WiFi it checks GitHub when it connects and every 6 hours, and when there is a new version a notice pops up
+so **you** decide whether to install it. Nothing is installed without your confirmation and no data of yours is sent
+(only public repository information is read).
+
 ```mermaid
 flowchart LR
   U["sudo sdrkit update"] --> S["Show changes"] --> I["Install"] --> H{"Panel<br/>answers?"}
