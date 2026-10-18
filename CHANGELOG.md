@@ -6,6 +6,8 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-10-18
+
 ### Changed
 - **"Instrumento" look for the whole panel** (`files/web/app.css`, a CSS-only layer, no logic touched): deeper graphite
   surfaces with hairline borders and soft depth, rounder cards, tuned buttons and segmented controls, a glowing yellow

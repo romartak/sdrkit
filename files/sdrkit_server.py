@@ -55,7 +55,7 @@ def _read_version():
                     return v
         except OSError:
             pass
-    return "3.9.0"
+    return "3.10.0"
 
 
 VERSION = _read_version()
