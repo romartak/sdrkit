@@ -173,4 +173,48 @@ I18N.add({
   "🔕 Avisos de versiones nuevas: <b>desactivados</b>. Actívalos en Más → Sistema → Actualizaciones.":
     "🔕 New version notices: <b>off</b>. Turn them on in More → System → Updates.",
   "🔎 Buscar ahora": "🔎 Check now",
+
+  // ---------------------------------------------------------------- welcome.js · roadmap, rate and share
+  "SDR-Kit: convierte una Raspberry Pi y un dongle SDR en un laboratorio de radio manejado desde el celular. Gratis y de código abierto.":
+    "SDR-Kit: turns a Raspberry Pi and an SDR dongle into a radio lab run from your phone. Free and open source.",
+  "Correo": "Email",
+  "Calificar el proyecto": "Rate the project",
+  "Toca las estrellas para calificar SDR-Kit. Tu calificación se guarda sólo en este celular: no se envía a ningún lado.":
+    "Tap the stars to rate SDR-Kit. Your rating is kept only on this phone: it is not sent anywhere.",
+  "¡Gracias! Si puedes, dale también una ⭐ en GitHub: es lo que más ayuda a que el proyecto crezca.":
+    "Thank you! If you can, also give it a ⭐ on GitHub: it is what helps the project grow most.",
+  "Dar una estrella en GitHub": "Star it on GitHub",
+  "Gracias por decirlo con franqueza. ¿Qué mejorarías? Cuéntanoslo en GitHub y lo tendremos en cuenta.":
+    "Thanks for being frank. What would you improve? Tell us on GitHub and we will take it into account.",
+  "Contar qué mejorar": "Tell us what to improve",
+  "Compartir…": "Share…",
+  "Copiar el enlace": "Copy the link",
+  "Enlace copiado.": "Link copied.",
+  "Esto es lo que quiero construir con SDR-Kit. Una función nueva cada día, todas gratis y de código abierto.":
+    "This is what I want to build with SDR-Kit. A new feature every day, all free and open source.",
+  "Lo próximo": "Up next",
+  "La gran visión": "The big vision",
+  "Ver todo el roadmap": "See the whole roadmap",
+  "Roadmap": "Roadmap",
+  "Lo que viene en SDR-Kit, en orden. Una función nueva cada día; las que dependen de otras van después.":
+    "What is coming to SDR-Kit, in order. A new feature every day; the ones that depend on others come later.",
+  "Fase {n}": "Phase {n}",
+  "Todo lo que se agregue seguirá siendo opcional y apagado por defecto cuando necesite internet o cuentas. SDR-Kit sólo recibe; lo único que transmitiría (PTT) será para equipos y bandas con permiso, y compartir audio en la red mundial será siempre una decisión tuya.":
+    "Everything added will stay optional and off by default when it needs internet or accounts. SDR-Kit only receives; the only thing it would transmit (PTT) will be for equipment and bands you are licensed for, and sharing audio on the worldwide network will always be your decision.",
+  "¿Tienes una idea o quieres ayudar?": "Have an idea or want to help?",
+  "Cuéntala en GitHub": "Tell us on GitHub",
+  "← Volver": "← Back",
+  "Compartir SDR-Kit": "Share SDR-Kit",
+  "Si SDR-Kit te sirve, cuéntaselo a alguien: así llega a más gente que ama la radio.":
+    "If SDR-Kit is useful to you, tell someone: that is how it reaches more people who love radio.",
+  "Calificar SDR-Kit": "Rate SDR-Kit",
+  "¿Qué tal te parece SDR-Kit hasta ahora?": "How do you like SDR-Kit so far?",
+  "Hacia dónde va": "Where it is heading",
+  "SDR-Kit es libre y gratuito. Si te gusta, califícalo, dale una estrella en GitHub o compártelo: eso ayuda a que siga mejorando.":
+    "SDR-Kit is free and open source. If you like it, rate it, star it on GitHub or share it: that helps it keep improving.",
+  "Compartir": "Share",
+  "{n} estrella": "{n} star",
+  "{n} estrellas": "{n} stars",
+  "{n} de {total} funciones lista": "{n} of {total} features done",
+  "{n} de {total} funciones listas": "{n} of {total} features done",
 });

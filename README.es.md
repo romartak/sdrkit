@@ -334,6 +334,15 @@ o `0bda:2832`. Un power bank débil suele ser la causa.
 
 </details>
 
+## 🗺 Roadmap, calificar y compartir
+
+El panel muestra hacia dónde va el proyecto (**Más → Sistema → Acerca de SDR-Kit → Roadmap**, y también en la
+bienvenida): una función nueva por día, desde la repetición instantánea y las alertas de aviones hasta un **servidor
+unificado** a futuro donde cualquiera podría conectar su Pi y escuchar las Pi de todo el mundo — siempre opcional, apagado
+por defecto y tú decides qué compartes. Puedes calificar el proyecto (las estrellas se quedan en tu dispositivo),
+compartirlo (WhatsApp, Telegram, X, Facebook, correo, copiar enlace) o dejarle una ⭐ en GitHub. El plan completo está en
+[ROADMAP.md](ROADMAP.md).
+
 ## 🔄 Actualizaciones que no rompen nada
 
 ```bash
@@ -412,7 +421,7 @@ Sin nube, sin cuentas, sin telemetría.
 | [Guía completa en español](docs/es/GUIA.md) | Compras, montaje, instalación, cada pestaña, antenas, voz digital, actualizaciones y problemas |
 | [Documentación técnica (inglés)](docs/README.md) | Arquitectura, API HTTP, configuración, desarrollo |
 | [Historial de versiones](CHANGELOG.md) · [Cómo contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md) | Proyecto |
-| [Plan diario de funciones](ROADMAP.md) | 34 funciones nuevas, una por día: qué viene y qué ya está hecho |
+| [Plan diario de funciones](ROADMAP.md) | 34 funciones nuevas, una por día, y la visión a futuro (un servidor unificado para escuchar las Pi de todo el mundo): qué viene y qué ya está hecho |
 
 ## ⚖️ Legal
 

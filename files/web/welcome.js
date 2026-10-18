@@ -1,9 +1,9 @@
-/* SDR-Kit · Bienvenida, versión en la cabecera y aviso de versiones nuevas (opcional, el usuario decide) */
+/* SDR-Kit · Bienvenida, roadmap, calificar y compartir, versión en la cabecera y aviso de versiones nuevas (opcional, el usuario decide) */
 "use strict";
 const Welcome = (() => {
   const REPO = "https://github.com/romartak/sdrkit";
   const LOGO = '<svg viewBox="0 0 24 24" fill="none" stroke="#ffd400" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 18h3l2-9 3 13 3-17 3 11 2-4h4"/></svg>';
-  const W = {steps: [], i: 0, kind: null, started: false, off: false, updFor: null};
+  const W = {steps: [], i: 0, kind: null, started: false, off: false, updFor: null, back: null};
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* almacenamiento bloqueado */ } },
@@ -24,15 +24,24 @@ const Welcome = (() => {
   }
 
   // ------------------------------------------------------------ hoja (bienvenida / avisos)
-  function open(kind, steps) {
-    W.kind = kind; W.steps = steps; W.i = 0;
+  function open(kind, steps, back) {
+    W.kind = kind; W.steps = steps; W.i = 0; W.back = back || null;
+    if (kind === "welcome") store.set("sdrkit.welcome", "1");   // ya la vio: no vuelve a salir sola
     $("#wSheet").classList.remove("hidden");
     render();
   }
+  // abre una hoja encima de la actual (p. ej. el roadmap desde la bienvenida) y «← Volver» regresa a ella
+  function push(kind, steps) {
+    open(kind, steps, W.kind ? {kind: W.kind, steps: W.steps, i: W.i} : null);
+  }
+  function pop() {
+    const b = W.back; if (!b) return close();
+    W.kind = b.kind; W.steps = b.steps; W.i = b.i; W.back = null;
+    render();
+  }
   function close() {
-    if (W.kind === "welcome") store.set("sdrkit.welcome", "1");
     $("#wSheet").classList.add("hidden");
-    W.kind = null;
+    W.kind = null; W.back = null;
   }
   function render() {
     const st = W.steps[W.i];
@@ -48,6 +57,93 @@ const Welcome = (() => {
     const first = $("#wBtns .primary"); if (first) first.focus();
   }
   function go(d) { W.i = Math.max(0, Math.min(W.steps.length - 1, W.i + d)); render(); }
+
+  // ------------------------------------------------------------ calificar y compartir
+  // La calificación se guarda sólo en este navegador: no se envía a ningún servidor.
+  const getRating = () => { const n = +store.get("sdrkit.rating"); return n >= 1 && n <= 5 ? n : 0; };
+  const shareText = () => _t("SDR-Kit: convierte una Raspberry Pi y un dongle SDR en un laboratorio de radio manejado desde el celular. Gratis y de código abierto.");
+  const enc = encodeURIComponent;
+  function shareLinks() {
+    const t = shareText();
+    return [
+      ["WhatsApp", "💬", "https://wa.me/?text=" + enc(t + " " + REPO)],
+      ["Telegram", "✈️", "https://t.me/share/url?url=" + enc(REPO) + "&text=" + enc(t)],
+      ["X", "🐦", "https://twitter.com/intent/tweet?text=" + enc(t) + "&url=" + enc(REPO)],
+      ["Facebook", "📘", "https://www.facebook.com/sharer/sharer.php?u=" + enc(REPO)],
+      [_t("Correo"), "✉️", "mailto:?subject=" + enc("SDR-Kit") + "&body=" + enc(t + "\n\n" + REPO)],
+    ];
+  }
+  const starsHtml = () => {
+    const r = getRating();
+    return `<div class="stars" role="group" aria-label="${SDR.esc(_t("Calificar el proyecto"))}">` +
+      [1, 2, 3, 4, 5].map(n => `<button type="button" data-rate="${n}" class="${n <= r ? "on" : ""}" aria-label="${SDR.esc(_tn(n, "{n} estrella", "{n} estrellas"))}">★</button>`).join("") + "</div>";
+  };
+  const ratingNote = () => {
+    const r = getRating();
+    if (!r) return `<p class="muted small">${_t("Toca las estrellas para calificar SDR-Kit. Tu calificación se guarda sólo en este celular: no se envía a ningún lado.")}</p>`;
+    return r >= 4
+      ? `<p>${_t("¡Gracias! Si puedes, dale también una ⭐ en GitHub: es lo que más ayuda a que el proyecto crezca.")}</p>
+         <p><a class="btn primary" href="${REPO}" target="_blank" rel="noopener">⭐ ${_t("Dar una estrella en GitHub")}</a></p>`
+      : `<p>${_t("Gracias por decirlo con franqueza. ¿Qué mejorarías? Cuéntanoslo en GitHub y lo tendremos en cuenta.")}</p>
+         <p><a class="btn" href="${REPO}/issues/new/choose" target="_blank" rel="noopener">💬 ${_t("Contar qué mejorar")}</a></p>`;
+  };
+  const shareBox = () => `<div class="wshare">` +
+    (navigator.share ? `<button type="button" class="btn primary" data-native="1">📤 ${_t("Compartir…")}</button>` : "") +
+    shareLinks().map(([name, ico, url]) => `<a class="btn" href="${SDR.esc(url)}" target="_blank" rel="noopener">${ico} ${SDR.esc(name)}</a>`).join("") +
+    `<button type="button" class="btn" data-copy="1">🔗 ${_t("Copiar el enlace")}</button></div>`;
+  async function copyLink() {
+    try { await navigator.clipboard.writeText(REPO); SDR.toast(_t("Enlace copiado.")); }
+    catch (e) {
+      const ta = document.createElement("textarea"); ta.value = REPO; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); SDR.toast(_t("Enlace copiado.")); } catch (e2) { SDR.toast(REPO); }
+      ta.remove();
+    }
+  }
+  async function nativeShare() {
+    try { await navigator.share({title: "SDR-Kit", text: shareText(), url: REPO}); } catch (e) { /* canceló */ }
+  }
+
+  // ------------------------------------------------------------ roadmap
+  const rmItem = (x, hl) => {
+    const t = Roadmap.itemText(x);
+    return `<li class="rmi ${x[1]}${hl ? " vision" : ""}"><span class="rmic" aria-hidden="true">${hl ? "🌍" : Roadmap.ICON[x[1]]}</span>
+      <div><b>${SDR.esc(t.t)}</b><span>${SDR.esc(t.d)}</span></div></li>`;
+  };
+  const rmBar = () => { const c = Roadmap.counts();
+    return `<div class="rmbar" aria-hidden="true"><i style="width:${Math.max(3, Math.round(100 * c.done / c.total))}%"></i></div>
+      <p class="muted small" style="margin:6px 0 0">${_tn(c.done, "{n} de {total} funciones lista", "{n} de {total} funciones listas", {total: c.total})}</p>`; };
+  function roadmapPreview() {
+    const nx = Roadmap.next(), vision = Roadmap.all().find(x => x[0] === 35);
+    return `<p>${_t("Esto es lo que quiero construir con SDR-Kit. Una función nueva cada día, todas gratis y de código abierto.")}</p>${rmBar()}
+      <h4>${_t("Lo próximo")}</h4><ul class="rmlist">${rmItem(nx)}</ul>
+      <h4>${_t("La gran visión")}</h4><ul class="rmlist">${rmItem(vision, true)}</ul>
+      <p style="margin-top:12px"><button type="button" class="btn" data-open="roadmap">🗺 ${_t("Ver todo el roadmap")}</button></p>`;
+  }
+  function roadmapSteps() {
+    return [{
+      title: _t("Roadmap"),
+      body: () => `<p>${_t("Lo que viene en SDR-Kit, en orden. Una función nueva cada día; las que dependen de otras van después.")}</p>${rmBar()}` +
+        Roadmap.PHASES.map(p => `<h4>${_t("Fase {n}", {n: p[0]})} · ${SDR.esc(Roadmap.phaseName(p))}</h4><ul class="rmlist">${p[2].map(x => rmItem(x, x[0] === 35)).join("")}</ul>`).join("") +
+        `<div class="wnote y">${_t("Todo lo que se agregue seguirá siendo opcional y apagado por defecto cuando necesite internet o cuentas. SDR-Kit sólo recibe; lo único que transmitiría (PTT) será para equipos y bandas con permiso, y compartir audio en la red mundial será siempre una decisión tuya.")}</div>
+        <p class="small">${_t("¿Tienes una idea o quieres ayudar?")} <a href="${REPO}/issues/new/choose" target="_blank" rel="noopener">${_t("Cuéntala en GitHub")}</a> · <a href="${REPO}/blob/main/ROADMAP.md" target="_blank" rel="noopener">ROADMAP.md</a></p>`,
+      buttons: () => [[W.back ? "back2" : "ok", W.back ? _t("← Volver") : _t("Cerrar"), "primary"]],
+    }];
+  }
+  function shareSteps() {
+    return [{
+      title: _t("Compartir SDR-Kit"),
+      body: () => `<p>${_t("Si SDR-Kit te sirve, cuéntaselo a alguien: así llega a más gente que ama la radio.")}</p>${shareBox()}
+        <p class="muted small mono" style="margin-top:12px">${REPO.replace("https://", "")}</p>`,
+      buttons: () => [[W.back ? "back2" : "ok", W.back ? _t("← Volver") : _t("Cerrar"), "primary"]],
+    }];
+  }
+  function rateSteps() {
+    return [{
+      title: _t("Calificar SDR-Kit"),
+      body: () => `<div class="whero"><p style="margin-top:0">${_t("¿Qué tal te parece SDR-Kit hasta ahora?")}</p>${starsHtml()}</div>${ratingNote()}`,
+      buttons: () => [[W.back ? "back2" : "ok", W.back ? _t("← Volver") : _t("Cerrar"), "primary"]],
+    }];
+  }
 
   async function setNotify(on, quiet) {
     try {
@@ -85,10 +181,11 @@ const Welcome = (() => {
         <div><b>🎙 ${_t("Grabaciones")}</b><span>${_t("Todo lo que grabas, ordenado por día, con su registro de actividad.")}</span></div></div>
         <p class="muted small">${_t("Toca cualquier ⓘ del panel para saber qué hace cada parte, o el «?» de arriba para la guía rápida.")}</p>`},
     ];
+    steps.push({title: _t("Hacia dónde va"), body: roadmapPreview});
     if (upd().notify == null) steps.push(stepUpdates);
-    steps.push({title: _t("Apoya el proyecto"), body: () => `<div class="whero">⭐<p>${_t("SDR-Kit es libre y gratuito. Si te gusta, dale una estrella en GitHub, compártelo o reporta lo que falle: eso ayuda a que siga mejorando.")}</p>
-      <p><a class="btn primary" href="${REPO}" target="_blank" rel="noopener">⭐ ${_t("Ver el repositorio en GitHub")}</a></p>
-      <p class="muted small mono">${REPO.replace("https://", "")}</p></div>`});
+    steps.push({title: _t("Apoya el proyecto"), body: () => `<div class="whero"><p style="margin-top:0">${_t("SDR-Kit es libre y gratuito. Si te gusta, califícalo, dale una estrella en GitHub o compártelo: eso ayuda a que siga mejorando.")}</p>${starsHtml()}</div>
+      ${ratingNote()}<h4>${_t("Compartir")}</h4>${shareBox()}
+      <p class="small" style="margin-top:12px"><a href="${REPO}" target="_blank" rel="noopener">⭐ ${_t("Ver el repositorio en GitHub")}</a></p>`});
     return steps;
   }
 
@@ -119,6 +216,7 @@ const Welcome = (() => {
   }
 
   async function onButton(id) {
+    if (id === "back2") return pop();
     if (id === "next") return go(1);
     if (id === "back") return go(-1);
     if (id === "yes" || id === "no") {
@@ -162,6 +260,16 @@ const Welcome = (() => {
   function init() {
     $("#verChip").addEventListener("click", () => open("version", versionSteps()));
     $("#wBtns").addEventListener("click", ev => { const b = ev.target.closest("[data-w]"); if (b) onButton(b.dataset.w); });
+    $("#wBody").addEventListener("click", ev => {   // calificar, compartir y abrir el roadmap desde dentro de una hoja
+      const r = ev.target.closest("[data-rate]"), o = ev.target.closest("[data-open]");
+      if (r) { store.set("sdrkit.rating", r.dataset.rate); render(); return; }
+      if (o) return push("roadmap", roadmapSteps());
+      if (ev.target.closest("[data-copy]")) return copyLink();
+      if (ev.target.closest("[data-native]")) return nativeShare();
+    });
+    $("#btnRoadmap").addEventListener("click", () => open("roadmap", roadmapSteps()));
+    $("#btnRate").addEventListener("click", () => open("rate", rateSteps()));
+    $("#btnShare").addEventListener("click", () => open("share", shareSteps()));
     $("#wClose").addEventListener("click", close);
     $("#wSheet").addEventListener("click", ev => { if (ev.target.id === "wSheet") close(); });
     document.addEventListener("keydown", ev => { if (ev.key === "Escape" && W.kind) close(); });

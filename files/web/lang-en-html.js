@@ -234,7 +234,10 @@ I18N.add({
   "SDR-Kit es un proyecto libre y gratuito (licencia MIT). Si te sirve, apóyalo con una ⭐ en GitHub, cuéntale a alguien o reporta lo que falle: así sigue creciendo.":
     "SDR-Kit is a free, open-source project (MIT license). If it helps you, support it with a ⭐ on GitHub, tell someone about it or report what breaks: that keeps it growing.",
   "⭐ Apoyar en GitHub": "⭐ Support on GitHub",
-  "👋 Ver la introducción": "👋 Show the introduction",
+  "🗺 Roadmap": "🗺 Roadmap",
+  "★ Calificar": "★ Rate",
+  "📤 Compartir": "📤 Share",
+  "👋 Introducción": "👋 Introduction",
   "⏪ ¿Qué dijo?": "⏪ What did they say?",
   "💾 Guardar": "💾 Save",
   "El radio guarda siempre lo último que se oyó. Si no entendiste, tócalo y se repite.":

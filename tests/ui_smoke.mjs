@@ -38,6 +38,25 @@ for (const lang of ["en", "es"]) {
     const ver = await page.textContent("#verTxt");
     if (!/^v\d+\.\d+\.\d+$/.test(ver)) fail(`${lang}: version chip shows "${ver}"`);
     await page.click("#verChip"); await page.waitForTimeout(300); await page.click("#wClose");
+    // About card: roadmap (all 35 features, the unified server last), rating and sharing
+    await page.click('.tabbar [data-tab="more"]'); await page.click('#moreNav [data-sub="sys"]');
+    await page.click("#btnIntro"); await page.click('[data-w="next"]'); await page.click('[data-w="next"]');
+    await page.click('[data-open="roadmap"]');
+    if (!(await page.$('[data-w="back2"]'))) fail(`${lang}: roadmap opened from the tour has no Back button`);
+    await page.click('[data-w="back2"]'); await page.waitForSelector('[data-open="roadmap"]', { timeout: 3000 });
+    await page.click("#wClose");
+    await page.click("#btnRoadmap"); await page.waitForTimeout(300);
+    const n = await page.locator("#wBody .rmi").count();
+    if (n !== 35) fail(`${lang}: roadmap shows ${n} features, expected 35`);
+    if (!(await page.locator("#wBody .rmi.vision").innerText()).match(/Network|SDR-Kit/)) fail(`${lang}: roadmap vision item missing`);
+    await page.click("#wClose");
+    await page.click("#btnRate"); await page.click('[data-rate="5"]'); await page.waitForTimeout(200);
+    if ((await page.locator("#wBody .stars button.on").count()) !== 5) fail(`${lang}: rating not shown`);
+    await page.click("#wClose");
+    await page.click("#btnShare"); await page.waitForTimeout(200);
+    if ((await page.locator("#wBody .wshare a").count()) < 4) fail(`${lang}: share links missing`);
+    await page.click("#wClose");
+    await page.click('.tabbar [data-tab="an"]');
   } catch (e) { fail(`${lang}: welcome tour: ${e.message.split("\n")[0]}`); }
 
   const htmlLang = await page.evaluate(() => document.documentElement.lang);

@@ -1,7 +1,7 @@
 # 🗺️ SDR-Kit · Plan diario de funciones
 
-Una función nueva por día, en este orden. Las primeras aprovechan lo que el kit ya tiene; las que dependen de otras
-van después. Cada día se toma **la primera casilla ☐** de la lista.
+Una función nueva por día, en este orden (34 funciones, más una visión a futuro: el servidor unificado). Las primeras aprovechan lo que el kit ya tiene; las que dependen de otras
+van después. Cada día se toma **la primera casilla ☐** de la lista (salvo la #35, que primero se diseña: ver su fila).
 
 Estado: ☐ pendiente · ◐ hecha en parte (ver nota) · ✅ terminada (fecha · versión)
 
@@ -19,7 +19,9 @@ Estado: ☐ pendiente · ◐ hecha en parte (ver nota) · ✅ terminada (fecha �
 6. **Honesto**: si algo depende de hardware que no se puede probar, se simula, se prueba la parte de software y se dice
    claramente en la documentación qué falta verificar con hardware real.
 7. **Legal**: el kit sólo recibe. Lo que toque privacidad (TPMS, medidores, monitoreo de personal) lleva su aviso; la
-   única función que transmite (#34) va al final, apagada por defecto y sólo para equipos y bandas autorizadas.
+   única función que transmite por radio (#34) va casi al final, apagada por defecto y sólo para equipos y bandas
+   autorizadas. La única que **comparte audio por internet** (#35, servidor unificado) es la última: siempre opcional,
+   apagada por defecto, y cada usuario elige qué comparte.
 8. **Publicación**: commit a nombre de `romartak <dr.robinsonsantos113@gmail.com>`, sin menciones a herramientas de IA
    en commits ni archivos; push a `main`; versión menor nueva (`VERSION`, `version()` en `sdrkit_server.py`,
    `CHANGELOG.md`) y release con el workflow **Release**. Al final, marcar aquí la casilla con fecha y versión.
@@ -92,3 +94,9 @@ Estado: ☐ pendiente · ◐ hecha en parte (ver nota) · ✅ terminada (fecha �
 | 32 | ☐ | **Respaldo en la nube** | Copia opcional de grabaciones y configuración (rclone: Google Drive, Dropbox…), apagada por defecto. |
 | 33 | ☐ | **Más equipos: Airspy, SDRplay, Pi 5** | Soporte detectado automáticamente, con pruebas simuladas como las de la V3. |
 | 34 | ☐ | **Hablar por tus radios (PTT)** | Con un walkie conectado por audio + PTT, hablarle a tu equipo desde el panel. Apagado por defecto, con aviso legal: sólo equipos y bandas en las que tengas permiso de transmitir. |
+
+## Fase 8 · Visión a futuro
+
+| # | Estado | Función | Listo cuando… |
+|---|---|---|---|
+| 35 | ☐ | **Servidor unificado (SDR-Kit Network)** | Un servidor al que cualquiera puede conectar su Pi para compartir su recepción y escuchar las Pi de otras personas en todos los países, con mapa mundial. Opt-in y apagado por defecto: cada quien elige qué comparte (sólo canales públicos o sin licencia, nunca cifrados ni privados), con aviso legal por país, moderación, límites de ancho de banda y la opción de apagarlo en cualquier momento. Requiere diseñar el servidor, la seguridad y el protocolo antes de escribir código. |

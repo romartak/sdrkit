@@ -373,3 +373,22 @@ details.card > summary .infobtn{margin-left:auto;margin-right:6px}
 .wnote{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px}
 .wnote.y{border-left-color:var(--accent)}
 .wchanges{margin:8px 0 0;padding-left:20px;font-size:14px}
+
+/* roadmap, calificar y compartir */
+.rmbar{height:8px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;margin-top:10px}
+.rmbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--ok));border-radius:99px}
+.rmlist{list-style:none;margin:0;padding:0}
+.sheet-body .rmlist li{margin:0}
+.rmi{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line)}
+.rmi:last-child{border-bottom:0}
+.rmic{flex:none;width:22px;text-align:center;font-size:16px;line-height:1.3;color:var(--muted)}
+.rmi b{display:block;font-weight:600}
+.rmi span:not(.rmic){display:block;color:var(--muted);font-size:13px;line-height:1.35}
+.rmi.done b{color:var(--ok)}
+.rmi.vision{background:linear-gradient(90deg,rgba(255,212,0,.08),transparent);border:1px solid #5c5214;border-radius:10px;padding:10px;margin-top:2px}
+.stars{display:flex;justify-content:center;gap:4px;margin:6px 0 2px}
+.stars button{background:none;border:0;padding:2px 4px;font-size:34px;line-height:1;color:var(--line2);cursor:pointer;transition:transform .12s}
+.stars button.on{color:var(--accent)}
+.stars button:active{transform:scale(1.2)}
+.wshare{display:flex;flex-wrap:wrap;gap:8px}
+.wshare .btn{flex:1 1 130px;text-decoration:none}

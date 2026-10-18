@@ -6,6 +6,18 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-10-18
+
+### Added
+- **Roadmap inside the panel**: the welcome tour has a "Where it is heading" step (progress, what is next, the big vision)
+  and **More → System → About SDR-Kit → 🗺 Roadmap** lists all 35 planned features by phase with their status
+  (`files/web/roadmap.js`, English in `lang-en-roadmap.js`; `tests/test_roadmap.py` keeps it identical to `ROADMAP.md`).
+- **Rate and share**: 1–5 stars (kept only on the device, nothing is sent; 4–5 suggests a ⭐ on GitHub, 1–3 opens a GitHub
+  issue to say what to improve) and share options — the phone's share sheet, WhatsApp, Telegram, X, Facebook, email and
+  copy the link. In the welcome tour and in the About card.
+- `ROADMAP.md`: new **#35 Unified server (SDR-Kit Network)** — a long-term idea: connect your Pi to a server and listen to
+  Pis all over the world. Opt-in, off by default, public/license-free channels only, to be designed first.
+
 ## [3.8.0] - 2026-10-18
 
 ### Added

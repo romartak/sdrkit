@@ -419,7 +419,9 @@ Dimensioned drawings for dipole, ground-plane, J-pole, 3-element Yagi, satellite
   optional new-version notices (checked only while the Pi is on your WiFi; nothing is installed without a tap). The
   version and its dot (🟢 up to date, 🟠 new version, ⚪ not checked) are always at the top next to **SDR-Kit**. See
   [Updating](updating.md#new-version-notices-optional).
-- **About SDR-Kit:** link to the GitHub repository (a ⭐ helps the project) and **👋 Show the introduction** again.
+- **About SDR-Kit:** link to the GitHub repository (a ⭐ helps the project) and the **🗺 Roadmap** (what is coming, with its status), **★ Rate**
+  (stars kept only on your device), **📤 Share** (share sheet, WhatsApp, Telegram, X, Facebook, email, copy link) and
+  **👋 Introduction** to see the welcome tour again.
 - **Language:** English / Español.
 - **Maintenance:** **📄 View logs** (last 200 lines of the SDR-Kit services), **🔄 Restart** (reboots the Pi), **⏻ Shut down**, **Log out** (shown only when a password is set).
 
