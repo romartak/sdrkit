@@ -6,6 +6,11 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+### Changed
+- **Premium sign-in page**: logo and tagline, glass card with a labelled password field, show/hide button, Caps Lock hint,
+  loading state on the button, shake and focus on a wrong password, and a quiet animated spectrum in the background
+  (stops with "reduce motion"). Still a single self-contained page with no external requests; Spanish/English as before.
+
 ## [3.9.0] - 2026-10-18
 
 ### Added
