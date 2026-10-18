@@ -42,6 +42,19 @@ for (const lang of ["en", "es"]) {
     try { await page.click(sel, { timeout: 3000 }); await page.waitForTimeout(400); }
     catch (e) { fail(`${lang}: cannot click ${sel}`); }
   }
+  // instant replay: listen on the demo walkie-talkie, then "⏪ What did they say?" plays it back and "💾 Save" keeps it
+  try {
+    await page.evaluate(() => SDR.api("/api/radio", {freq: 462562500, mod: "nfm", squelch: -45, activate: true}));
+    await page.click('.tabbar [data-tab="radio"]');
+    await page.waitForFunction(() => Radio && document.querySelector("#rReplay").textContent.includes("· "), null, { timeout: 20000 });
+    await page.click("#rReplay");
+    await page.waitForFunction(() => !document.querySelector("#rReplaySave").disabled, null, { timeout: 10000 });
+    await page.click("#rReplaySave");
+    await page.waitForFunction(() => /Grabaciones|Recordings/.test(document.querySelector("#toast").textContent), null, { timeout: 10000 });
+    await page.click("#rReplay");
+    await page.click('.tabbar [data-tab="an"]');
+  } catch (e) { fail(`${lang}: instant replay: ${e.message.split("\n")[0]}`); }
+
   const missing = await page.evaluate(() => Array.from(I18N.missing));
   if (lang === "en" && missing.length) {
     console.log(`  note: ${missing.length} Spanish-looking string(s) without English (often live demo data):`);

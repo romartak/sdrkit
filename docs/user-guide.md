@@ -264,6 +264,14 @@ Chips for **POCSAG, FLEX, APRS, EAS, Selcall, Morse, FMS** start multimon-ng on 
 - **⏺ Record now** records until you stop it.
 - **Automatically record every transmission** creates one file per transmission (with 0.6 s of pre-roll), even with your phone locked or the panel closed.
 
+### Instant replay
+
+**⏪ What did they say?** plays back the last 30 seconds of what you heard — only audio with the squelch open, the silences
+between transmissions are cut to a short pause — even if nothing was being recorded. While it plays the live audio pauses;
+tap again to stop. **💾 Save** keeps exactly that clip as a recording (tagged **⏪ replay** in Recordings). The audio lives in
+RAM and nothing is written to the card until you save. It only fills while the radio is running (panel open on Radio,
+scanner, recording or data decoder active). Length: `REPLAY_SEC` (0 = off).
+
 Recordings are 16-bit mono WAV at 24 kHz in `/var/lib/sdrkit/grabaciones/YYYY-MM-DD/`. Transmissions shorter than `REC_MIN_SEC` are discarded, the oldest files are deleted when the folder exceeds `REC_MAX_MB`, and recording does not start with less than 300 MB free on the card. See [Recordings](#recordings).
 
 ### Scanner

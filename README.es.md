@@ -73,6 +73,7 @@ lugar entras con [Tailscale](https://tailscale.com).
 - **Reconoce señales digitales** por su forma (2/4-FSK, GMSK, AFSK, velocidad de símbolos)
 - Subtonos CTCSS/DCS y DTMF
 - Grabación por transmisión con registro de actividad
+- **⏪ Repetición instantánea** — «¿qué dijo?» repite los últimos 30 s
 - Escáner de servicios completos, búsqueda, memorias
 - Modo cazador para encontrar un transmisor de oído
 

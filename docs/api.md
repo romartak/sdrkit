@@ -196,13 +196,26 @@ curl -s -b jar.txt -H 'Content-Type: application/json' \
 
 `{"on": true}` starts a manual recording (`400` if it cannot, e.g. low space); `{"on": false}` stops it and returns `{"ok": true, "saved": {metadata} | null}`.
 
+### Instant replay
+
+`GET /api/radio/replay.wav` freezes the replay buffer (the last `REPLAY_SEC` seconds heard with the squelch open) and returns
+it as a WAV file (16-bit mono, 24 kHz) with the headers `X-Replay-Id`, `X-Replay-Secs` and `X-Replay-Tx` (number of
+transmissions in it). `404` with `{"error": "…"}` when nothing has been heard yet.
+
+`POST /api/radio/replay` with `{"id": N}` saves that frozen clip as a recording (`kind: "replay"`) and returns
+`{"ok": true, "saved": {metadata}}`; without a matching `id` it saves what the buffer holds now.
+
+```sh
+curl -s -b jar.txt -o replay.wav $PI/api/radio/replay.wav
+```
+
 ### `GET /api/radio/stream` (Server-Sent Events)
 
 Opening it keeps the radio running. Events:
 
 | Event | Data |
 |---|---|
-| `radio` | `freq`, `mod`, `name`, `db`, `noise`, `sq` (open), `squelch`, `ctcss` (`{tone, measured, dev, snr}`), `dcs` (`{code, inverted, quality, text}`), `dtmf`, `rec` (`{file, kind, secs}`), `autorec`, `scan` (`{state, hits, channels, range, lock, cycle_ms}`), `device`, `data`, `data_error`, `decoded` (last 8 messages), `digital` (`{kind, rate, levels, guess, dev, conf, t}`), `dsd` (`{kind, title, error, meta: {sync, tg, src, cc, nac, enc, slot, alias, t}, lines, running}`), and on every other event `spec` (256 dB bins) with `spec_span` (Hz) |
+| `radio` | `freq`, `mod`, `name`, `db`, `noise`, `sq` (open), `squelch`, `ctcss` (`{tone, measured, dev, snr}`), `dcs` (`{code, inverted, quality, text}`), `dtmf`, `rec` (`{file, kind, secs}`), `replay` (seconds in the replay buffer), `autorec`, `scan` (`{state, hits, channels, range, lock, cycle_ms}`), `device`, `data`, `data_error`, `decoded` (last 8 messages), `digital` (`{kind, rate, levels, guess, dev, conf, t}`), `dsd` (`{kind, title, error, meta: {sync, tg, src, cc, nac, enc, slot, alias, t}, lines, running}`), and on every other event `spec` (256 dB bins) with `spec_span` (Hz) |
 | `radio_saved` | `{"saved": {recording metadata}}` |
 | `radio_note` | `{"msg": "…"}` — e.g. seek results |
 | `radio_error` | `{"error": "…"}` |
@@ -352,6 +365,8 @@ curl -s -b jar.txt $PI/api/system/update | python3 -m json.tool
 | POST | `/api/monitor/clear` | [24/7 monitor](#other-monitor-routes) |
 | GET/POST | `/api/radio` | [Radio](#radio) |
 | POST | `/api/radio/record` | [Radio](#post-apiradiorecord) |
+| GET | `/api/radio/replay.wav` | [Radio](#instant-replay) |
+| POST | `/api/radio/replay` | [Radio](#instant-replay) |
 | GET | `/api/radio/stream` | [Radio](#get-apiradiostream-server-sent-events) |
 | GET | `/api/radio/audio` | [Radio](#get-apiradioaudio) |
 | POST | `/api/radio/scan` | [Scanner](#scanner) |

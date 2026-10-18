@@ -6,6 +6,15 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-10-18
+
+### Added
+- **Instant replay** (Radio → **⏪ What did they say?**): the radio always keeps the last 30 s of what was heard (squelch
+  open, silences cut to a short pause) in RAM. One tap plays it back on the phone (the live audio pauses meanwhile);
+  **💾 Save** keeps that same clip as a recording, tagged **⏪ replay** in Recordings. Nothing is written to the card until
+  you save. New setting `REPLAY_SEC` (0 = off, max 120) and API `GET /api/radio/replay.wav`, `POST /api/radio/replay`.
+  Covered by `tests/test_replay.py` and the browser smoke test; works in demo mode.
+
 ## [3.6.0] - 2026-10-18
 
 ### Added

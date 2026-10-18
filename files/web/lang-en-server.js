@@ -65,6 +65,9 @@
     "FM ancha": "Wide FM",
     "Frecuencia inválida.": "Invalid frequency.",
     "No se pudo empezar a grabar (¿poco espacio en la microSD?).": "Could not start recording (low space on the microSD?).",
+    "No se pudo guardar (¿poco espacio en la microSD?).": "Could not save (low space on the microSD?).",
+    "Todavía no hay nada que repetir: se guarda lo que se oye con el squelch abierto.":
+      "Nothing to replay yet: the radio keeps what you hear while the squelch is open.",
     "No hay canales para escanear.": "No channels to scan.",
     "Demasiados canales (máx. 4000).": "Too many channels (max. 4000).",
     "Rango inválido (paso mínimo 1 kHz).": "Invalid range (minimum step 1 kHz).",

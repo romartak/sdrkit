@@ -73,6 +73,7 @@ internet required. At home it joins your WiFi; in the field it creates its own h
 - **Automatic recognition** of digital signals by their shape (2/4-FSK, GMSK, AFSK, symbol rate)
 - CTCSS/DCS tone squelch detection and DTMF
 - Per-transmission recording with an activity log
+- **⏪ Instant replay** — "what did they say?" plays the last 30 s again
 - Scanner over whole services, seek, memories
 - Fox-hunt mode to find a transmitter by ear
 

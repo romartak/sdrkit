@@ -55,6 +55,7 @@ const Radio = (() => {
     }
   }
   function schedule(f32, rate) {
+    if (RP.src) return;  // mientras suena la repetición, el audio en vivo se calla
     const ctx = P.ctx;
     const buf = ctx.createBuffer(1, f32.length, rate);
     buf.getChannelData(0).set(f32);
@@ -74,7 +75,7 @@ const Radio = (() => {
   function drawViz() {
     const c = $("#audioViz"); const ctx2 = c.getContext("2d");
     const loop = () => {
-      if (!P.playing && !Hunter.open) { ctx2.clearRect(0, 0, c.width, c.height); return; }
+      if (!P.playing && !Hunter.open && !RP.src) { ctx2.clearRect(0, 0, c.width, c.height); return; }
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = Math.round(c.clientWidth * dpr), h = Math.round(c.clientHeight * dpr);
       if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
@@ -93,6 +94,54 @@ const Radio = (() => {
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
+  }
+
+  // ------------------------------------------------------------ repetición instantánea «⏪ ¿qué dijo?»
+  // El servidor guarda en RAM lo último que se oyó; aquí se baja como WAV y suena por el mismo volumen que el radio.
+  const RP = {src: null, id: 0, secs: 0, tx: 0, busy: false};
+  async function replay() {
+    if (RP.src) { stopReplay(); return; }
+    if (RP.busy) return;
+    RP.busy = true;
+    const ctx = ensureCtx();
+    try {
+      const r = await fetch("/api/radio/replay.wav", {cache: "no-store"});
+      if (r.status === 401) { location.href = "/login"; return; }
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || r.statusText); }
+      RP.id = +r.headers.get("X-Replay-Id") || 0;
+      RP.secs = +r.headers.get("X-Replay-Secs") || 0;
+      RP.tx = +r.headers.get("X-Replay-Tx") || 0;
+      const ab = await r.arrayBuffer();
+      const buf = await new Promise((ok, ko) => ctx.decodeAudioData(ab, ok, ko));
+      const src = ctx.createBufferSource();
+      src.buffer = buf; src.connect(P.gain);
+      src.onended = () => { if (RP.src === src) { RP.src = null; renderReplay(); } };
+      RP.src = src;
+      src.start();
+      if (!P.playing && !Hunter.open) drawViz();
+      $("#rReplaySave").disabled = false;
+      renderReplay();
+    } catch (e) { SDR.toast(e.message, true); }
+    finally { RP.busy = false; }
+  }
+  function stopReplay() {
+    const src = RP.src; RP.src = null;
+    if (src) try { src.stop(); } catch (e) { /* ya terminó */ }
+    renderReplay();
+  }
+  async function saveReplay() {
+    try {
+      const r = await SDR.api("/api/radio/replay", {id: RP.id});
+      if (r.saved) SDR.toast(_t("Repetición guardada en Grabaciones ({d} s).", {d: r.saved.duration}));
+    } catch (e) { SDR.toast(e.message, true); }
+  }
+  function renderReplay() {
+    const live = R.live && R.live.replay;
+    $("#rReplay").textContent = RP.src ? _t("■ Parar repetición") : live ? _t("⏪ ¿Qué dijo? · {s} s", {s: Math.round(live)}) : _t("⏪ ¿Qué dijo?");
+    $("#rReplay").classList.toggle("recon", !!RP.src);
+    $("#rReplayInfo").textContent = RP.src
+      ? _tn(RP.tx, "Repitiendo {s} s · {n} transmisión. «Guardar» la deja en Grabaciones.", "Repitiendo {s} s · {n} transmisiones. «Guardar» las deja en Grabaciones.", {s: RP.secs})
+      : _t("El radio guarda siempre lo último que se oyó. Si no entendiste, tócalo y se repite.");
   }
 
   // ------------------------------------------------------------ eventos en vivo
@@ -137,6 +186,7 @@ const Radio = (() => {
     $("#rRec").textContent = manual ? _t("■ Detener grabación · {t}", {t: SDR.fmtDur(rec.secs)}) : _t("⏺ Grabar ahora");
     $("#rRec").classList.toggle("recon", !!manual);
     $("#rAuto").checked = !!d.autorec;
+    if (!RP.src) renderReplay();
     syncInv(d.inv);
     $("#rRecInfo").textContent = rec ? (rec.kind === "auto" ? _t("● Grabando esta transmisión… {f}", {f: rec.file}) : _t("● Grabando… {f}", {f: rec.file}))
       : d.autorec ? _t("Esperando transmisiones para grabarlas (se activa cuando se abre el squelch).") : _t("Se guardan en carpetas por fecha. Míralas en la pestaña Grabaciones.");
@@ -483,6 +533,8 @@ const Radio = (() => {
         if (on) SDR.toast(_t("Grabando… pulsa otra vez para detener."));
       } catch (e) { SDR.toast(e.message, true); }
     });
+    $("#rReplay").addEventListener("click", replay);
+    $("#rReplaySave").addEventListener("click", saveReplay);
     $("#rInv").addEventListener("change", ev => {
       const f = +ev.target.value;
       setParams({inv: f});

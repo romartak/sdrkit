@@ -33,7 +33,8 @@ const Recs = (() => {
       if (dstr !== day) { day = dstr; html += `<div class="recday">${SDR.esc(dstr)}</div>`; }
       const hora = d.toLocaleTimeString(I18N.locale, {hour: "2-digit", minute: "2-digit", second: "2-digit"});
       const badges = [
-        m.kind === "auto" ? '<span class="badge">auto</span>' : m.kind === "manual" ? '<span class="badge">manual</span>' : "",
+        m.kind === "auto" ? '<span class="badge">auto</span>' : m.kind === "manual" ? '<span class="badge">manual</span>' :
+          m.kind === "replay" ? `<span class="badge">${SDR.esc(_t("⏪ repetición"))}</span>` : "",
         m.ctcss ? `<span class="badge g">CTCSS ${SDR.esc(m.ctcss)}</span>` : "",
         m.dcs ? `<span class="badge g">${SDR.esc(String(m.dcs).split(" ≡ ")[0])}</span>` : "",
         m.dtmf ? `<span class="badge y">DTMF ${SDR.esc(m.dtmf)}</span>` : "",

@@ -354,6 +354,9 @@ Notas técnicas:
 - **Grabar:**
   - Manual, o **automático por transmisión** (un archivo cada vez que alguien habla, aunque cierres el celular).
   - Se guarda en `/var/lib/sdrkit/grabaciones/AAAA-MM-DD/`.
+- **Repetición instantánea «⏪ ¿Qué dijo?»:** repite los últimos 30 s de lo que se oyó (sólo con el squelch abierto), aunque
+  no estuvieras grabando. **💾 Guardar** lo deja como una grabación más. Vive en la memoria RAM: no escribe en la microSD
+  hasta que lo guardas. Se ajusta con `REPLAY_SEC` (0 = apagada).
 - **Escáner:**
   - **Memorias**, **Servicio** (PMR, FRS, marina, aviación… con un toque) o **Rango**.
   - Revisa ~22 canales cercanos en ~40 ms.

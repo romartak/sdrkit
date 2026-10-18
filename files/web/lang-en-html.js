@@ -226,6 +226,11 @@ I18N.add({
   "Grabar automáticamente cada transmisión": "Automatically record every transmission",
   "Un archivo por transmisión, aunque cierres el celular.": "One file per transmission, even with your phone locked.",
   "Se guardan en carpetas por fecha. Míralas en la pestaña Grabaciones.": "Saved in folders by date. See them in the Recordings tab.",
+  "Repetición instantánea": "Instant replay",
+  "⏪ ¿Qué dijo?": "⏪ What did they say?",
+  "💾 Guardar": "💾 Save",
+  "El radio guarda siempre lo último que se oyó. Si no entendiste, tócalo y se repite.":
+    "The radio always keeps the last thing you heard. If you missed it, tap and it plays again.",
 
   // ---------------------------------------------------------------- radio: scanner, memories
   "Escáner": "Scanner",

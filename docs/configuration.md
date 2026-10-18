@@ -107,6 +107,7 @@ Networks added by SDR-Kit get NetworkManager autoconnect priority 20. List them 
 | `REC_DIR` | `""` | panel | Recordings folder. Empty = `/var/lib/sdrkit/grabaciones`, one subfolder per day |
 | `REC_MAX_MB` | `"2000"` | panel | Maximum space for recordings. When exceeded, the oldest are deleted down to 90 % |
 | `REC_MIN_SEC` | `"1"` | panel | Recordings shorter than this (seconds) are discarded |
+| `REPLAY_SEC` | `"30"` | panel | Instant replay (Radio → **⏪ What did they say?**): seconds of heard audio kept in RAM, never on the card. `0` turns it off; maximum `120` (≈ 2.9 MB of RAM per minute) |
 
 Independently of these limits, a recording does not start with less than 300 MB free on the card.
 

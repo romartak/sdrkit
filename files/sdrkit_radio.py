@@ -10,6 +10,7 @@ Sólo usa numpy y la biblioteca estándar.
 """
 
 import collections
+import io
 import json
 import math
 import os
@@ -423,12 +424,13 @@ class Recorder:
         os.makedirs(folder, exist_ok=True)
 
     # -- archivos --
-    def _open(self, kind, info):
+    def _open(self, kind, info, when=None):
         self._make_room()
         st = shutil.disk_usage(self.folder)
         if st.free < 300 * 1024 * 1024:
             return None
-        now = time.localtime()
+        when = time.time() if when is None else when
+        now = time.localtime(when)
         day = os.path.join(self.folder, time.strftime("%Y-%m-%d", now))
         os.makedirs(day, exist_ok=True)
         parts = [time.strftime("%H-%M-%S", now), "%.4fMHz" % (info["freq"] / 1e6), FILE_MODE_NAMES.get(info["mod"]) or MODE_NAMES.get(info["mod"], info["mod"])]
@@ -445,14 +447,14 @@ class Recorder:
         w.setsampwidth(2)
         w.setframerate(AUDIO_RATE)
         meta = {"file": os.path.relpath(path, self.folder), "kind": kind, "freq": info["freq"], "mod": info["mod"],
-                "name": info.get("name", ""), "start": time.time(), "samples": 0, "peak_db": -200.0}
+                "name": info.get("name", ""), "start": when, "samples": 0, "peak_db": -200.0}
         return {"w": w, "path": path, "meta": meta}
 
     def _write(self, rec, pcm):
         rec["w"].writeframes(pcm.tobytes())
         rec["meta"]["samples"] += len(pcm)
 
-    def _close(self, rec, info, keep=True):
+    def _close(self, rec, info, keep=True, min_sec=None):
         try:
             rec["w"].close()
         except Exception:
@@ -460,7 +462,7 @@ class Recorder:
         meta = rec["meta"]
         meta["duration"] = round(meta["samples"] / AUDIO_RATE, 1)
         meta.update({k: info.get(k) for k in ("ctcss", "dcs", "dtmf") if info.get(k)})
-        if not keep or meta["duration"] < self.min_sec:
+        if not keep or meta["duration"] < (self.min_sec if min_sec is None else min_sec):
             for p in (rec["path"], rec["path"][:-4] + ".json"):
                 try:
                     os.remove(p)
@@ -560,6 +562,16 @@ class Recorder:
             self.pre.append(pcm)
         return done
 
+    def save_clip(self, pcm, info, when=None, kind="replay"):
+        """Guarda audio ya capturado (la repetición instantánea) como una grabación más."""
+        with self.lock:
+            rec = self._open(kind, info, when)
+            if rec is None:
+                raise ValueError("No se pudo guardar (¿poco espacio en la microSD?).")
+            self._write(rec, np.asarray(pcm, dtype=np.int16))
+            rec["meta"]["peak_db"] = info.get("db", -200.0)
+            return self._close(rec, info, min_sec=0.0)   # lo que pidió el usuario se guarda aunque sea corto
+
     def status(self):
         with self.lock:
             r = self.manual or self.auto
@@ -633,6 +645,87 @@ class Recorder:
                         pass
         st = shutil.disk_usage(self.folder)
         return {"bytes": total, "count": count, "max_bytes": self.max_bytes, "disk_free": st.free, "folder": self.folder}
+
+
+def wav_bytes(pcm, rate=AUDIO_RATE):
+    """PCM int16 mono → archivo WAV completo en memoria."""
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(np.asarray(pcm, dtype=np.int16).tobytes())
+    return buf.getvalue()
+
+
+class ReplayBuffer:
+    """Repetición instantánea «⏪ ¿qué dijo?»: los últimos segundos de lo que se oyó (squelch abierto),
+    siempre en memoria RAM (nunca en la microSD). Entre una transmisión y otra se deja un silencio corto."""
+
+    def __init__(self, secs=30.0, gap=0.5):
+        self.max = int(min(max(float(secs), 0.0), 120.0) * AUDIO_RATE)
+        self.gap = np.zeros(int(gap * AUDIO_RATE), dtype=np.int16)
+        self.lock = threading.Lock()
+        self.chunks = collections.deque()   # [pcm, t, tx] · tx = None en los silencios entre transmisiones
+        self.samples = 0
+        self._tx = None
+
+    def feed(self, pcm, audible, info):
+        if not self.max:
+            return
+        if not audible:
+            self._tx = None
+            return
+        now = time.time()
+        with self.lock:
+            tx = self._tx
+            if tx is None or tx["freq"] != info.get("freq") or tx["mod"] != info.get("mod"):
+                if self.chunks:
+                    self._push(self.gap, now, None)
+                tx = self._tx = {"t": now, "freq": info.get("freq"), "mod": info.get("mod"), "name": info.get("name", "")}
+            for k in ("ctcss", "dcs", "dtmf"):
+                if info.get(k):
+                    tx[k] = info[k]
+            if info.get("db") is not None:
+                tx["peak_db"] = round(max(tx.get("peak_db", -200.0), info["db"]), 1)
+            self._push(np.asarray(pcm, dtype=np.int16).copy(), now, tx)
+            while self.chunks and (self.samples > self.max or self.chunks[0][2] is None):
+                old = self.chunks.popleft()
+                self.samples -= len(old[0])
+
+    def _push(self, pcm, t, tx):
+        self.chunks.append((pcm, t, tx))
+        self.samples += len(pcm)
+
+    def secs(self):
+        return round(self.samples / AUDIO_RATE, 1)
+
+    def clear(self):
+        with self.lock:
+            self.chunks.clear()
+            self.samples = 0
+            self._tx = None
+
+    def snapshot(self):
+        """(pcm, meta) de lo que hay ahora; meta lista las transmisiones incluidas, de la más vieja a la más nueva."""
+        with self.lock:
+            chunks = list(self.chunks)
+        if not chunks:
+            return np.zeros(0, dtype=np.int16), {"secs": 0.0, "start": None, "end": None, "tx": []}
+        pcm = np.concatenate([c[0] for c in chunks])
+        txs = []
+        for part, t, tx in chunks:
+            if tx is None:
+                continue
+            if not txs or txs[-1]["src"] is not tx:
+                txs.append({"src": tx, "t": t, "samples": 0})
+            txs[-1]["samples"] += len(part)
+        out = []
+        for x in txs:
+            item = {k: v for k, v in x["src"].items() if k != "t"}
+            item.update(t=x["t"], secs=round(x["samples"] / AUDIO_RATE, 1))
+            out.append(item)
+        return pcm, {"secs": round(len(pcm) / AUDIO_RATE, 1), "start": chunks[0][1], "end": chunks[-1][1], "tx": out}
 
 
 class ActivityLog:
@@ -876,6 +969,10 @@ class RadioManager:
                                  max_mb=float(conf.get("REC_MAX_MB", 2000) or 2000),
                                  min_sec=float(conf.get("REC_MIN_SEC", 1.0) or 1.0))
         self.activity = ActivityLog(os.path.join(folder, "actividad.jsonl"))
+        rs = str(conf.get("REPLAY_SEC", "30")).strip()
+        self.replay = ReplayBuffer(float(rs) if re.match(r"^\d+(\.\d+)?$", rs) else 30.0)
+        self._clip = None    # última repetición pedida: lo que se escuchó es lo que se guarda
+        self._clip_seq = 0
         self.decoded = ActivityLog(os.path.join(folder, "decodificados.jsonl"), keep=2000)
         self._dec = None
         self._dsd = None
@@ -1000,6 +1097,34 @@ class RadioManager:
             return None
         self.manual_rec = False
         return self.recorder.stop_manual(self.info_dict())
+
+    # -- repetición instantánea ----------------------------------------------
+    def replay_take(self):
+        """Congela lo que hay en la repetición y lo devuelve como WAV (para escucharlo y, si se quiere, guardarlo)."""
+        pcm, meta = self.replay.snapshot()
+        if not len(pcm):
+            raise ValueError("Todavía no hay nada que repetir: se guarda lo que se oye con el squelch abierto.")
+        self._clip_seq += 1
+        meta["id"] = self._clip_seq
+        self._clip = (pcm, meta)
+        return wav_bytes(pcm), meta
+
+    def replay_save(self, clip_id=None):
+        clip = self._clip
+        if clip is None or (clip_id and clip[1]["id"] != clip_id):
+            self.replay_take()
+            clip = self._clip
+        pcm, meta = clip
+        last = meta["tx"][-1] if meta["tx"] else {}
+        one = len({(x["freq"], x["mod"]) for x in meta["tx"]}) == 1
+        info = {"freq": last.get("freq") or self.params["freq"], "mod": last.get("mod") or self.params["mod"],
+                "name": last.get("name", "") if one else "", "db": max([x.get("peak_db", -200.0) for x in meta["tx"]] or [-200.0])}
+        if one:
+            info.update({k: last[k] for k in ("ctcss", "dcs", "dtmf") if last.get(k)})
+        saved = self.recorder.save_clip(pcm, info, when=meta["start"])
+        if saved:
+            self._log_recording(saved)
+        return saved
 
     def scan_start(self, chans, squelch=None, once=False, down=False):
         """Escanea canales. once=True: se detiene en la primera señal (botones «Buscar»)."""
@@ -1280,6 +1405,7 @@ class RadioManager:
         self.live.update(db=round(db, 1), noise=round(noise, 1), sq=is_open)
         info = self.info_dict()
         info["db"] = db
+        self.replay.feed(pcm, hang_open, info)
         for m in self.recorder.feed(pcm, is_open, info):
             self._log_recording(m)
         # fin de transmisión
@@ -1326,7 +1452,7 @@ class RadioManager:
         obj = {"freq": self.params["freq"], "mod": self.params["mod"], "name": self.params.get("name", ""),
                "db": self.live["db"], "noise": self.live["noise"], "sq": self.live["sq"],
                "squelch": self.params["squelch"], "ctcss": self.live["ctcss"], "dcs": self.live["dcs"],
-               "dtmf": self._tx_dtmf, "rec": self.recorder.status(), "autorec": self.params["autorec"], "inv": self.params["inv"],
+               "dtmf": self._tx_dtmf, "rec": self.recorder.status(), "replay": self.replay.secs(), "autorec": self.params["autorec"], "inv": self.params["inv"],
                "scan": self._scan_info(s), "device": self.info.get("device"),
                "data": self.params.get("data", []), "data_error": self.info.get("data_error"),
                "decoded": list(self._dec_recent), "digital": self.live.get("digital"),

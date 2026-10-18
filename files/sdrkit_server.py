@@ -2144,6 +2144,13 @@ class Handler(BaseHTTPRequestHandler):
             return self._radio_stream()
         if path == "/api/radio/audio":
             return self._audio()
+        if path == "/api/radio/replay.wav":
+            try:
+                wav, meta = app.radio.replay_take()
+            except ValueError as e:
+                return self._send(404, {"ok": False, "error": str(e)})
+            return self._send(200, wav, "audio/wav", headers={"X-Replay-Id": str(meta["id"]), "X-Replay-Secs": str(meta["secs"]),
+                                                              "X-Replay-Tx": str(len(meta["tx"]))})
         if path == "/api/memories":
             return self._send(200, {"items": app.radio.memories.list()})
         if path == "/api/recordings":
@@ -2258,6 +2265,8 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/radio/record":
                 meta = app.radio.record(bool(body.get("on")))
                 return self._send(200, {"ok": True, "saved": meta})
+            if path == "/api/radio/replay":
+                return self._send(200, {"ok": True, "saved": app.radio.replay_save(cint(body.get("id"), 0))})
             if path == "/api/radio/scan":
                 action = body.get("action")
                 if action == "stop":
