@@ -88,6 +88,15 @@ for (const lang of ["en", "es"]) {
     await page.click('.tabbar [data-tab="an"]');
   } catch (e) { fail(`${lang}: instant replay: ${e.message.split("\n")[0]}`); }
 
+  // business panel: charts drawn from the activity log (demo data)
+  try {
+    await page.click('.tabbar [data-tab="recs"]');
+    await page.waitForFunction(() => document.querySelectorAll("#bizBody .biz-chart i").length >= 24, null, { timeout: 10000 });
+    await page.click('#bizDays [data-d="30"]');
+    await page.waitForFunction(() => document.querySelectorAll("#bizBody .biz-chart").length === 2, null, { timeout: 10000 });
+    await page.click('.tabbar [data-tab="an"]');
+  } catch (e) { fail(`${lang}: business panel: ${e.message.split("\n")[0]}`); }
+
   const missing = await page.evaluate(() => Array.from(I18N.missing));
   if (lang === "en" && missing.length) {
     console.log(`  note: ${missing.length} Spanish-looking string(s) without English (often live demo data):`);

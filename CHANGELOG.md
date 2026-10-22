@@ -6,6 +6,15 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-10-22
+
+### Added
+- **Business panel** (Recordings → **Panel del negocio / Business panel**): charts of how much the radio is used — transmissions
+  per hour of the day and per day, total airtime, the busiest hour, the five busiest channels and the longest transmission —
+  for Today, 7 or 30 days, computed from the activity log. New API `GET /api/activity/stats?days=N`. The activity log now
+  keeps the last 5000 transmissions (was 1000). Demo mode shows sample data (in memory only). Covered by
+  `tests/test_activity_stats.py`; help sheet ⓘ and English translation included.
+
 ## [3.10.0] - 2026-10-18
 
 ### Changed

@@ -345,6 +345,7 @@ Antenna: a vertical quarter-wave of **6.5–6.9 cm**, as high as possible. Typic
 - The header shows how many recordings there are, the space used against `REC_MAX_MB`, and the free space on the card.
 - Recordings are grouped by day, with time, frequency, mode, duration and badges (*auto*/*manual*, CTCSS, DCS, DTMF). Search by frequency, name or tone.
 - ▶ plays, ⬇ downloads; select several (or **Select all**) for **⬇ ZIP** or **🗑 Delete**.
+- The **Business panel** (above the activity log) charts the log: transmissions per hour and per day, airtime, the busiest channels and the longest transmission, for today, 7 or 30 days.
 - The **Activity log** records every transmission the radio or scanner detects, even when nothing is recorded: time, frequency, duration, peak level, tones and digital type. **⬇ CSV (Excel)** exports it; 🎧 returns to that frequency.
 
 Over SSH, `sdrkit recs` shows the folder, the number of files and how to copy them to a PC with `scp`.

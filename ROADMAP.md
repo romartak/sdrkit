@@ -31,7 +31,7 @@ Estado: ☐ pendiente · ◐ hecha en parte (ver nota) · ✅ terminada (fecha �
 | # | Estado | Función | Listo cuando… |
 |---|---|---|---|
 | 1 | ✅ 2026-10-18 · 3.7.0 | **Repetición instantánea** «⏪ ¿qué dijo?» | El radio guarda siempre los últimos 30 s en memoria y un botón los reproduce o los guarda como grabación. |
-| 2 | ☐ | **Panel del negocio** | Gráficos de actividad del radio por hora y por día, canal más usado, transmisión más larga; a partir del registro de actividad. |
+| 2 | ✅ 2026-10-22 · 3.11.0 | **Panel del negocio** | Gráficos de actividad del radio por hora y por día, canal más usado, transmisión más larga; a partir del registro de actividad. |
 | 3 | ☐ | **Alertas de aviones** | Aviso (panel + ntfy) por códigos 7700/7600/7500, aviones militares o helicópteros cerca, con filtros configurables. |
 | 4 | ☐ | **Mapa de barcos (AIS)** | Modo AIS con mapa sin internet como el radar de aviones (decodificador opcional, p. ej. AIS-catcher); barcos simulados en demo. |
 | 5 | ☐ | **Home Assistant (MQTT)** | Sensores de 433 MHz, aviones y actividad del radio publicados por MQTT con *discovery* automático; apagado por defecto. |

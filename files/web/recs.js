@@ -72,9 +72,51 @@ const Recs = (() => {
     } catch (e) {}
   }
 
+  let bizDays = 7;
+  const fmtDur = s => s >= 3600 ? (s / 3600).toFixed(1) + " h" : s >= 60 ? Math.round(s / 60) + " min" : Math.round(s) + " s";
+  function bars(vals, labels) {
+    const max = Math.max(1, ...vals);
+    return `<div class="biz-chart">` + vals.map((v, i) =>
+      `<i class="${v ? "" : "zero"}" style="height:${Math.max(3, Math.round(v / max * 100))}%" title="${SDR.esc(labels[i])}: ${v}"></i>`).join("") + "</div>";
+  }
+  async function loadBiz() {
+    const box = $("#bizBody");
+    try {
+      const s = await SDR.api("/api/activity/stats?days=" + bizDays);
+      if (!s.total) { box.innerHTML = `<p class="muted small">${SDR.esc(_t("Todavía no hay actividad en este período."))}</p>`; return; }
+      let h = `<div class="biz-tiles"><div><b>${s.total}</b><span>${SDR.esc(_t("transmisiones"))}</span></div>` +
+        `<div><b>${fmtDur(s.secs)}</b><span>${SDR.esc(_t("en el aire"))}</span></div>` +
+        `<div><b>${s.hours.reduce((m, x, i) => x.n > s.hours[m].n ? i : m, 0)}:00</b><span>${SDR.esc(_t("hora más activa"))}</span></div></div>`;
+      h += `<div class="biz-h">${SDR.esc(_t("Por hora del día"))}</div>` + bars(s.hours.map(x => x.n), s.hours.map((x, i) => i + ":00")) +
+        `<div class="biz-axis"><span>0</span><span>6</span><span>12</span><span>18</span><span>23</span></div>`;
+      if (s.days > 1) {
+        h += `<div class="biz-h">${SDR.esc(_t("Por día"))}</div>` + bars(s.per_day.map(x => x.n), s.per_day.map(x => x.day)) +
+          `<div class="biz-axis"><span>${SDR.esc(s.per_day[0].day.slice(5))}</span><span>${SDR.esc(s.per_day[s.per_day.length - 1].day.slice(5))}</span></div>`;
+      }
+      h += `<div class="biz-h">${SDR.esc(_t("Canales más usados"))}</div><table class="tbl"><tbody>` + s.top.map(c =>
+        `<tr><td>${SDR.esc(c.name ? _t(c.name) : (c.freq / 1e6).toFixed(4) + " MHz")}</td><td>${_tn(c.n, "{n} transmisión", "{n} transmisiones")}</td><td>${fmtDur(c.secs)}</td>` +
+        `<td class="r"><button class="btn sm" data-tune="${c.freq}" data-mod="${SDR.esc(c.mod || "nfm")}" aria-label="${SDR.esc(_t("Escuchar"))}">🎧</button></td></tr>`).join("") + "</tbody></table>";
+      if (s.longest) {
+        const l = s.longest, d = new Date(l.t * 1000);
+        h += `<div class="biz-h">${SDR.esc(_t("Transmisión más larga"))}</div><p class="small">${fmtDur(l.dur)} · ${SDR.esc(l.name ? _t(l.name) : (l.freq / 1e6).toFixed(4) + " MHz")} · ` +
+          d.toLocaleDateString(I18N.locale, {day: "2-digit", month: "2-digit"}) + " " + d.toLocaleTimeString(I18N.locale, {hour: "2-digit", minute: "2-digit"}) + "</p>";
+      }
+      box.innerHTML = h;
+    } catch (e) {}
+  }
+
   function init() {
+    $("#bizDays").addEventListener("click", ev => {
+      const b = ev.target.closest("[data-d]"); if (!b) return;
+      bizDays = +b.dataset.d;
+      $$("#bizDays button").forEach(x => x.classList.toggle("active", x === b));
+      loadBiz();
+    });
+    $("#bizBody").addEventListener("click", ev => {
+      const t = ev.target.closest("[data-tune]"); if (t) SDR.openRadio(+t.dataset.tune, t.dataset.mod);
+    });
     $("#recSearch").addEventListener("input", render);
-    $("#recRefresh").addEventListener("click", () => { load(); loadActivity(); });
+    $("#recRefresh").addEventListener("click", () => { load(); loadActivity(); loadBiz(); });
     $("#recList").addEventListener("click", ev => {
       const card = ev.target.closest(".recitem"); if (!card) return;
       const f = card.dataset.f;
@@ -121,12 +163,12 @@ const Recs = (() => {
     });
     $("#actClear").addEventListener("click", async () => {
       if (!confirm(_t("¿Borrar todo el registro de actividad? (las grabaciones no se borran)"))) return;
-      await SDR.api("/api/activity/clear", {}); loadActivity();
+      await SDR.api("/api/activity/clear", {}); loadActivity(); loadBiz();
     });
   }
   return {
     init,
-    onShow() { load(); loadActivity(); clearInterval(timer); timer = setInterval(() => { if (!document.hidden && SDR.tab === "recs") loadActivity(); }, 10000); },
+    onShow() { load(); loadActivity(); loadBiz(); clearInterval(timer); timer = setInterval(() => { if (!document.hidden && SDR.tab === "recs") loadActivity(); }, 10000); },
     onHide() { clearInterval(timer); $$("#recList audio").forEach(a => a.pause()); },
   };
 })();

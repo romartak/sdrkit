@@ -6,7 +6,7 @@ const Roadmap = (() => {
   const PHASES = [
     [1, "Sacarle más jugo a lo que ya existe", [
       [1, "done", "Repetición instantánea", "«⏪ ¿Qué dijo?»: repite los últimos 30 s que se oyeron."],
-      [2, "todo", "Panel del negocio", "Gráficos de actividad del radio por hora y por día, canal más usado."],
+      [2, "done", "Panel del negocio", "Gráficos de actividad del radio por hora y por día, canal más usado."],
       [3, "todo", "Alertas de aviones", "Aviso por emergencias (7700/7600/7500), militares y helicópteros cerca."],
       [4, "todo", "Mapa de barcos (AIS)", "Barcos en un mapa sin internet, como el radar de aviones."],
       [5, "todo", "Home Assistant (MQTT)", "Sensores, aviones y actividad del radio en tu casa inteligente."],
