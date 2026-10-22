@@ -16,6 +16,11 @@ Update an installed kit with `sudo sdrkit update`.
   there is no administrator password. `GET /api/status` now includes `role`. It only guards the panel; OpenWebRX+ (port 8073)
   keeps its own login. Covered by `tests/test_viewer.py`.
 
+### Changed
+- **Roadmap trimmed to 32 features**: Home Assistant (MQTT), the installable app (PWA) and the daily Telegram summary were
+  dropped; the rest were renumbered (the unified server is now #32). Updated in `ROADMAP.md`, the panel's Roadmap card
+  and the README.
+
 ## [3.12.0] - 2026-10-22
 
 ### Added

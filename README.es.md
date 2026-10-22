@@ -423,7 +423,7 @@ Sin nube, sin cuentas, sin telemetría.
 | [Guía completa en español](docs/es/GUIA.md) | Compras, montaje, instalación, cada pestaña, antenas, voz digital, actualizaciones y problemas |
 | [Documentación técnica (inglés)](docs/README.md) | Arquitectura, API HTTP, configuración, desarrollo |
 | [Historial de versiones](CHANGELOG.md) · [Cómo contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md) | Proyecto |
-| [Plan diario de funciones](ROADMAP.md) | 34 funciones nuevas, una por día, y la visión a futuro (un servidor unificado para escuchar las Pi de todo el mundo): qué viene y qué ya está hecho |
+| [Plan diario de funciones](ROADMAP.md) | 31 funciones nuevas, una por día, y la visión a futuro (un servidor unificado para escuchar las Pi de todo el mundo): qué viene y qué ya está hecho |
 
 ## ⚖️ Legal
 

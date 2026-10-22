@@ -113,7 +113,7 @@ const Welcome = (() => {
     return `<div class="rmbar" aria-hidden="true"><i style="width:${Math.max(3, Math.round(100 * c.done / c.total))}%"></i></div>
       <p class="muted small" style="margin:6px 0 0">${_tn(c.done, "{n} de {total} funciones lista", "{n} de {total} funciones listas", {total: c.total})}</p>`; };
   function roadmapPreview() {
-    const nx = Roadmap.next(), vision = Roadmap.all().find(x => x[0] === 35);
+    const nx = Roadmap.next(), vision = Roadmap.all().find(x => x[0] === 32);
     return `<p>${_t("Esto es lo que quiero construir con SDR-Kit. Una función nueva cada día, todas gratis y de código abierto.")}</p>${rmBar()}
       <h4>${_t("Lo próximo")}</h4><ul class="rmlist">${rmItem(nx)}</ul>
       <h4>${_t("La gran visión")}</h4><ul class="rmlist">${rmItem(vision, true)}</ul>
@@ -123,7 +123,7 @@ const Welcome = (() => {
     return [{
       title: _t("Roadmap"),
       body: () => `<p>${_t("Lo que viene en SDR-Kit, en orden. Una función nueva cada día; las que dependen de otras van después.")}</p>${rmBar()}` +
-        Roadmap.PHASES.map(p => `<h4>${_t("Fase {n}", {n: p[0]})} · ${SDR.esc(Roadmap.phaseName(p))}</h4><ul class="rmlist">${p[2].map(x => rmItem(x, x[0] === 35)).join("")}</ul>`).join("") +
+        Roadmap.PHASES.map(p => `<h4>${_t("Fase {n}", {n: p[0]})} · ${SDR.esc(Roadmap.phaseName(p))}</h4><ul class="rmlist">${p[2].map(x => rmItem(x, x[0] === 32)).join("")}</ul>`).join("") +
         `<div class="wnote y">${_t("Todo lo que se agregue seguirá siendo opcional y apagado por defecto cuando necesite internet o cuentas. SDR-Kit sólo recibe; lo único que transmitiría (PTT) será para equipos y bandas con permiso, y compartir audio en la red mundial será siempre una decisión tuya.")}</div>
         <p class="small">${_t("¿Tienes una idea o quieres ayudar?")} <a href="${REPO}/issues/new/choose" target="_blank" rel="noopener">${_t("Cuéntala en GitHub")}</a> · <a href="${REPO}/blob/main/ROADMAP.md" target="_blank" rel="noopener">ROADMAP.md</a></p>`,
       buttons: () => [[W.back ? "back2" : "ok", W.back ? _t("← Volver") : _t("Cerrar"), "primary"]],
