@@ -38,7 +38,7 @@ for (const lang of ["en", "es"]) {
     const ver = await page.textContent("#verTxt");
     if (!/^v\d+\.\d+\.\d+$/.test(ver)) fail(`${lang}: version chip shows "${ver}"`);
     await page.click("#verChip"); await page.waitForTimeout(300); await page.click("#wClose");
-    // About card: roadmap (all 35 features, the unified server last), rating and sharing
+    // About card: roadmap (all 32 features, the unified server last), rating and sharing
     await page.click('.tabbar [data-tab="more"]'); await page.click('#moreNav [data-sub="sys"]');
     await page.click("#btnIntro"); await page.click('[data-w="next"]'); await page.click('[data-w="next"]');
     await page.click('[data-open="roadmap"]');
@@ -47,7 +47,7 @@ for (const lang of ["en", "es"]) {
     await page.click("#wClose");
     await page.click("#btnRoadmap"); await page.waitForTimeout(300);
     const n = await page.locator("#wBody .rmi").count();
-    if (n !== 35) fail(`${lang}: roadmap shows ${n} features, expected 35`);
+    if (n !== 32) fail(`${lang}: roadmap shows ${n} features, expected 32`);
     if (!(await page.locator("#wBody .rmi.vision").innerText()).match(/Network|SDR-Kit/)) fail(`${lang}: roadmap vision item missing`);
     await page.click("#wClose");
     await page.click("#btnRate"); await page.click('[data-rate="5"]'); await page.waitForTimeout(200);
