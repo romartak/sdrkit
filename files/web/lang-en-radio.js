@@ -140,7 +140,7 @@ I18N.add({
   "Al pulsar ▶ el dongle pasa al radio (se pausa el analizador).": "Pressing ▶ moves the dongle to the radio (the analyzer pauses).",
   "Al pulsar ▶ el dongle pasa al radio (se pausa la búsqueda de sensores).": "Pressing ▶ moves the dongle to the radio (the sensor search pauses).",
   "Al pulsar ▶ el dongle pasa al radio (se pausa el radar de aviones).": "Pressing ▶ moves the dongle to the radio (the aircraft radar pauses).",
-  "Al pulsar ▶ el dongle pasa al radio (se pausa el mapa de barcos).": "When you tap ▶ the dongle moves to the radio (the ship map pauses).",
+  "Al pulsar ▶ el dongle pasa al radio (se pausa el mapa de barcos).": "Pressing ▶ moves the dongle to the radio (the ship map pauses).",
   "Al pulsar ▶ el dongle pasa al radio (se pausa el receptor avanzado).": "Pressing ▶ moves the dongle to the radio (the advanced receiver pauses).",
   "Al pulsar ▶ el dongle pasa al radio (se pausa lo demás).": "Pressing ▶ moves the dongle to the radio (everything else pauses).",
   "📍 en el radar": "📍 on the radar",

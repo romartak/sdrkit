@@ -320,6 +320,8 @@ I18N.add({
   "🗑 Borrar": "🗑 Delete",
   "Registro de actividad": "Activity log",
   "Panel del negocio": "Business panel",
+  "👁 Solo escucha": "👁 Listen only",
+  "Puedes ver y escuchar, pero no cambiar nada": "You can look and listen, but not change anything",
   "Cuánto se usa la radio: transmisiones por hora y por día, los canales más activos y la transmisión más larga.": "How much the radio is used: transmissions per hour and per day, the busiest channels and the longest transmission.",
   "Hoy": "Today",
   "7 días": "7 days",

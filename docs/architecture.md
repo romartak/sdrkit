@@ -279,8 +279,8 @@ Summarised here, detailed in [Updating](updating.md).
 | Aspect | Design |
 |---|---|
 | **Exposure** | Plain HTTP on port 80 (and OpenWebRX+ on 8073), meant for the **local network, the Pi's own WPA2 hotspot and Tailscale**. Do not port-forward it to the internet |
-| **Authentication** | One shared password, `ADMIN_PASSWORD`. `POST /login` compares it in constant time; a wrong password costs a 1 s delay |
-| **Session cookie** | `sdrkit_auth` = HMAC-SHA256(secret, `"v1:" + password`), `HttpOnly`, `SameSite=Lax`, 30 days. The 32-byte secret is generated once in `/var/lib/sdrkit/secret` (mode 600). Changing the password invalidates every session |
+| **Authentication** | `ADMIN_PASSWORD`, plus an optional listen-only `VIEWER_PASSWORD` (see below). `POST /login` compares it in constant time; a wrong password costs a 1 s delay |
+| **Session cookie** | `sdrkit_auth` = HMAC-SHA256(secret, `"v1:" + password`), `HttpOnly`, `SameSite=Lax`, 30 days. The 32-byte secret is generated once in `/var/lib/sdrkit/secret` (mode 600). Changing the password invalidates every session. The listen-only session uses the same cookie with `"viewer1:" + viewer_password`; every `POST` except `/login` is refused for it, and `/api/wifi`, `/api/logs` and `/api/system/*` are hidden from it. It only guards the panel: OpenWebRX+ on port 8073 has its own login |
 | **No password** | If `ADMIN_PASSWORD` is empty, the panel is open to anyone on the network |
 | **API** | Every `/api/*` route requires the cookie (`401 {"error":"auth"}` otherwise); only `/login`, `/logout`, the icons and the manifest are public |
 | **Transport** | No TLS. The hotspot is WPA2; Tailscale encrypts remote access end to end (WireGuard). On a shared LAN, traffic — including the login — is readable by others on that LAN |

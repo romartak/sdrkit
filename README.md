@@ -85,6 +85,7 @@ internet required. At home it joins your WiFi; in the field it creates its own h
 - **433/868/915 MHz sensors**: weather stations, tyre sensors, doorbells… (rtl_433)
 - **Offline aircraft radar** on 1090 MHz (dump1090)
 - **Offline ship map** (AIS, 162 MHz) with name, type, speed and distress beacons
+- **Listen-only password** for guests: they can look and listen, never change or delete
 - 40+ more modes in the advanced receiver (OpenWebRX+): FT8, WSPR, SSTV, HF fax, ACARS…
 - Every service's channel plan built in: PMR446, FRS/GMRS, marine VHF, airband, CB, ham bands…
 

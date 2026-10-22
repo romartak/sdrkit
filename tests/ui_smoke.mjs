@@ -104,6 +104,7 @@ for (const lang of ["en", "es"]) {
     await page.click("#aiStart");
     await page.waitForFunction(() => document.querySelectorAll("#aiTable tbody tr[data-mmsi]").length >= 6, null, { timeout: 25000 });
     await page.click('.tabbar [data-tab="an"]');
+    await page.waitForFunction(() => SDR.status && SDR.status.mode === "ais" && !SDR.status.switching, null, { timeout: 15000 });
     await page.evaluate(() => SDR.api("/api/mode", {mode: "sweep"}));
   } catch (e) { fail(`${lang}: ship map: ${e.message.split("\n")[0]}`); }
 

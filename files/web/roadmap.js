@@ -12,7 +12,7 @@ const Roadmap = (() => {
       [5, "todo", "Home Assistant (MQTT)", "Sensores, aviones y actividad del radio en tu casa inteligente."],
       [6, "todo", "App instalable (PWA)", "El panel se instala en el celular y avisa como una app."],
       [7, "todo", "Resumen diario por Telegram", "Bot opcional que manda cada día el resumen de actividad."],
-      [8, "todo", "Usuario de solo escucha", "Segunda contraseña: escucha y ve todo, pero no cambia ni borra nada."],
+      [8, "done", "Usuario de solo escucha", "Segunda contraseña: escucha y ve todo, pero no cambia ni borra nada."],
     ]],
     [2, "Herramientas de campo", [
       [9, "todo", "Prueba de interferencias", "Asistente que dice si hay ruido, otra emisora o saturación."],

@@ -435,6 +435,7 @@ Dimensioned drawings for dipole, ground-plane, J-pole, 3-element Yagi, satellite
   (stars kept only on your device), **📤 Share** (share sheet, WhatsApp, Telegram, X, Facebook, email, copy link) and
   **👋 Introduction** to see the welcome tour again.
 - **Language:** English / Español.
+- **Listen-only user:** run `sudo sdrkit viewer` to set a second password. Whoever logs in with it sees the panel marked **👁 Listen only**: they can look at every tab, hear the live audio and download recordings, but any change (tuning, modes, deleting, settings) is refused, and they do not see the WiFi networks, system logs or updates. Handy for a shared tablet or for someone who only needs to listen. The same command with an empty password turns it off. It only guards this panel; the advanced receiver (port 8073) keeps its own login.
 - **Maintenance:** **📄 View logs** (last 200 lines of the SDR-Kit services), **🔄 Restart** (reboots the Pi), **⏻ Shut down**, **Log out** (shown only when a password is set).
 
 > [!WARNING]

@@ -6,6 +6,16 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.13.0] - 2026-10-22
+
+### Added
+- **Listen-only user**: an optional second password (`VIEWER_PASSWORD`, set or removed with `sudo sdrkit viewer`). Logging
+  in with it opens the same panel, marked **👁 Listen only**, where you can look at everything and listen to the live audio,
+  recordings and downloads, but every change is refused (`403`): tuning, modes, deleting, settings, reboot. It does not see
+  the saved WiFi networks, the system logs or the update status. Ignored when it equals the administrator password or when
+  there is no administrator password. `GET /api/status` now includes `role`. It only guards the panel; OpenWebRX+ (port 8073)
+  keeps its own login. Covered by `tests/test_viewer.py`.
+
 ## [3.12.0] - 2026-10-22
 
 ### Added

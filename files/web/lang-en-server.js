@@ -121,6 +121,8 @@
     "dump1090 no está instalado (sudo apt install dump1090-fa-minimal).": "dump1090 is not installed (sudo apt install dump1090-fa-minimal).",
     "¿El dongle está conectado?": "Is the dongle connected?",
     "Coordenadas inválidas.": "Invalid coordinates.",
+    "Modo de solo escucha: no se puede cambiar nada.": "Listen-only mode: nothing can be changed.",
+    "Modo de solo escucha: esto es sólo para el administrador.": "Listen-only mode: this is for the administrator only.",
     // decoder catalog (/api/decoders): names
     "Buscapersonas POCSAG / FLEX": "POCSAG / FLEX pagers",
     "Alertas de emergencia EAS": "EAS emergency alerts",

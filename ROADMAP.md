@@ -37,7 +37,7 @@ Estado: ☐ pendiente · ◐ hecha en parte (ver nota) · ✅ terminada (fecha �
 | 5 | ☐ | **Home Assistant (MQTT)** | Sensores de 433 MHz, aviones y actividad del radio publicados por MQTT con *discovery* automático; apagado por defecto. |
 | 6 | ☐ | **App instalable (PWA)** | El panel se instala en el celular, funciona sin conexión para lo estático y muestra avisos nativos cuando está abierto. |
 | 7 | ☐ | **Resumen diario por Telegram** | Bot opcional (token en `sdrkit.conf`) que manda cada día el resumen de actividad y, si se quiere, grabaciones marcadas. |
-| 8 | ☐ | **Usuario de solo escucha** | Segunda contraseña con permisos limitados: escucha y ve todo, pero no cambia configuración ni borra nada. |
+| 8 | ✅ 2026-10-22 · 3.13.0 | **Usuario de solo escucha** | Segunda contraseña con permisos limitados: escucha y ve todo, pero no cambia configuración ni borra nada. |
 
 ## Fase 2 · Herramientas de campo
 

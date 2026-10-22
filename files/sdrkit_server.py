@@ -55,7 +55,7 @@ def _read_version():
                     return v
         except OSError:
             pass
-    return "3.12.0"
+    return "3.13.0"
 
 
 VERSION = _read_version()
@@ -79,6 +79,7 @@ HACKRF_MIN_HZ, HACKRF_MAX_HZ = 1e6, 6000e6
 DEFAULTS = {
     "PANEL_PORT": "80",
     "ADMIN_PASSWORD": "",
+    "VIEWER_PASSWORD": "",
     "OWRX_PORT": "8073",
     "DEFAULT_MODE": "last",
     "SWEEP_ENGINE": "auto",
@@ -1907,6 +1908,9 @@ class App:
         self.sys = SysInfo()
         self.wifi = WiFi(conf, demo)
         self.password = conf.get("ADMIN_PASSWORD", "")
+        # segunda clave, de solo escucha: ve y escucha todo pero no cambia nada (ignorada si no hay clave de administrador o es igual)
+        vp = conf.get("VIEWER_PASSWORD", "")
+        self.viewer_password = vp if self.password and vp != self.password else ""
         self._login_fails = {}
         self._login_lock = threading.Lock()
         self.secret = self._secret()
@@ -1955,7 +1959,9 @@ class App:
         with self._login_lock:
             self._login_fails.pop(ip, None)
 
-    def token(self):
+    def token(self, role="admin"):
+        if role == "viewer":
+            return hmac.new(self.secret, ("viewer1:" + self.viewer_password).encode(), hashlib.sha256).hexdigest()
         return hmac.new(self.secret, ("v1:" + self.password).encode(), hashlib.sha256).hexdigest()
 
     # -- actualizaciones desde GitHub ------------------------------------------
@@ -2274,16 +2280,27 @@ class Handler(BaseHTTPRequestHandler):
             return origin is None
         return urlparse(origin).netloc.lower() == (self.headers.get("Host") or "").lower()
 
-    def _authed(self):
+    def _role(self):
+        """«admin» (todo), «viewer» (solo ver y escuchar) o None (sin sesión)."""
         app = self.app
         if not app.password:
-            return True
+            return "admin"
         cookie = self.headers.get("Cookie", "")
         for part in cookie.split(";"):
             k, _, v = part.strip().partition("=")
-            if k == "sdrkit_auth" and hmac.compare_digest(v, app.token()):
-                return True
-        return False
+            if k != "sdrkit_auth":
+                continue
+            if hmac.compare_digest(v, app.token()):
+                return "admin"
+            if app.viewer_password and hmac.compare_digest(v, app.token("viewer")):
+                return "viewer"
+        return None
+
+    def _authed(self):
+        return self._role() is not None
+
+    # lo que el usuario de solo escucha no puede ni ver: WiFi guardadas, registros del sistema y actualizaciones
+    VIEWER_BLOCKED = ("/api/wifi", "/api/logs", "/api/system/")
 
     # -- rutas --
     def do_HEAD(self):
@@ -2303,6 +2320,8 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/api/"):
                 return self._send(401, {"error": "auth"})
             return self._send(302, "", headers={"Location": "/login"})
+        if self._role() == "viewer" and path.startswith(self.VIEWER_BLOCKED):
+            return self._send(403, {"error": "Modo de solo escucha: esto es sólo para el administrador."})
         if path in ("/", "/index.html"):
             return self._static("index.html")
         if re.match(r"^/[a-z0-9_-]+\.(js|css)$", path):
@@ -2371,7 +2390,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, ("\ufeff" + "\n".join(rows) + "\n").encode("utf-8"), "text/csv; charset=utf-8",
                               {"Content-Disposition": "attachment; filename=mensajes-%s.csv" % time.strftime("%Y-%m-%d")})
         if path == "/api/status":
-            return self._send(200, self.app.status())
+            return self._send(200, dict(self.app.status(), role=self._role()))
         if path == "/api/sweep":
             s = self.app.sweep
             return self._send(200, {"params": s.params, "info": s.info, "cal": s.cal})
@@ -2409,9 +2428,11 @@ class Handler(BaseHTTPRequestHandler):
                 err = '<div class="e" data-en="Too many attempts. Try again in a few minutes.">Demasiados intentos. Prueba de nuevo en unos minutos.</div>'
                 return self._send(429, LOGIN_HTML.replace("__ERR__", err), "text/html; charset=utf-8",
                                   headers={"Retry-After": str(wait)})
-            if app.password and hmac.compare_digest(pw.encode(), app.password.encode()):
+            role = "admin" if app.password and hmac.compare_digest(pw.encode(), app.password.encode()) else \
+                "viewer" if app.viewer_password and hmac.compare_digest(pw.encode(), app.viewer_password.encode()) else None
+            if role:
                 app.login_ok(ip)
-                cookie = "sdrkit_auth=%s; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax" % app.token()
+                cookie = "sdrkit_auth=%s; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax" % app.token(role)
                 return self._send(303, "", headers={"Location": "/", "Set-Cookie": cookie})
             app.login_failed(ip)
             time.sleep(1.0)
@@ -2419,6 +2440,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, LOGIN_HTML.replace("__ERR__", err), "text/html; charset=utf-8")
         if not self._authed():
             return self._send(401, {"error": "auth"})
+        if self._role() == "viewer":
+            return self._send(403, {"error": "Modo de solo escucha: no se puede cambiar nada."})
         try:
             if path == "/api/mode":
                 mode = body.get("mode")
