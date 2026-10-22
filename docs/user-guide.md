@@ -334,9 +334,20 @@ The **Received** list is searchable (text, RIC, callsign) and filterable by type
 
 Antenna: a vertical quarter-wave of **6.5–6.9 cm**, as high as possible. Typical range is 100–250 km with a clear view. See [Antennas](antennas.md).
 
+### Ships (AIS 162 MHz)
+
+**Ship map · no internet**, with the same look as the aircraft radar.
+
+- **▶ Start map**; ships appear within 1–5 minutes (each one transmits every few seconds to a few minutes, depending on its speed). **Range**: 10, 25, 50, 100 or 200 km.
+- The map is centred on your location, the same one you save under **Aircraft → Your location**. Ships are colored by type (green cargo, orange tanker, light blue passenger, violet fishing, yellow tug) and leave a trail. Squares are aids to navigation and base stations.
+- The table shows name, MMSI, type, size, speed, course, destination (or navigation status) and distance. **Distress beacons are drawn in red**: AIS-SART, man-overboard and EPIRB (MMSI 970/972/974…) or navigation status 14.
+- Needs a decoder: `sudo apt install rtl-ais` or [AIS-catcher](https://github.com/jvde-github/AIS-catcher). The installer adds them when your repository has them. SDR-Kit decodes the NMEA sentences itself.
+- The dongle works on 162 MHz while the map is on, so the analyzer and the radio pause (as with the aircraft radar). AIS is a public, short-range signal: only ships that transmit appear, typically 20–60 km from the coast with a vertical antenna of about 46 cm.
+- *Not verified with real hardware yet:* tested against real AIS sentences and in demo mode; the options passed to `AIS-catcher` / `rtl_ais` still need a check on a Pi.
+
 ### All modes
 
-**Everything this device can decode** lists every decoder with its installation status: those that run **in this panel** (multimon-ng modes, CTCSS/DCS/DTMF, digital voice, the digital-signal identifier, rtl_433, dump1090) and those available **in the advanced receiver** (OpenWebRX+): RDS, AIS, ACARS, VDL2, HFDL, UAT 978, radiosondes, LoRa/Meshtastic, FT8 family (with `INSTALL_WSJTX`), JS8, RTTY, PSK31, NAVTEX, SSTV, FAX, DRM, DAB+, HD Radio, TETRA, FreeDV, M17 and AMBE digital voice (with a licensed dongle). Tap an entry to jump to it. The same list is available over SSH with `sdrkit decoders`.
+**Everything this device can decode** lists every decoder with its installation status: those that run **in this panel** (multimon-ng modes, CTCSS/DCS/DTMF, digital voice, the digital-signal identifier, rtl_433, dump1090, AIS) and those available **in the advanced receiver** (OpenWebRX+): RDS, ACARS, VDL2, HFDL, UAT 978, radiosondes, LoRa/Meshtastic, FT8 family (with `INSTALL_WSJTX`), JS8, RTTY, PSK31, NAVTEX, SSTV, FAX, DRM, DAB+, HD Radio, TETRA, FreeDV, M17 and AMBE digital voice (with a licensed dongle). Tap an entry to jump to it. The same list is available over SSH with `sdrkit decoders`.
 
 ## Recordings
 

@@ -84,6 +84,7 @@ lugar entras con [Tailscale](https://tailscale.com).
 - **Buscapersonas** POCSAG / FLEX, **APRS** con posiciones, alertas **EAS** (multimon-ng)
 - **Sensores de 433/868/915 MHz**: estaciones meteorológicas, sensores de llantas, timbres… (rtl_433)
 - **Radar de aviones sin internet** en 1090 MHz (dump1090)
+- **Mapa de barcos sin internet** (AIS, 162 MHz) con nombre, tipo, velocidad y balizas de socorro
 - Más de 40 modos en el receptor avanzado (OpenWebRX+): FT8, WSPR, SSTV, fax HF, ACARS…
 - Los canales de cada servicio listos: PMR446, FRS/GMRS, marina VHF, aviación, CB, radioaficionados…
 

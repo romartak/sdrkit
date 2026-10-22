@@ -217,6 +217,7 @@ I18N.add({
   "El dongle lo está usando el radio. Puedes cambiar al analizador.": "The dongle is in use by the radio. You can switch to the analyzer.",
   "El dongle lo está usando el receptor avanzado (OpenWebRX+). Puedes cambiar al analizador.": "The dongle is in use by the advanced receiver (OpenWebRX+). You can switch to the analyzer.",
   "El dongle lo está usando el decodificador de sensores (rtl_433). Puedes cambiar al analizador.": "The dongle is in use by the sensor decoder (rtl_433). You can switch to the analyzer.",
+  "El dongle lo está usando el mapa de barcos (AIS). Puedes cambiar al analizador.": "The dongle is in use by the ship map (AIS). You can switch to the analyzer.",
   "El dongle lo está usando el radar de aviones (dump1090). Puedes cambiar al analizador.": "The dongle is in use by the aircraft radar (dump1090). You can switch to the analyzer.",
   "El SDR está en reposo.": "The SDR is idle.",
   "Ojo: el radio está grabando, escaneando o decodificando; se pausará.": "Note: the radio is recording, scanning or decoding; it will be paused.",

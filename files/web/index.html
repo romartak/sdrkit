@@ -447,6 +447,7 @@
     <button data-dsub="msg" class="active">✉ Mensajes</button>
     <button data-dsub="ism">🌡 Sensores</button>
     <button data-dsub="air">✈ Aviones</button>
+    <button data-dsub="ais">🚢 Barcos</button>
     <button data-dsub="all">🧩 Todos los modos</button>
   </div>
 
@@ -554,6 +555,36 @@
           <div class="row" style="margin-bottom:8px"><label class="f">Ganancia<select id="adGain"></select></label></div>
           <div style="overflow-x:auto"><table class="tbl" id="adTable"></table></div>
           <p class="muted small" style="margin:8px 0 0">Antena: vertical de 6.9 cm (¼ de onda a 1090 MHz) lo más alta posible; con el dipolo del kit, abre cada brazo a 6.5 cm. Alcance típico 100–250 km con vista despejada. Squawk 7700 = emergencia, 7600 = sin radio, 7500 = interferencia ilícita.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dec-ais" class="dsub hidden">
+    <div class="cols">
+      <div>
+        <div class="card">
+          <h3>Mapa de barcos (AIS 162 MHz) · sin internet</h3>
+          <div class="row" style="margin-bottom:8px">
+            <button class="btn primary" id="aiStart">▶ Encender mapa</button>
+            <button class="btn danger" id="aiStop">■ Detener</button>
+            <select id="aiRange" style="max-width:130px" aria-label="Alcance"><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100" selected>100 km</option><option value="200">200 km</option></select>
+          </div>
+          <canvas id="aisMap" aria-label="Mapa de barcos"></canvas>
+          <p class="muted small" id="aiState" style="margin:8px 0 0">—</p>
+        </div>
+        <div class="card">
+          <h3>Tu ubicación (centro del mapa)</h3>
+          <p class="muted small" id="aiLocNote" style="margin:0 0 8px">—</p>
+          <button class="btn" id="aiGoLoc">Cambiar en Aviones → Tu ubicación</button>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h3>Barcos</h3>
+          <div class="row" style="margin-bottom:8px"><label class="f">Ganancia<select id="aiGain"></select></label></div>
+          <div style="overflow-x:auto"><table class="tbl" id="aiTable"></table></div>
+          <p class="muted small" style="margin:8px 0 0">Antena vertical de unos 46 cm (¼ de onda a 162 MHz), lo más alta posible y con vista al agua. El alcance típico es de 20–60 km desde la costa. Las señales AIS son públicas y de corto alcance: sólo se ven los barcos que transmiten.</p>
         </div>
       </div>
     </div>

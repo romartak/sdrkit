@@ -97,6 +97,16 @@ for (const lang of ["en", "es"]) {
     await page.click('.tabbar [data-tab="an"]');
   } catch (e) { fail(`${lang}: business panel: ${e.message.split("\n")[0]}`); }
 
+  // ship map (AIS): start it in demo mode and wait for ships in the table
+  try {
+    await page.click('.tabbar [data-tab="dec"]');
+    await page.click('#decNav [data-dsub="ais"]');
+    await page.click("#aiStart");
+    await page.waitForFunction(() => document.querySelectorAll("#aiTable tbody tr[data-mmsi]").length >= 6, null, { timeout: 25000 });
+    await page.click('.tabbar [data-tab="an"]');
+    await page.evaluate(() => SDR.api("/api/mode", {mode: "sweep"}));
+  } catch (e) { fail(`${lang}: ship map: ${e.message.split("\n")[0]}`); }
+
   const missing = await page.evaluate(() => Array.from(I18N.missing));
   if (lang === "en" && missing.length) {
     console.log(`  note: ${missing.length} Spanish-looking string(s) without English (often live demo data):`);

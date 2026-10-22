@@ -6,6 +6,20 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-10-22
+
+### Added
+- **Ship map (AIS)** (Decode → **🚢 Ships**): ships appear on an offline radar-style map around your location, like the aircraft
+  radar — name, MMSI, type (cargo, tanker, passenger, fishing, sailing, tug…), size, speed, course, destination, distance and
+  bearing, with trails and colors by type. Ships, aids to navigation and base stations are decoded by SDR-Kit's own AIS
+  decoder (message types 1–5, 18, 19, 21, 24; checksums verified; multi-part messages joined) fed by **AIS-catcher** or
+  **rtl_ais** (`sudo apt install rtl-ais`; the installer adds it when the repository has it). Distress beacons
+  (AIS-SART, man overboard, EPIRB) are flagged red. New mode `ais` (the dongle works on 162 MHz while it is on), API
+  `GET/POST /api/ais`. Demo mode simulates eight ships and a distress beacon. Covered by `tests/test_ais.py` and the
+  browser smoke test. *Not verified with real hardware yet: the decoder is tested against real AIS sentences and the
+  demo, but the AIS-catcher / rtl_ais launch options have not been run on a Pi.*
+- The decoder catalog now lists AIS as a panel decoder (before it only pointed at OpenWebRX+).
+
 ## [3.11.0] - 2026-10-22
 
 ### Added

@@ -267,6 +267,7 @@ pre.logs{white-space:pre-wrap;word-break:break-all;font:11px/1.45 var(--mono);ba
 .fchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .fchip{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:3px 8px;font-size:13px;white-space:nowrap}
 .fchip.bad{border-color:#7a3333;color:#ffb3b3}
+#aisMap{display:block;width:100%;aspect-ratio:1;max-height:70vh;background:#04101a;border-radius:10px;border:1px solid #16384f}
 #radar{display:block;width:100%;aspect-ratio:1;max-height:70vh;background:#04120a;border-radius:10px;border:1px solid #164a2c}
 .tbl tr[data-hex]{cursor:pointer}
 .biz-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}

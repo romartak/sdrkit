@@ -8,7 +8,7 @@ const Roadmap = (() => {
       [1, "done", "Repetición instantánea", "«⏪ ¿Qué dijo?»: repite los últimos 30 s que se oyeron."],
       [2, "done", "Panel del negocio", "Gráficos de actividad del radio por hora y por día, canal más usado."],
       [3, "todo", "Alertas de aviones", "Aviso por emergencias (7700/7600/7500), militares y helicópteros cerca."],
-      [4, "todo", "Mapa de barcos (AIS)", "Barcos en un mapa sin internet, como el radar de aviones."],
+      [4, "done", "Mapa de barcos (AIS)", "Barcos en un mapa sin internet, como el radar de aviones."],
       [5, "todo", "Home Assistant (MQTT)", "Sensores, aviones y actividad del radio en tu casa inteligente."],
       [6, "todo", "App instalable (PWA)", "El panel se instala en el celular y avisa como una app."],
       [7, "todo", "Resumen diario por Telegram", "Bot opcional que manda cada día el resumen de actividad."],

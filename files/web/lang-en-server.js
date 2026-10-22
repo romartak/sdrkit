@@ -138,6 +138,9 @@
     "DRM (onda corta digital)": "DRM (digital shortwave)",
     "RDS de emisoras FM": "RDS from FM stations",
     "Barcos AIS": "AIS ships",
+    "Barcos AIS (mapa sin internet)": "AIS ships (offline map)",
+    "Decodificar → Barcos": "Decode → Ships",
+    "Falta un decodificador AIS (sudo apt install rtl-ais, o instala AIS-catcher).": "No AIS decoder installed (sudo apt install rtl-ais, or install AIS-catcher).",
     "Aviación ACARS / VDL2 / HFDL": "Airband ACARS / VDL2 / HFDL",
     "UAT 978 MHz (EE. UU.)": "UAT 978 MHz (US)",
     "Radiosondas meteorológicas": "Weather radiosondes",
@@ -217,6 +220,7 @@
     [/^(\d)FSK (\d+) baudios$/, "$1FSK $2 baud"],                              // the guess before the colon
     [/^No se pudo iniciar (multimon-ng|dsd-fme): (.*)$/, "Could not start $1: $2"],
     [/^(rtl_433|dump1090) se detuvo\. (.*)$/, (m, p, e) => p + " stopped. " + or(e)],
+    [/^El decodificador AIS se detuvo\. (.*)$/, (m, e) => "The AIS decoder stopped. " + or(e)],
     [/^(RIC|Capcode) (\S+) · \(solo tono\)$/, "$1 $2 · (tone only)"],
     // decoder catalog note + " · falta: binaries" (decode.js)
     [/^(?:(.*?) )?· falta: (.+)$/, (m, note, bins) => (note ? or(note) + " · " : "") + "missing: " + bins],

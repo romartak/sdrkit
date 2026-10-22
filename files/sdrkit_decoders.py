@@ -3,6 +3,7 @@
 SDR-Kit · Decodificadores
   - SensorsManager: rtl_433 (estaciones meteorológicas, sensores de llantas TPMS, timbres, controles…)
   - AdsbManager:    dump1090-fa (aviones: posición, altura, velocidad) con radar sin internet
+  - AisManager:     AIS-catcher / rtl_ais (barcos AIS) con decodificador NMEA propio y mapa sin internet
   - DataDecoder:    multimon-ng sobre el audio del radio (POCSAG/FLEX, APRS, EAS, Morse, selcall…)
   - status():       qué decodificadores están instalados (propios y de OpenWebRX+)
 """
@@ -562,6 +563,346 @@ def _dist_bearing(lat1, lon1, lat2, lon2):
 
 
 # ----------------------------------------------------------------------------
+# Barcos AIS (161.975 / 162.025 MHz): decodificador NMEA propio + AIS-catcher / rtl_ais
+# ----------------------------------------------------------------------------
+
+def nmea_checksum(body):
+    c = 0
+    for ch in body:
+        c ^= ord(ch)
+    return "%02X" % c
+
+
+def _ais_bits(payload, pad=0):
+    bits = []
+    for ch in payload:
+        v = ord(ch) - 48
+        if v > 40:
+            v -= 8
+        if not 0 <= v < 64:
+            raise ValueError("carácter AIS inválido")
+        bits.extend((v >> i) & 1 for i in range(5, -1, -1))
+    return bits[:len(bits) - pad] if pad else bits
+
+
+def _u(bits, a, n):
+    v = 0
+    for b in bits[a:a + n]:
+        v = (v << 1) | b
+    return v if len(bits) >= a + n else None
+
+
+def _s(bits, a, n):
+    v = _u(bits, a, n)
+    if v is None:
+        return None
+    return v - (1 << n) if v & (1 << (n - 1)) else v
+
+
+def _text(bits, a, n):
+    out = []
+    for i in range(a, a + n, 6):
+        if i + 6 > len(bits):
+            break
+        v = _u(bits, i, 6)
+        out.append(chr(v + 64) if v < 32 else chr(v))
+    return "".join(out).split("@")[0].strip()
+
+
+def _lonlat(bits, lon_at, lon_n, lat_at, lat_n):
+    lon, lat = _s(bits, lon_at, lon_n), _s(bits, lat_at, lat_n)
+    if lon is None or lat is None or abs(lon) > 180 * 600000 or abs(lat) > 90 * 600000:
+        return None, None  # 181° / 91° = «sin posición»
+    return round(lat / 600000.0, 5), round(lon / 600000.0, 5)
+
+
+def ais_kind(code):
+    """Categoría para colorear el barco a partir del código «tipo de barco» de AIS."""
+    c = int(code or 0)
+    if c == 30:
+        return "fishing"
+    if c in (31, 32, 52):
+        return "tug"
+    if c in (35, 55):
+        return "military"
+    if c == 36:
+        return "sailing"
+    if c == 37:
+        return "pleasure"
+    if 60 <= c <= 69:
+        return "passenger"
+    if 70 <= c <= 79:
+        return "cargo"
+    if 80 <= c <= 89:
+        return "tanker"
+    if c in (50, 51, 53, 54, 58) or 40 <= c <= 49:
+        return "service"
+    return "other"
+
+
+class AisParser:
+    """Frases NMEA !AIVDM → barcos. Verifica el checksum y junta las frases de varios fragmentos."""
+
+    def __init__(self, keep=2000):
+        self.lock = threading.Lock()
+        self.ships = {}
+        self.frag = {}
+        self.keep = keep
+        self.count = 0
+
+    def feed(self, line, now=None):
+        """Procesa una línea; devuelve el MMSI actualizado o None si no era AIS válido."""
+        line = line.strip()
+        if not (line.startswith("!AIVDM") or line.startswith("!AIVDO")):
+            return None
+        body, _, chk = line[1:].partition("*")
+        if chk[:2].upper() != nmea_checksum(body):
+            return None
+        f = body.split(",")
+        try:
+            total, num, seq, payload, pad = int(f[1]), int(f[2]), f[3], f[5], int(f[6] or 0)
+        except (IndexError, ValueError):
+            return None
+        if total > 1:
+            key = (seq, f[4])
+            parts = self.frag.setdefault(key, {})
+            parts[num] = (payload, pad)
+            if len(parts) < total:
+                if len(self.frag) > 20:
+                    self.frag.pop(next(iter(self.frag)))
+                return None
+            del self.frag[key]
+            payload, pad = "".join(parts[i][0] for i in sorted(parts)), parts[max(parts)][1]
+        try:
+            bits = _ais_bits(payload, pad)
+        except ValueError:
+            return None
+        return self._message(bits, time.time() if now is None else now)
+
+    def _message(self, b, now):
+        t, mmsi = _u(b, 0, 6), _u(b, 8, 30)
+        if t is None or not mmsi:
+            return None
+        upd = {}
+        if t in (1, 2, 3) and len(b) >= 137:
+            sog, cog, hd = _u(b, 50, 10), _u(b, 116, 12), _u(b, 128, 9)
+            lat, lon = _lonlat(b, 61, 28, 89, 27)
+            upd = {"cls": "A", "status": _u(b, 38, 4), "lat": lat, "lon": lon,
+                   "sog": None if sog == 1023 else sog / 10.0, "cog": None if cog >= 3600 else cog / 10.0,
+                   "heading": None if hd == 511 else hd}
+        elif t in (18, 19) and len(b) >= 133:
+            sog, cog, hd = _u(b, 46, 10), _u(b, 112, 12), _u(b, 124, 9)
+            lat, lon = _lonlat(b, 57, 28, 85, 27)
+            upd = {"cls": "B", "lat": lat, "lon": lon, "sog": None if sog == 1023 else sog / 10.0,
+                   "cog": None if cog >= 3600 else cog / 10.0, "heading": None if hd == 511 else hd}
+            if t == 19 and len(b) >= 271:
+                upd.update(name=_text(b, 143, 120), shiptype=_u(b, 263, 8))
+        elif t == 5 and len(b) >= 422:
+            upd = {"cls": "A", "imo": _u(b, 40, 30) or None, "callsign": _text(b, 70, 42), "name": _text(b, 112, 120),
+                   "shiptype": _u(b, 232, 8), "length": (_u(b, 240, 9) or 0) + (_u(b, 249, 9) or 0) or None,
+                   "beam": (_u(b, 258, 6) or 0) + (_u(b, 264, 6) or 0) or None,
+                   "draught": (_u(b, 294, 8) or 0) / 10.0 or None, "dest": _text(b, 302, 120)}
+        elif t == 24 and len(b) >= 160:
+            if _u(b, 38, 2) == 0:
+                upd = {"cls": "B", "name": _text(b, 40, 120)}
+            elif len(b) >= 162:
+                upd = {"cls": "B", "shiptype": _u(b, 40, 8), "callsign": _text(b, 90, 42),
+                       "length": (_u(b, 132, 9) or 0) + (_u(b, 141, 9) or 0) or None,
+                       "beam": (_u(b, 150, 6) or 0) + (_u(b, 156, 6) or 0) or None}
+        elif t == 21 and len(b) >= 219:
+            lat, lon = _lonlat(b, 164, 28, 192, 27)
+            upd = {"cls": "AtoN", "name": _text(b, 43, 120), "lat": lat, "lon": lon, "shiptype": 0}
+        elif t == 4 and len(b) >= 134:
+            lat, lon = _lonlat(b, 79, 28, 107, 27)
+            upd = {"cls": "base", "lat": lat, "lon": lon}
+        else:
+            return None
+        with self.lock:
+            s = self.ships.get(mmsi)
+            if s is None:
+                if len(self.ships) >= self.keep:
+                    self.ships.pop(min(self.ships, key=lambda k: self.ships[k]["last"]))
+                s = self.ships[mmsi] = {"mmsi": mmsi, "count": 0, "first": now}
+            for k, v in upd.items():
+                if v is not None and v != "":
+                    s[k] = v
+            if "lat" in upd and upd["lat"] is None:
+                s.pop("lat", None), s.pop("lon", None)
+            s.update(last=now, count=s["count"] + 1)
+            s["kind"] = ais_kind(s.get("shiptype"))
+            self.count += 1
+        return mmsi
+
+    def snapshot(self, max_age=1800.0, now=None):
+        now = time.time() if now is None else now
+        with self.lock:
+            out = [dict(s, seen=round(now - s["last"], 1)) for s in self.ships.values() if now - s["last"] <= max_age]
+            for k in [k for k, s in self.ships.items() if now - s["last"] > 6 * max_age]:
+                del self.ships[k]
+        out.sort(key=lambda s: (s.get("lat") is None, s["seen"]))
+        return out
+
+
+def ais_emergency(s):
+    """Señal de socorro: estado «AIS-SART activo» o MMSI de baliza (970 SART, 972 hombre al agua, 974 EPIRB)."""
+    return s.get("status") == 14 or str(s.get("mmsi", "")).startswith(("970", "972", "974"))
+
+
+# --- Codificador (lo usa el modo demo y las pruebas para generar frases reales, bit a bit)
+
+def _pack(fields):
+    bits = []
+    for v, n in fields:
+        v = int(v) & ((1 << n) - 1)
+        bits.extend((v >> i) & 1 for i in range(n - 1, -1, -1))
+    return bits
+
+
+def _ptext(s, n):
+    s = (s.upper() + "@" * n)[:n]
+    return [(ord(c) - 64) if 64 <= ord(c) < 96 else ord(c) for c in s]
+
+
+def _armor(bits):
+    pad = (-len(bits)) % 6
+    bits = bits + [0] * pad
+    out = ""
+    for i in range(0, len(bits), 6):
+        v = int("".join(map(str, bits[i:i + 6])), 2)
+        out += chr(v + 48 if v < 40 else v + 56)
+    return out, pad
+
+
+def _sentences(bits, channel="A", seq="1"):
+    payload, pad = _armor(bits)
+    chunks = [payload[i:i + 60] for i in range(0, len(payload), 60)] or [""]
+    out = []
+    for i, c in enumerate(chunks, 1):
+        body = "AIVDM,%d,%d,%s,%s,%s,%d" % (len(chunks), i, seq if len(chunks) > 1 else "", channel, c, pad if i == len(chunks) else 0)
+        out.append("!%s*%s" % (body, nmea_checksum(body)))
+    return out
+
+
+def ais_encode_position(mmsi, lat, lon, sog=0.0, cog=0.0, heading=511, status=0, msg=1):
+    f = [(msg, 6), (0, 2), (mmsi, 30), (status, 4), (128, 8), (round(sog * 10), 10), (0, 1),
+         (round(lon * 600000), 28), (round(lat * 600000), 27), (round(cog * 10), 12), (heading, 9), (60, 6), (0, 3), (0, 1), (0, 19)]
+    return _sentences(_pack(f))
+
+
+def ais_encode_class_b(mmsi, lat, lon, sog=0.0, cog=0.0, heading=511):
+    f = [(18, 6), (0, 2), (mmsi, 30), (0, 8), (round(sog * 10), 10), (0, 1), (round(lon * 600000), 28), (round(lat * 600000), 27),
+         (round(cog * 10), 12), (heading, 9), (60, 6), (0, 14)]
+    return _sentences(_pack(f))
+
+
+def ais_encode_static(mmsi, name, shiptype, callsign="", dest="", length=0, beam=0, draught=0.0, imo=0):
+    bow, port = int(length * 0.8), int(beam / 2)
+    f = [(5, 6), (0, 2), (mmsi, 30), (0, 2), (imo, 30)]
+    bits = _pack(f)
+    for s, n in ((callsign, 7), (name, 20)):
+        bits += _pack([(c, 6) for c in _ptext(s, n)])
+    bits += _pack([(shiptype, 8), (bow, 9), (int(length) - bow, 9), (port, 6), (int(beam) - port, 6), (1, 4), (0, 20), (round(draught * 10), 8)])
+    bits += _pack([(c, 6) for c in _ptext(dest, 20)])
+    bits += _pack([(0, 1), (0, 1)])
+    return _sentences(bits)
+
+
+class AisManager(_ProcEngine):
+    name = "barcos"
+
+    def __init__(self, conf, state, folder, demo=False, location=None):
+        self.parser = AisParser()
+        self.get_location = location or (lambda: None)
+        self.seen_today = {}
+        p = {"gain": "auto"}
+        p.update(state.get("ais") or {})
+        self.params = p
+        self.tail = collections.deque(maxlen=6)
+        super().__init__(conf, state, folder, demo)
+
+    def set_params(self, p):
+        g = p.get("gain", self.params.get("gain"))
+        self.params = {"gain": "auto" if str(g).lower() == "auto" else min(max(float(g), 0.0), 50.0)}
+        self.state.update(ais=self.params)
+        self.restart()
+        return self.params
+
+    def snapshot(self):
+        ships = self.parser.snapshot()
+        loc = self.get_location()
+        if not loc:
+            pts = [(s["lat"], s["lon"]) for s in ships if s.get("lat") is not None]
+            if pts:
+                loc = {"lat": sum(p[0] for p in pts) / len(pts), "lon": sum(p[1] for p in pts) / len(pts), "source": "estimada"}
+        today = time.strftime("%Y-%m-%d")
+        for s in ships:
+            self.seen_today[s["mmsi"]] = today
+            s["emerg"] = ais_emergency(s)
+            if loc and s.get("lat") is not None:
+                s["dist_km"], s["bearing"] = _dist_bearing(loc["lat"], loc["lon"], s["lat"], s["lon"])
+        return {"ships": ships, "messages": self.parser.count, "now": time.time(), "location": loc, "info": self.info,
+                "params": self.params, "today": len([1 for v in self.seen_today.values() if v == today])}
+
+    def _run(self, ver):
+        exe = which("AIS-catcher", "ais-catcher", "rtl_ais")
+        if not exe:
+            raise RuntimeError("Falta un decodificador AIS (sudo apt install rtl-ais, o instala AIS-catcher).")
+        idx = str(int(float(self.conf.get("RTL_DEVICE_INDEX", 0) or 0)))
+        gain = self.params.get("gain")
+        if os.path.basename(exe).lower() == "rtl_ais":
+            cmd = [exe, "-n", "-d", idx] + (["-g", str(gain)] if gain not in (None, "auto") else [])
+        else:
+            cmd = [exe, "-d", idx, "-o", "1"] + (["-gr", "TUNER", str(gain), "RTLAGC", "off"] if gain not in (None, "auto") else [])
+        self.tail.clear()
+        # rtl_ais escribe las frases por stderr y AIS-catcher por stdout: se leen las dos juntas
+        self.proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors="replace", bufsize=1)
+        for line in self.proc.stdout:
+            if not self._alive(ver):
+                break
+            if self.parser.feed(line) is None and line.strip():
+                self.tail.append(line.strip())
+        if self._alive(ver):
+            raise RuntimeError("El decodificador AIS se detuvo. " + (" ".join(list(self.tail)[-2:])[-300:] or "¿El dongle está conectado?"))
+
+    def _demo_loop(self, ver):
+        loc = self.get_location() or {}
+        lat0, lon0 = loc.get("lat", 18.44), loc.get("lon", -69.90)
+        rng = np.random.default_rng(21)
+        kinds = [(70, "CARIBBEAN TRADER", 190, 28, "SANTO DOMINGO"), (80, "PETROMAR UNO", 228, 36, "HAINA"),
+                 (60, "ISLA CATALINA", 120, 22, "LA ROMANA"), (30, "DON PEPE", 24, 7, ""), (36, "VIENTO SUR", 14, 4, "BOCA CHICA"),
+                 (52, "REMOLCADOR 7", 32, 10, "HAINA"), (37, "SEA LION", 18, 5, ""), (70, "ATLANTIC STAR", 240, 32, "MIAMI")]
+        ships = []
+        for i, (st, name, length, beam, dest) in enumerate(kinds):
+            ships.append({"mmsi": 366000000 + 1137 * (i + 1), "name": name, "st": st, "length": length, "beam": beam, "dest": dest,
+                          "lat": lat0 - float(rng.uniform(0.02, 0.35)), "lon": lon0 + float(rng.uniform(-0.45, 0.45)),
+                          "sog": 0.0 if st == 30 and i == 3 else float(rng.uniform(3, 17)), "cog": float(rng.uniform(0, 360)),
+                          "cls": "B" if st in (30, 36, 37) else "A", "tick": 0})
+        sos = {"mmsi": 970123456, "lat": lat0 - 0.18, "lon": lon0 + 0.1}
+        tick = 0
+        while self._alive(ver):
+            for s in ships:
+                d = s["sog"] * 0.514 * 2.0 / 111000.0
+                s["lat"] += d * math.cos(math.radians(s["cog"]))
+                s["lon"] += d * math.sin(math.radians(s["cog"])) / max(0.2, math.cos(math.radians(s["lat"])))
+                s["cog"] = (s["cog"] + float(rng.normal(0, 1.5))) % 360
+                lines = []
+                if tick % 15 == 0:
+                    lines += ais_encode_static(s["mmsi"], s["name"], s["st"], "HI%04d" % (s["mmsi"] % 10000), s["dest"], s["length"], s["beam"], 5.5)
+                if s["cls"] == "A":
+                    lines += ais_encode_position(s["mmsi"], s["lat"], s["lon"], s["sog"], s["cog"], int(s["cog"]), 0 if s["sog"] > 0.5 else 5)
+                else:
+                    lines += ais_encode_class_b(s["mmsi"], s["lat"], s["lon"], s["sog"], s["cog"], int(s["cog"]))
+                for ln in lines:
+                    self.parser.feed(ln)
+            if tick == 6:  # una baliza de socorro de ejemplo (AIS-SART)
+                for ln in ais_encode_position(sos["mmsi"], sos["lat"], sos["lon"], 0.0, 0.0, 511, 14):
+                    self.parser.feed(ln)
+            tick += 1
+            with self.cv:
+                self.cv.wait(2.0)
+
+
+# ----------------------------------------------------------------------------
 # Qué está instalado
 # ----------------------------------------------------------------------------
 
@@ -578,6 +919,7 @@ CATALOG = [
     ("digid", "Identificador automático de señales digitales", "panel", [], "Radio: avisa qué tipo de señal es"),
     ("sensors", "Sensores ISM (rtl_433): clima, llantas TPMS, timbres…", "panel", ["rtl_433"], "Decodificar → Sensores"),
     ("adsb", "Aviones ADS-B (radar sin internet)", "panel", ["dump1090-fa|dump1090"], "Decodificar → Aviones"),
+    ("ais", "Barcos AIS (mapa sin internet)", "panel", ["AIS-catcher|ais-catcher|rtl_ais"], "Decodificar → Barcos"),
     ("dmr", "Voz digital DMR · D-Star · YSF · NXDN · P25", "owrx", ["codecserver"], "requiere códec AMBE (llave USB AMBE3000)"),
     ("m17", "Voz digital M17", "owrx", ["m17-demod"], "códec abierto"),
     ("freedv", "Voz digital FreeDV (HF)", "owrx", ["freedv_rx"], ""),
@@ -586,7 +928,6 @@ CATALOG = [
     ("hdradio", "HD Radio (EE. UU.)", "owrx", ["nrsc5"], ""),
     ("drm", "DRM (onda corta digital)", "owrx", ["dream"], ""),
     ("rds", "RDS de emisoras FM", "owrx", ["redsea"], ""),
-    ("ais", "Barcos AIS", "owrx", [], "integrado en OpenWebRX+"),
     ("acars", "Aviación ACARS / VDL2 / HFDL", "owrx", ["acarsdec", "dumpvdl2", "dumphfdl"], ""),
     ("uat", "UAT 978 MHz (EE. UU.)", "owrx", ["dump978-fa"], ""),
     ("sonde", "Radiosondas meteorológicas", "owrx", ["rs41mod|dfm09mod|rs41ecc"], ""),
