@@ -99,6 +99,7 @@ const Help = (() => {
       u: ["En el panel: DMR, P25, D-Star, Fusion, NXDN, dPMR y M17 con DSD-FME (opcional).", "En el receptor avanzado: los mismos con una llave AMBE3000 (camino con licencia).",
         "Imposible con cualquier equipo: voz cifrada (AES, ARC4, TETRA con TEA), celulares, WiFi o Bluetooth cifrados."]},
     grabaciones: {t: "Grabaciones", p: "Todos los audios grabados, por día, con frecuencia, duración y subtono.", u: ["▶ escucha, ⬇ descarga, selecciona varias para bajar un ZIP o borrarlas.", "Busca por frecuencia, nombre o tono."]},
+    negocio: {t: "Panel del negocio", p: "Resume el registro de actividad: cuántas transmisiones hubo, a qué horas y en qué días, qué canales se usan más y cuál fue la transmisión más larga.", u: ["Elige Hoy, 7 días o 30 días.", "Las barras muestran el número de transmisiones; toca una barra (o déjala pulsada) para ver el valor.", "🎧 en un canal vuelve a esa frecuencia."], c: "Se calcula con el registro de actividad: si lo borras, los gráficos empiezan de cero. En modo demo se usan datos de ejemplo."},
     actividad: {t: "Registro de actividad", p: "Cada transmisión que el radio o el escáner detectan queda anotada aunque no grabes: hora, frecuencia, duración, nivel, tono y tipo digital.", u: ["Descárgalo en CSV para Excel.", "🎧 vuelve a esa frecuencia."]},
     paises: {t: "Tu país", p: "Elige tu país y el panel te muestra lo que corresponde allí: qué walkie-talkies sin licencia se usan, las bandas de radioaficionado, dónde están las salidas de las repetidoras y qué subtonos suelen usar.",
       u: ["Los servicios propios de tu país aparecen primero en la lista de abajo; los de otros países, más tenues.", "«📡 Buscar» escanea las salidas de repetidoras de esa banda: el escáner se detiene en cada una que esté activa.",
@@ -141,7 +142,7 @@ const Help = (() => {
     ["limite", "#limUp"], ["vigilancia", "#monOn"], ["estados", "#stSave"], ["picos", "#peakRows"],
     ["squelch", "#rSq"], ["scrambler", "#rInv"], ["panorama", "#pan"], ["subtonos", "#dCtcss"], ["dsd", "#dsdModes"], ["datos", "#rData"], ["grabar", "#rRec"], ["repeticion", "#rReplay"],
     ["escaner", "#scStart"], ["memorias", "#memList"], ["mensajes", "#dmKinds"], ["sensores", "#snPreset"], ["adsb", "#radar"],
-    ["ubicacion", "#adLat"], ["todos", "#allList"], ["vozdigital", "#ambeState"], ["grabaciones", "#recSearch"], ["actividad", "#actTable"],
+    ["ubicacion", "#adLat"], ["todos", "#allList"], ["vozdigital", "#ambeState"], ["grabaciones", "#recSearch"], ["negocio", "#bizBody"], ["actividad", "#actTable"],
     ["paises", "#paisSel"], ["decsub", "#toneF"], ["canales", "#chServices"], ["guia", "#refTable"], ["tablas", "#ctcssGrid"], ["tablas", "#dcsGrid"], ["antenas", "#antF"], ["cable", "#cabT"],
     ["owrx", "#btnRxOpen"], ["wifi", "#btnHotspot"], ["sistema", "#tiles"], ["actualizar", "#btnUpdCheck"],
   ];

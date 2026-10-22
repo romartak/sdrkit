@@ -209,7 +209,7 @@ Con GitHub, la configuración queda en `/etc/sdrkit/sdrkit.conf` con valores por
 - **Analizador:** espectro, cascada, sintonizador, marcadores, mediciones, span cero, límites y vigilancia.
 - **Radio:** escuchar (también digital), buscar señal, subtonos, datos, grabar, escáner, memorias y modo cazador.
 - **Decodificar:** mensajes (POCSAG/FLEX/APRS/EAS), sensores de 433 MHz, radar de aviones y la lista de todos los modos.
-- **Grabaciones:** audios por día y el registro de actividad.
+- **Grabaciones:** audios por día, el **panel del negocio** (gráficos de uso por hora y por día, canales más usados) y el registro de actividad.
 - **Más:**
   - **Canales**: todos los servicios.
   - Guía de frecuencias y tonos.

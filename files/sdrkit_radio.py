@@ -10,6 +10,7 @@ Sólo usa numpy y la biblioteca estándar.
 """
 
 import collections
+import datetime
 import io
 import json
 import math
@@ -729,7 +730,7 @@ class ReplayBuffer:
 
 
 class ActivityLog:
-    def __init__(self, path, keep=1000):
+    def __init__(self, path, keep=5000):
         self.path = path
         self.lock = threading.Lock()
         self.items = collections.deque(maxlen=keep)
@@ -767,6 +768,67 @@ class ActivityLog:
                 open(self.path, "w").close()
             except OSError:
                 pass
+
+    def stats(self, days=7, now=None):
+        with self.lock:
+            items = list(self.items)
+        return activity_stats(items, days, now)
+
+
+def demo_activity(now=None, days=7):
+    """Made-up activity for demo mode (shown only in memory), so the business panel has something to draw."""
+    now = time.time() if now is None else now
+    chans = [("Canal 1 (FRS/GMRS)", 462562500), ("Taxi", 151625000), ("Canal 16 marina", 156800000), ("Seguridad", 464550000)]
+    out = []
+    for d in range(days):
+        for i in range(18 + (d * 7) % 9):
+            hour = 7 + (i * 5 + d) % 14
+            t = now - d * 86400 - ((now % 86400) - hour * 3600) % 86400 + (i * 97) % 3000
+            if t > now:
+                continue
+            name, freq = chans[(i * 3 + d) % 4 if i % 3 else 0]
+            out.append({"t": round(t, 1), "freq": freq, "mod": "nfm", "name": name, "peak_db": -40.0, "dur": round(2 + (i * 13 + d * 7) % 40 / 2, 1)})
+    return sorted(out, key=lambda a: a["t"])
+
+
+def activity_stats(items, days=7, now=None):
+    """Summary of the activity log for the business panel: per hour of the day, per day, busiest channels, longest transmission."""
+    now = time.time() if now is None else now
+    days = max(1, min(int(days), 90))
+    today = datetime.date.fromtimestamp(now)
+    first = today - datetime.timedelta(days=days - 1)
+    start = time.mktime(first.timetuple())
+    hours = [{"n": 0, "secs": 0.0} for _ in range(24)]
+    per_day = {(first + datetime.timedelta(days=i)).isoformat(): {"n": 0, "secs": 0.0} for i in range(days)}
+    chans, longest, total, secs = {}, None, 0, 0.0
+    for a in items:
+        t, dur = a.get("t"), a.get("dur")
+        if not isinstance(t, (int, float)) or not isinstance(dur, (int, float)) or t < start or t > now + 60:
+            continue
+        lt = time.localtime(t)
+        day = time.strftime("%Y-%m-%d", lt)
+        if day not in per_day:
+            continue
+        total += 1
+        secs += dur
+        hours[lt.tm_hour]["n"] += 1
+        hours[lt.tm_hour]["secs"] += dur
+        per_day[day]["n"] += 1
+        per_day[day]["secs"] += dur
+        key = (a.get("name") or "").strip() or "%.4f" % (a.get("freq", 0) / 1e6)
+        c = chans.setdefault(key, {"name": a.get("name") or "", "freq": a.get("freq"), "mod": a.get("mod"), "n": 0, "secs": 0.0})
+        c["n"] += 1
+        c["secs"] += dur
+        if longest is None or dur > longest["dur"]:
+            longest = dict(a)
+    for h in hours:
+        h["secs"] = round(h["secs"], 1)
+    top = sorted(chans.values(), key=lambda c: (-c["n"], -c["secs"]))[:5]
+    for c in top:
+        c["secs"] = round(c["secs"], 1)
+    return {"days": days, "total": total, "secs": round(secs, 1), "hours": hours,
+            "per_day": [{"day": d, "n": v["n"], "secs": round(v["secs"], 1)} for d, v in per_day.items()],
+            "top": top, "longest": longest}
 
 
 def ui_lang(conf=None):
@@ -969,6 +1031,8 @@ class RadioManager:
                                  max_mb=float(conf.get("REC_MAX_MB", 2000) or 2000),
                                  min_sec=float(conf.get("REC_MIN_SEC", 1.0) or 1.0))
         self.activity = ActivityLog(os.path.join(folder, "actividad.jsonl"))
+        if demo and not self.activity.items:
+            self.activity.items.extend(demo_activity())
         rs = str(conf.get("REPLAY_SEC", "30")).strip()
         self.replay = ReplayBuffer(float(rs) if re.match(r"^\d+(\.\d+)?$", rs) else 30.0)
         self._clip = None    # última repetición pedida: lo que se escuchó es lo que se guarda

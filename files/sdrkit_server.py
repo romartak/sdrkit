@@ -55,7 +55,7 @@ def _read_version():
                     return v
         except OSError:
             pass
-    return "3.10.0"
+    return "3.11.0"
 
 
 VERSION = _read_version()
@@ -2333,6 +2333,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._zip(q.get("f") or [])
         if path == "/api/activity":
             return self._send(200, {"items": app.radio.activity.list(cint((q.get("n") or ["300"])[0], 300))})
+        if path == "/api/activity/stats":
+            return self._send(200, app.radio.activity.stats(cint((q.get("days") or ["7"])[0], 7)))
         if path == "/api/activity.csv":
             return self._activity_csv()
         if path == "/api/monitor":

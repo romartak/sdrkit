@@ -311,6 +311,11 @@ I18N.add({
   "Seleccionar todo": "Select all",
   "🗑 Borrar": "🗑 Delete",
   "Registro de actividad": "Activity log",
+  "Panel del negocio": "Business panel",
+  "Cuánto se usa la radio: transmisiones por hora y por día, los canales más activos y la transmisión más larga.": "How much the radio is used: transmissions per hour and per day, the busiest channels and the longest transmission.",
+  "Hoy": "Today",
+  "7 días": "7 days",
+  "30 días": "30 days",
   "Cada vez que alguien transmite (en el radio o el escáner) queda anotado: hora, frecuencia, duración, nivel y tonos.":
     "Every time someone transmits (on the radio or the scanner) it is logged: time, frequency, duration, level and tones.",
   "Borrar registro": "Clear log",

@@ -269,6 +269,15 @@ pre.logs{white-space:pre-wrap;word-break:break-all;font:11px/1.45 var(--mono);ba
 .fchip.bad{border-color:#7a3333;color:#ffb3b3}
 #radar{display:block;width:100%;aspect-ratio:1;max-height:70vh;background:#04120a;border-radius:10px;border:1px solid #164a2c}
 .tbl tr[data-hex]{cursor:pointer}
+.biz-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.biz-tiles div{background:var(--panel2,rgba(255,255,255,.04));border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.biz-tiles b{display:block;font:700 20px var(--mono);font-variant-numeric:tabular-nums}
+.biz-tiles span{color:var(--muted);font-size:11px}
+.biz-h{font:600 11px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:12px 0 4px}
+.biz-chart{display:flex;align-items:flex-end;gap:2px;height:84px;border-bottom:1px solid var(--line)}
+.biz-chart i{flex:1;min-width:2px;background:var(--accent,#ffd400);border-radius:2px 2px 0 0;opacity:.85}
+.biz-chart i.zero{background:var(--line);height:2px!important}
+.biz-axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:2px}
 .tbl tr.sel td{background:rgba(255,212,0,.08)}
 .tbl tr.emerg td{color:#ffb3b3;background:rgba(255,92,92,.08)}
 code{font-family:var(--mono);font-size:.92em;background:var(--bg2);border:1px solid var(--line);border-radius:5px;padding:0 4px}

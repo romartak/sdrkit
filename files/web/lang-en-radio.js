@@ -231,6 +231,16 @@ I18N.add({
   // ---------------------------------------------------------------- recs.js · recordings and activity log
   "{n} grabación · {used} de {max} · libre en la microSD: {free}": "{n} recording · {used} of {max} · free on the microSD: {free}",
   "{n} grabaciones · {used} de {max} · libre en la microSD: {free}": "{n} recordings · {used} of {max} · free on the microSD: {free}",
+  "Todavía no hay actividad en este período.": "No activity in this period yet.",
+  "transmisiones": "transmissions",
+  "en el aire": "on the air",
+  "hora más activa": "busiest hour",
+  "Por hora del día": "By hour of the day",
+  "Por día": "By day",
+  "Canales más usados": "Busiest channels",
+  "Transmisión más larga": "Longest transmission",
+  "{n} transmisión": "{n} transmission",
+  "{n} transmisiones": "{n} transmissions",
   "Nada coincide con la búsqueda.": "Nothing matches your search.",
   "Todavía no hay grabaciones. En la pestaña Radio pulsa «Grabar ahora» o activa «Grabar automáticamente cada transmisión».":
     "No recordings yet. On the Radio tab tap “Record now” or turn on “Automatically record every transmission”.",
