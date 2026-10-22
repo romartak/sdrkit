@@ -84,6 +84,8 @@ internet required. At home it joins your WiFi; in the field it creates its own h
 - **Pagers** POCSAG / FLEX, **APRS** with positions, **EAS** alerts (multimon-ng)
 - **433/868/915 MHz sensors**: weather stations, tyre sensors, doorbells… (rtl_433)
 - **Offline aircraft radar** on 1090 MHz (dump1090)
+- **Offline ship map** (AIS, 162 MHz) with name, type, speed and distress beacons
+- **Listen-only password** for guests: they can look and listen, never change or delete
 - 40+ more modes in the advanced receiver (OpenWebRX+): FT8, WSPR, SSTV, HF fax, ACARS…
 - Every service's channel plan built in: PMR446, FRS/GMRS, marine VHF, airband, CB, ham bands…
 
@@ -420,7 +422,7 @@ HTTP API: [docs/api.md](docs/api.md).
 
 ## 🗺️ Roadmap
 
-📅 **Daily feature plan:** [ROADMAP.md](ROADMAP.md) lists 34 new features, one shipped per day, plus the long-term vision (a unified server where everyone can share and listen to each other's Pis worldwide), with what's done and what's next.
+📅 **Daily feature plan:** [ROADMAP.md](ROADMAP.md) lists 31 new features, one shipped per day, plus the long-term vision (a unified server where everyone can share and listen to each other's Pis worldwide), with what's done and what's next.
 
 - [ ] HackRF One sweeps up to 6 GHz in the analyzer (detected automatically; needs more field testing)
 - [ ] Second-dongle profiles: aircraft radar or sensors 24/7 while using the analyzer

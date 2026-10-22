@@ -498,6 +498,7 @@ Otros comandos:
 | `sudo sdrkit hotspot` / `sudo sdrkit auto` | Forzar hotspot / volver a automático |
 | `sudo sdrkit wifi "Red" "clave"` | Guardar una red WiFi |
 | `sudo sdrkit clave` / `clave-hotspot` | Cambiar claves |
+| `sudo sdrkit escucha` | Crear o quitar la clave de **solo escucha** (ve y escucha todo, no cambia ni borra nada) |
 | `sdrkit diagnóstico` | Revisión completa con ✔/✖ y qué hacer si algo falla |
 | `sudo sdrkit copia [archivo]` / `restaurar archivo` | Guardar / recuperar tu configuración y memorias (sin grabaciones) |
 | `sudo sdrkit probar-sdr` | Probar el dongle |

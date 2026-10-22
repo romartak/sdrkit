@@ -417,7 +417,7 @@ echo "openwebrx openwebrx/admin_user_password password $ADMIN_PASSWORD" | debcon
 "${APT[@]}" install --no-install-recommends openwebrx || fail "could not install openwebrx" "no se pudo instalar openwebrx"
 # useful, light decoders (without the heavy wsjtx/js8call, which need a desktop environment)
 # decodificadores útiles y livianos (sin los pesados wsjtx/js8call, que necesitan entorno gráfico)
-EXTRAS=(python3-digiham codecserver direwolf nmux redsea multimon-ng rtl-433 dump1090-fa-minimal acarsdec
+EXTRAS=(python3-digiham codecserver direwolf nmux redsea multimon-ng rtl-433 dump1090-fa-minimal rtl-ais ais-catcher acarsdec
         dumpvdl2 dumphfdl dump978-fa-minimal codec2 m17-demod sonde-decoders aprs-symbols lame imagemagick
         python3-paho-mqtt python3-csdr-eti dablin nrsc5 codecserver-driver-ambe3k)
 is_yes "${INSTALL_WSJTX:-no}" && EXTRAS+=(wsjtx js8call)   # FT8/FT4/WSPR/JS8: heavy (≈300 MB) · pesados

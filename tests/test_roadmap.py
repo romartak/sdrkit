@@ -42,5 +42,5 @@ def test_every_item_has_an_english_translation():
 def test_unified_server_is_on_the_roadmap_as_opt_in():
     with open(os.path.join(ROOT, "ROADMAP.md"), encoding="utf-8") as f:
         text = f.read()
-    row = next(line for line in text.splitlines() if line.startswith("| 35 |"))
+    row = next(line for line in text.splitlines() if line.startswith("| 32 |"))
     assert "Servidor unificado" in row and "Opt-in" in row and "apagado por defecto" in row

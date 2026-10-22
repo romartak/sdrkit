@@ -15,7 +15,11 @@ const SDR = {
     if (r.status === 401) { location.href = "/login"; throw new Error(_t("Sesión expirada")); }
     const ct = r.headers.get("content-type") || "";
     const data = ct.includes("json") ? await r.json() : await r.text();
-    if (!r.ok) throw new Error((data && data.error) || r.statusText);
+    if (!r.ok) {
+      const msg = (data && data.error) || r.statusText;
+      if (r.status === 403 && /^Modo de solo escucha/.test(msg)) SDR.toast(_t(msg), true);  // el usuario de solo escucha siempre ve el aviso
+      throw new Error(msg);
+    }
     return data;
   },
   toast(msg, err) {
@@ -122,7 +126,9 @@ const SDR = {
   renderChips() {
     const s = SDR.status; if (!s) return;
     const cm = $("#chipMode");
-    const names = {sweep: _t("Analizador"), radio: _t("Radio"), sensors: _t("Sensores"), adsb: _t("Aviones"), receiver: _t("Receptor avanzado"), idle: _t("En reposo")};
+    document.body.classList.toggle("viewer", s.role === "viewer");
+    $("#chipViewer").classList.toggle("hidden", s.role !== "viewer");
+    const names = {sweep: _t("Analizador"), radio: _t("Radio"), sensors: _t("Sensores"), adsb: _t("Aviones"), ais: _t("Barcos"), receiver: _t("Receptor avanzado"), idle: _t("En reposo")};
     const label = s.switching ? _t("Cambiando…") : names[s.mode] || s.mode;
     cm.className = "chip on " + (s.switching ? "busy" : s.mode === "idle" ? "" : "ok");
     cm.innerHTML = '<span class="dot"></span>' + label;
@@ -176,7 +182,7 @@ const Owrx = {
   render() {
     const s = SDR.status; if (!s) return;
     const o = s.owrx;
-    const modeName = {sweep: _t("analizador"), radio: _t("radio"), sensors: _t("sensores"), adsb: _t("aviones")}[s.mode] || _t("reposo");
+    const modeName = {sweep: _t("analizador"), radio: _t("radio"), sensors: _t("sensores"), adsb: _t("aviones"), ais: _t("barcos")}[s.mode] || _t("reposo");
     $("#owrxState").textContent = !o.installed && !s.demo ? _t("OpenWebRX+ no está instalado.")
       : s.mode === "receiver" ? (o.ready ? _t("✅ Receptor encendido y listo.") : _t("⏳ Receptor iniciando…"))
       : _t("⏸ Apagado (el dongle está en modo {m}).", {m: modeName});

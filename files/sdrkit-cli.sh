@@ -23,6 +23,7 @@ sdrkit — atajos de SDR-Kit
   sudo sdrkit wifi "Red" "clave"  guarda una red WiFi (ej. el hotspot del celular)
   sdrkit networks                 lista las redes guardadas
   sudo sdrkit password            cambia la clave del panel y de OpenWebRX+ (admin)
+  sudo sdrkit viewer              crea o quita la clave de solo escucha (ve y escucha, no cambia nada)
   sudo sdrkit hotspot-password    cambia la clave del hotspot
   sudo sdrkit profiles            reescribe los perfiles de bandas de OpenWebRX+
   sudo sdrkit test-sdr            prueba el dongle con rtl_test (pausa el panel unos segundos)
@@ -37,7 +38,7 @@ sdrkit — atajos de SDR-Kit
   sudo sdrkit language en|es      idioma de estos mensajes y del instalador
   sdrkit logs                     registros en vivo (Ctrl+C para salir)
   sudo sdrkit restart             reinicia los servicios de SDR-Kit
-Los comandos en español también valen, en el mismo orden: estado, diagnóstico, copia, restaurar, redes, clave, clave-hotspot,
+Los comandos en español también valen, en el mismo orden: estado, diagnóstico, copia, restaurar, redes, clave, escucha, clave-hotspot,
   perfiles, probar-sdr, grabaciones, decodificadores, actualizar (--buscar), volver, versión,
   configurar, instalar-dsd, idioma, reiniciar, ayuda.
 EOF
@@ -53,6 +54,7 @@ sdrkit — SDR-Kit shortcuts
   sudo sdrkit wifi "Name" "pass"  save a WiFi network (e.g. your phone's hotspot)
   sdrkit networks                 list the saved networks
   sudo sdrkit password            change the panel and OpenWebRX+ (admin) password
+  sudo sdrkit viewer              set or remove the listen-only password (sees and listens, changes nothing)
   sudo sdrkit hotspot-password    change the hotspot password
   sudo sdrkit profiles            rewrite the OpenWebRX+ band profiles
   sudo sdrkit test-sdr            test the dongle with rtl_test (pauses the panel for a few seconds)
@@ -67,7 +69,7 @@ sdrkit — SDR-Kit shortcuts
   sudo sdrkit language en|es      language of these messages and of the installer
   sdrkit logs                     live logs (Ctrl+C to quit)
   sudo sdrkit restart             restart the SDR-Kit services
-Spanish aliases work too, in the same order: estado, diagnóstico, copia, restaurar, redes, clave, clave-hotspot, perfiles,
+Spanish aliases work too, in the same order: estado, diagnóstico, copia, restaurar, redes, clave, escucha, clave-hotspot, perfiles,
   probar-sdr, grabaciones, decodificadores, actualizar (--buscar), volver, versión, configurar,
   instalar-dsd, idioma, reiniciar, ayuda.
 EOF
@@ -190,6 +192,25 @@ case "${1:-help}" in
       chown openwebrx: /var/lib/openwebrx/users.json 2>/dev/null
     fi
     systemctl restart sdrkit && L "Password changed." "Clave cambiada."
+    ;;
+  viewer|escucha)
+    need_root "$@"
+    L "Listen-only password: that login can see and listen to everything but cannot change or delete anything. Leave empty to turn it off." \
+      "Clave de solo escucha: con ella se puede ver y escuchar todo, pero no cambiar ni borrar nada. Déjala vacía para desactivarla."
+    read -r -s -p "$(Ln "New listen-only password (8+ characters, empty = off): " "Nueva clave de solo escucha (8+ caracteres, vacía = desactivar): ")" p1; echo
+    if [ -z "$p1" ]; then
+      sdrkit_set_conf VIEWER_PASSWORD "" "$CONF"
+      systemctl restart sdrkit && L "Listen-only password removed." "Clave de solo escucha desactivada."
+    else
+      read -r -s -p "$(Ln "Repeat the password: " "Repite la clave: ")" p2; echo
+      [ "$p1" = "$p2" ] || { L "They do not match." "No coinciden."; exit 1; }
+      [ ${#p1} -ge 8 ] || { L "The password must have at least 8 characters." "La clave debe tener al menos 8 caracteres."; exit 1; }
+      case "$p1" in *'"'*) L 'The password cannot contain double quotes (").' 'La clave no puede contener comillas dobles (").'; exit 1;; esac
+      [ "$p1" != "${ADMIN_PASSWORD:-}" ] || { L "It must be different from the administrator password." "Debe ser distinta de la clave de administrador."; exit 1; }
+      sdrkit_set_conf VIEWER_PASSWORD "$p1" "$CONF"
+      systemctl restart sdrkit && L "Listen-only password saved. Log in with it at the panel to get the listen-only view." \
+        "Clave de solo escucha guardada. Entra con ella al panel para ver la vista de solo escucha."
+    fi
     ;;
   hotspot-password|clave-hotspot)
     need_root "$@"

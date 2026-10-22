@@ -65,6 +65,7 @@ The **Applied** column in the tables below uses: **panel**, **netwatch**, **inst
 | Key | Default | Applied | Meaning |
 |---|---|---|---|
 | `ADMIN_PASSWORD` | `""` | panel, installer | Password of the web panel and of the OpenWebRX+ `admin` user. The installer asks for one (4+ characters). Change it with `sudo sdrkit password`, which updates both |
+| `VIEWER_PASSWORD` | `""` | panel | Optional second password for a **listen-only** user: it can see and listen to everything but changes and deletes nothing, and does not see WiFi networks, system logs or updates. Empty = off; ignored if it equals `ADMIN_PASSWORD` or there is no administrator password. Set it with `sudo sdrkit viewer` |
 
 > [!WARNING]
 > If `ADMIN_PASSWORD` is empty, the panel runs **without a login**. The installer always sets one; do not clear it on a kit that joins shared networks.

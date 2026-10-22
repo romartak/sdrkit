@@ -1,7 +1,8 @@
 /* SDR-Kit · Decodificar: mensajes (multimon-ng), sensores (rtl_433), aviones (dump1090) y catálogo */
 "use strict";
 const Dec = (() => {
-  const D = {sub: "msg", timer: null, slow: null, decoded: [], sensors: null, adsb: null, catalog: null,
+  const D = {sub: "msg", timer: null, slow: null, decoded: [], sensors: null, adsb: null, ais: null, catalog: null,
+    aisTrails: {}, aisSel: null,
     trails: {}, sel: null, loc: null, aprs: []};
   const KINDS = {pocsag: "POCSAG", flex: "FLEX", aprs: "APRS", eas: "EAS", selcall: "Selcall", cw: "Morse", fms: "FMS"};
   // [nombre, MHz, modo, decodificadores]
@@ -21,7 +22,7 @@ const Dec = (() => {
   const OWRX_FREQ = {ais: 161.975e6, acars: 131.55e6, uat: 978e6, sonde: 403e6, lora: 433.775e6, rds: 98.1e6, ft8: 14.074e6,
     js8: 7.078e6, wxsat: 137.1e6, freedv: 14.236e6};
   const PANEL_GO = {pocsag: ["dec", "msg"], aprs: ["dec", "msg"], eas: ["dec", "msg"], selcall: ["dec", "msg"], cw: ["dec", "msg"],
-    sensors: ["dec", "ism"], adsb: ["dec", "air"], ctcss: ["radio"], dsd: ["radio"], digid: ["radio"]};
+    sensors: ["dec", "ism"], adsb: ["dec", "air"], ais: ["dec", "ais"], ctcss: ["radio"], dsd: ["radio"], digid: ["radio"]};
   const GAINS = [0, 0.9, 1.4, 2.7, 3.7, 7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7, 20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8, 36.4,
     37.2, 38.6, 40.2, 42.1, 43.4, 43.9, 44.5, 48.0, 49.6];
   const ago = (t) => { const s = Math.max(0, Math.round(Date.now() / 1000 - t)); return s < 60 ? _t("hace {n} s", {n: s}) : s < 3600 ? _t("hace {n} min", {n: Math.round(s / 60)}) : _t("hace {n} h", {n: (s / 3600).toFixed(1)}); };
@@ -41,6 +42,7 @@ const Dec = (() => {
     if (s === "msg") { loadDecoded(); D.timer = setInterval(loadDecoded, 2000); }
     if (s === "ism") { loadSensors(); D.timer = setInterval(loadSensors, 2000); }
     if (s === "air") { loadAdsb(); loadAprs(); D.timer = setInterval(loadAdsb, 1000); D.slow = setInterval(loadAprs, 5000); }
+    if (s === "ais") { loadAis(); D.timer = setInterval(loadAis, 2000); }
     if (s === "all") loadCatalog();
     renderStates();
   }
@@ -55,6 +57,7 @@ const Dec = (() => {
     const pausa = {sweep: "Al pulsar ▶ el dongle pasa al radio (se pausa el analizador).",
       sensors: "Al pulsar ▶ el dongle pasa al radio (se pausa la búsqueda de sensores).",
       adsb: "Al pulsar ▶ el dongle pasa al radio (se pausa el radar de aviones).",
+      ais: "Al pulsar ▶ el dongle pasa al radio (se pausa el mapa de barcos).",
       receiver: "Al pulsar ▶ el dongle pasa al radio (se pausa el receptor avanzado)."}[s.mode] || "Al pulsar ▶ el dongle pasa al radio (se pausa lo demás).";
     $("#dmState").innerHTML = s.switching ? SDR.esc(_t("Cambiando de modo…"))
       : on ? _t('<b style="color:var(--ok)">● Decodificando {k}</b> en {f} MHz', {k: SDR.esc(rp.data.map(k => KINDS[k] || k).join(", ")), f: (rp.freq / 1e6).toFixed(4)}) +
@@ -70,6 +73,10 @@ const Dec = (() => {
     if (s.mode !== "adsb") $("#adState").textContent = _t("Radar apagado. Al encenderlo, el dongle se dedica sólo a 1090 MHz.");
     else if (ad.error) $("#adState").textContent = "⚠ " + _t(ad.error);
     $("#adStart").classList.toggle("on", s.mode === "adsb");
+    const ai = s.ais || {};
+    if (s.mode !== "ais") $("#aiState").textContent = _t("Mapa apagado. Al encenderlo, el dongle se dedica sólo a 162 MHz (AIS).");
+    else if (ai.error) $("#aiState").textContent = "⚠ " + _t(ai.error);
+    $("#aiStart").classList.toggle("on", s.mode === "ais");
   }
 
   // ------------------------------------------------------------------ mensajes
@@ -208,13 +215,14 @@ const Dec = (() => {
           `<td class="mono">${SDR.esc(a.squawk || "—")}${em ? "<br><b class='small'>" + em + "</b>" : ""}</td></tr>`;
       }).join("") : `<tr><td colspan="6" class="muted">${SDR.esc(_t("Sin aviones todavía."))}</td></tr>`) + "</tbody>";
   }
-  function drawRadar() {
-    const c = $("#radar"); if (!c.clientWidth) return;
+  // fondo común de los dos radares (aviones y barcos): anillos de distancia, cruz y puntos cardinales
+  function radarBase(canvas, rangeSel, bg, grid, txt) {
+    const c = $(canvas); if (!c.clientWidth) return null;
     const dpr = Math.min(window.devicePixelRatio || 1, 2.5), W = Math.round(c.clientWidth * dpr), H = Math.round(c.clientHeight * dpr);
     if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
-    const ctx = c.getContext("2d"), R = Math.min(W, H) / 2 - 14 * dpr, cx = W / 2, cy = H / 2, range = +$("#adRange").value;
-    ctx.fillStyle = "#04120a"; ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = "#164a2c"; ctx.fillStyle = "#3a8a5c"; ctx.lineWidth = 1; ctx.font = `${10 * dpr}px ui-monospace,monospace`;
+    const ctx = c.getContext("2d"), R = Math.min(W, H) / 2 - 14 * dpr, cx = W / 2, cy = H / 2, range = +$(rangeSel).value;
+    ctx.fillStyle = bg || "#04120a"; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = grid || "#164a2c"; ctx.fillStyle = txt || "#3a8a5c"; ctx.lineWidth = 1; ctx.font = `${10 * dpr}px ui-monospace,monospace`;
     for (let k = 1; k <= 4; k++) {
       ctx.beginPath(); ctx.arc(cx, cy, R * k / 4, 0, 2 * Math.PI); ctx.stroke();
       ctx.textAlign = "left"; ctx.fillText((range * k / 4) + " km", cx + 3 * dpr, cy - R * k / 4 + 11 * dpr);
@@ -223,6 +231,11 @@ const Dec = (() => {
     ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = `bold ${11 * dpr}px system-ui,sans-serif`;
     const [cN, cS, cE, cW] = _t("N S E O").split(" ");  // iniciales de los puntos cardinales: norte, sur, este, oeste
     [[cN, 0, -1], [cS, 0, 1], [cE, 1, 0], [cW, -1, 0]].forEach(([t, x, y]) => ctx.fillText(t, cx + x * (R + 8 * dpr), cy + y * (R + 8 * dpr)));
+    return {ctx, dpr, R, cx, cy, range, W, H};
+  }
+  function drawRadar() {
+    const B = radarBase("#radar", "#adRange"); if (!B) return;
+    const {ctx, dpr, R, cx, cy, range} = B;
     const ctr = center();
     if (!ctr) {
       ctx.fillStyle = "#3a8a5c"; ctx.font = `${13 * dpr}px system-ui,sans-serif`;
@@ -257,6 +270,89 @@ const Dec = (() => {
       ctx.fillStyle = em ? "#ff9b9b" : "#cfe8d8";
       const fl = a.alt_baro == null || a.alt_baro === "ground" ? "" : " " + Math.round(a.alt_baro / 100).toString().padStart(3, "0");
       ctx.fillText(((a.flight || a.hex).trim()) + fl, x + 9 * dpr, y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ------------------------------------------------------------------ barcos (AIS)
+  const SHIP_KIND = {cargo: ["Carguero", "#3ddc84"], tanker: ["Petrolero", "#ff9f43"], passenger: ["Pasajeros", "#3cc8f5"], fishing: ["Pesca", "#c58bff"],
+    sailing: ["Velero", "#e6edf3"], pleasure: ["Recreo", "#e6edf3"], tug: ["Remolcador", "#ffd400"], military: ["Militar", "#ff7ab8"],
+    service: ["Servicio", "#9bb0c4"], other: ["Barco", "#9bb0c4"]};
+  const NAV_STATUS = ["navegando con motor", "fondeado", "sin gobierno", "maniobra restringida", "calado limitado", "amarrado", "varado",
+    "pescando", "navegando a vela"];
+  async function loadAis() {
+    try {
+      const r = await SDR.api("/api/ais"); D.ais = r;
+      const loc = r.location;
+      $("#aiLocNote").textContent = loc ? (loc.source === "manual" ? _t("Ubicación guardada: {lat}, {lon}", {lat: loc.lat.toFixed(4), lon: loc.lon.toFixed(4)})
+        : _t("Ubicación estimada con los barcos recibidos (guarda la tuya en Aviones → Tu ubicación).")) : _t("Sin ubicación, el mapa usa el centro de los barcos recibidos.");
+      if (document.activeElement !== $("#aiGain") && r.params) $("#aiGain").value = String(r.params.gain);
+      const s = SDR.status;
+      if (s && s.mode === "ais" && !(r.info && r.info.error)) {
+        const n = (r.ships || []).length, pos = (r.ships || []).filter(a => a.lat != null).length;
+        $("#aiState").innerHTML = [_t('<b style="color:var(--ok)">● Mapa encendido</b>'), _tn(n, "{n} barco ({p} con posición)", "{n} barcos ({p} con posición)", {p: pos}),
+          _tn(r.messages || 0, "{n} mensaje", "{n} mensajes"), _tn(r.today || 0, "{n} distinto hoy", "{n} distintos hoy")].join(" · ");
+      }
+      const now = Date.now();
+      for (const a of r.ships || []) {
+        if (a.lat == null) continue;
+        const t = D.aisTrails[a.mmsi] || (D.aisTrails[a.mmsi] = []);
+        const last = t[t.length - 1];
+        if (!last || last[0] !== a.lat || last[1] !== a.lon) t.push([a.lat, a.lon, now]);
+        if (t.length > 60) t.shift();
+      }
+      for (const k of Object.keys(D.aisTrails)) { const t = D.aisTrails[k]; if (now - t[t.length - 1][2] > 900000) delete D.aisTrails[k]; }
+      renderShips(); drawShips();
+    } catch (e) {}
+  }
+  function shipName(a) { return a.name || ("MMSI " + a.mmsi); }
+  function renderShips() {
+    const list = ((D.ais && D.ais.ships) || []).slice().sort((a, b) => (a.dist_km == null) - (b.dist_km == null) || (a.dist_km || 0) - (b.dist_km || 0));
+    $("#aiTable").innerHTML = `<thead><tr><th>${_t("Barco")}</th><th>${_t("Tipo y destino")}</th><th>${_t("Velocidad")}</th><th>${_t("Distancia")}</th></tr></thead><tbody>` +
+      (list.length ? list.map(a => {
+        const k = SHIP_KIND[a.kind] || SHIP_KIND.other, st = a.status != null && NAV_STATUS[a.status] ? _t(NAV_STATUS[a.status]) : "";
+        const size = a.length ? ` · ${a.length} × ${a.beam || "?"} m` : "";
+        return `<tr data-mmsi="${a.mmsi}" class="${D.aisSel === a.mmsi ? "sel" : ""}${a.emerg ? " emerg" : ""}"><td><b>${SDR.esc(a.name || "—")}</b><br><span class="muted mono">${a.mmsi}</span>${a.emerg ? "<br><b class='small'>" + SDR.esc(_t("SOCORRO")) + "</b>" : ""}</td>` +
+          `<td><span style="color:${k[1]}">●</span> ${SDR.esc(_t(k[0]))}${SDR.esc(size)}<br><span class="muted">${SDR.esc(a.dest || st || "")}</span></td>` +
+          `<td>${a.sog == null ? "—" : a.sog.toFixed(1) + " kn<br><span class='muted'>" + Math.round(a.sog * 1.852) + " km/h</span>"}${a.cog == null ? "" : "<br><span class='muted'>" + SDR.esc(_t("rumbo {n}°", {n: Math.round(a.cog)})) + "</span>"}</td>` +
+          `<td>${a.dist_km == null ? "—" : a.dist_km.toFixed(1) + " km" + (a.bearing != null ? "<br><span class='muted'>" + SDR.esc(_t("hacia {n}°", {n: a.bearing})) + "</span>" : "")}</td></tr>`;
+      }).join("") : `<tr><td colspan="4" class="muted">${SDR.esc(_t("Sin barcos todavía."))}</td></tr>`) + "</tbody>";
+  }
+  function drawShips() {
+    const B = radarBase("#aisMap", "#aiRange", "#04101a", "#16384f", "#3a7a9c"); if (!B) return;
+    const {ctx, dpr, R, cx, cy, range} = B, on = SDR.status && SDR.status.mode === "ais";
+    const ships = (D.ais && D.ais.ships) || [], loc = D.ais && D.ais.location;
+    if (!loc) {
+      ctx.fillStyle = "#3a7a9c"; ctx.font = `${13 * dpr}px system-ui,sans-serif`;
+      ctx.fillText(on ? _t("Esperando barcos…") : _t("Mapa apagado"), cx, cy + R / 2); return;
+    }
+    const P = (lat, lon) => { const [x, y] = km(loc, lat, lon); return [cx + x / range * R, cy - y / range * R]; };
+    if (!on && ships.length) {
+      ctx.fillStyle = "#ffb020"; ctx.font = `bold ${11 * dpr}px system-ui,sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "top";
+      ctx.fillText(D.ais.now ? _t("Mapa apagado · última imagen de las {t}", {t: new Date(D.ais.now * 1000).toLocaleTimeString()}) : _t("Mapa apagado · última imagen"), 8 * dpr, 8 * dpr);
+      ctx.globalAlpha = 0.45;
+    }
+    ctx.fillStyle = "#3cc8f5"; ctx.beginPath(); ctx.arc(cx, cy, 3 * dpr, 0, 2 * Math.PI); ctx.fill();
+    for (const [id, t] of Object.entries(D.aisTrails)) {
+      if (t.length < 2) continue;
+      ctx.strokeStyle = +id === D.aisSel ? "rgba(255,212,0,.6)" : "rgba(60,200,245,.3)"; ctx.beginPath();
+      t.forEach((p, i) => { const [x, y] = P(p[0], p[1]); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.stroke();
+    }
+    ctx.font = `${10 * dpr}px ui-monospace,monospace`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    for (const a of ships) {
+      if (a.lat == null) continue;
+      const [x, y] = P(a.lat, a.lon); if (Math.hypot(x - cx, y - cy) > R + 20 * dpr) continue;
+      const sel = a.mmsi === D.aisSel, col = a.emerg ? "#ff5c5c" : sel ? "#ffd400" : (SHIP_KIND[a.kind] || SHIP_KIND.other)[1], s = 5 * dpr;
+      ctx.fillStyle = col;
+      if (a.cls === "AtoN" || a.cls === "base") { ctx.fillRect(x - s / 2, y - s / 2, s, s); }
+      else if ((a.sog || 0) < 0.5 || a.cog == null) { ctx.beginPath(); ctx.arc(x, y, s * 0.8, 0, 2 * Math.PI); ctx.fill(); }
+      else {
+        ctx.save(); ctx.translate(x, y); ctx.rotate((((a.heading != null ? a.heading : a.cog) || 0) * Math.PI) / 180);
+        ctx.beginPath(); ctx.moveTo(0, -s * 1.6); ctx.lineTo(s, s); ctx.lineTo(-s, s); ctx.closePath(); ctx.fill(); ctx.restore();
+      }
+      if (a.emerg) { ctx.strokeStyle = "#ff5c5c"; ctx.beginPath(); ctx.arc(x, y, s * 2, 0, 2 * Math.PI); ctx.stroke(); }
+      ctx.fillStyle = a.emerg ? "#ff9b9b" : "#cfe3ee";
+      ctx.fillText(a.name || String(a.mmsi), x + 9 * dpr, y);
     }
     ctx.globalAlpha = 1;
   }
@@ -350,8 +446,22 @@ const Dec = (() => {
       if (g) { const t = PANEL_GO[g.dataset.go]; goto(t[0], t[1]); }
       if (o) Owrx.open(OWRX_FREQ[o.dataset.owrx] || null);
     });
+    $("#aiStart").addEventListener("click", async () => {
+      try { await SDR.api("/api/ais", {activate: true}); SDR.toast(_t("Mapa encendido: los barcos aparecen en 1–5 min.")); setTimeout(SDR.pollStatus, 800); }
+      catch (e) { SDR.toast(e.message, true); }
+    });
+    $("#aiStop").addEventListener("click", () => SDR.useMode("sweep"));
+    $("#aiGain").innerHTML = gainOpts;
+    $("#aiGain").addEventListener("change", async ev => { try { await SDR.api("/api/ais", {gain: ev.target.value}); } catch (e) { SDR.toast(e.message, true); } });
+    $("#aiRange").addEventListener("change", drawShips);
+    $("#aiGoLoc").addEventListener("click", () => showSub("air"));
+    $("#aiTable").addEventListener("click", ev => {
+      const tr = ev.target.closest("[data-mmsi]"); if (!tr) return;
+      D.aisSel = D.aisSel === +tr.dataset.mmsi ? null : +tr.dataset.mmsi; renderShips(); drawShips();
+    });
     new ResizeObserver(drawRadar).observe($("#radar"));
-    try { const s = localStorage.getItem("sdrkit.dsub"); if (["msg", "ism", "air", "all"].includes(s)) D.sub = s; } catch (e) {}
+    new ResizeObserver(drawShips).observe($("#aisMap"));
+    try { const s = localStorage.getItem("sdrkit.dsub"); if (["msg", "ism", "air", "ais", "all"].includes(s)) D.sub = s; } catch (e) {}
     $$("#decNav button").forEach(b => b.classList.toggle("active", b.dataset.dsub === D.sub));
     $$("#tab-dec .dsub").forEach(s => s.classList.toggle("hidden", s.id !== "dec-" + D.sub));
   }

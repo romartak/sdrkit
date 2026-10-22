@@ -55,7 +55,7 @@ def _read_version():
                     return v
         except OSError:
             pass
-    return "3.11.0"
+    return "3.13.0"
 
 
 VERSION = _read_version()
@@ -79,6 +79,7 @@ HACKRF_MIN_HZ, HACKRF_MAX_HZ = 1e6, 6000e6
 DEFAULTS = {
     "PANEL_PORT": "80",
     "ADMIN_PASSWORD": "",
+    "VIEWER_PASSWORD": "",
     "OWRX_PORT": "8073",
     "DEFAULT_MODE": "last",
     "SWEEP_ENGINE": "auto",
@@ -1546,12 +1547,13 @@ class State:
 class ModeManager:
     """Un solo dueño del dongle a la vez: analizador, radio (propio) o receptor OpenWebRX+."""
 
-    def __init__(self, conf, sweep, receiver, state, hub, radio=None, sensors=None, adsb=None):
+    def __init__(self, conf, sweep, receiver, state, hub, radio=None, sensors=None, adsb=None, ais=None):
         self.conf = conf
         self.sweep = sweep
         self.radio = radio
         self.sensors = sensors
         self.adsb = adsb
+        self.ais = ais
         self.rx = receiver
         self.state = state
         self.hub = hub
@@ -1563,7 +1565,7 @@ class ModeManager:
     def boot(self):
         dm = str(self.conf.get("DEFAULT_MODE", "last")).lower()
         mode = self.state.get("mode", "sweep") if dm == "last" else dm
-        if mode not in ("sweep", "radio", "sensors", "adsb", "receiver", "idle"):
+        if mode not in ("sweep", "radio", "sensors", "adsb", "ais", "receiver", "idle"):
             mode = "sweep"
         self.switch(mode, background=True)
 
@@ -1574,7 +1576,7 @@ class ModeManager:
         return self._switch(mode, freq, mod)
 
     def _switch(self, mode, freq, mod):
-        engines = {"sweep": self.sweep, "radio": self.radio, "sensors": self.sensors, "adsb": self.adsb}
+        engines = {"sweep": self.sweep, "radio": self.radio, "sensors": self.sensors, "adsb": self.adsb, "ais": self.ais}
         with self.lock:
             self.busy = True
             try:
@@ -1900,11 +1902,15 @@ class App:
         self.radio = radio_mod.RadioManager(conf, self.state, open_dev, SdrError, STATE_DIR, demo)
         self.sensors = dec_mod.SensorsManager(conf, self.state, STATE_DIR, demo)
         self.adsb = dec_mod.AdsbManager(conf, self.state, STATE_DIR, demo)
+        self.ais = dec_mod.AisManager(conf, self.state, STATE_DIR, demo, lambda: self.adsb.location)
         self.modes = ModeManager(conf, self.sweep, self.receiver, self.state, self.hub, self.radio,
-                                 self.sensors, self.adsb)
+                                 self.sensors, self.adsb, self.ais)
         self.sys = SysInfo()
         self.wifi = WiFi(conf, demo)
         self.password = conf.get("ADMIN_PASSWORD", "")
+        # segunda clave, de solo escucha: ve y escucha todo pero no cambia nada (ignorada si no hay clave de administrador o es igual)
+        vp = conf.get("VIEWER_PASSWORD", "")
+        self.viewer_password = vp if self.password and vp != self.password else ""
         self._login_fails = {}
         self._login_lock = threading.Lock()
         self.secret = self._secret()
@@ -1953,7 +1959,9 @@ class App:
         with self._login_lock:
             self._login_fails.pop(ip, None)
 
-    def token(self):
+    def token(self, role="admin"):
+        if role == "viewer":
+            return hmac.new(self.secret, ("viewer1:" + self.viewer_password).encode(), hashlib.sha256).hexdigest()
         return hmac.new(self.secret, ("v1:" + self.password).encode(), hashlib.sha256).hexdigest()
 
     # -- actualizaciones desde GitHub ------------------------------------------
@@ -2072,6 +2080,7 @@ class App:
                       "monitoring": self.radio.monitoring(), "params": self.radio.params},
             "sensors": {"running": self.sensors.info.get("running"), "error": self.sensors.info.get("error")},
             "adsb": {"running": self.adsb.info.get("running"), "error": self.adsb.info.get("error")},
+            "ais": {"running": self.ais.info.get("running"), "error": self.ais.info.get("error")},
             "monitor": self.sweep.monitor,
             "update": dict(self.upd, notify=self.update_notify()),
         }
@@ -2271,16 +2280,27 @@ class Handler(BaseHTTPRequestHandler):
             return origin is None
         return urlparse(origin).netloc.lower() == (self.headers.get("Host") or "").lower()
 
-    def _authed(self):
+    def _role(self):
+        """«admin» (todo), «viewer» (solo ver y escuchar) o None (sin sesión)."""
         app = self.app
         if not app.password:
-            return True
+            return "admin"
         cookie = self.headers.get("Cookie", "")
         for part in cookie.split(";"):
             k, _, v = part.strip().partition("=")
-            if k == "sdrkit_auth" and hmac.compare_digest(v, app.token()):
-                return True
-        return False
+            if k != "sdrkit_auth":
+                continue
+            if hmac.compare_digest(v, app.token()):
+                return "admin"
+            if app.viewer_password and hmac.compare_digest(v, app.token("viewer")):
+                return "viewer"
+        return None
+
+    def _authed(self):
+        return self._role() is not None
+
+    # lo que el usuario de solo escucha no puede ni ver: WiFi guardadas, registros del sistema y actualizaciones
+    VIEWER_BLOCKED = ("/api/wifi", "/api/logs", "/api/system/")
 
     # -- rutas --
     def do_HEAD(self):
@@ -2300,6 +2320,8 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/api/"):
                 return self._send(401, {"error": "auth"})
             return self._send(302, "", headers={"Location": "/login"})
+        if self._role() == "viewer" and path.startswith(self.VIEWER_BLOCKED):
+            return self._send(403, {"error": "Modo de solo escucha: esto es sólo para el administrador."})
         if path in ("/", "/index.html"):
             return self._static("index.html")
         if re.match(r"^/[a-z0-9_-]+\.(js|css)$", path):
@@ -2350,6 +2372,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, app.sensors.snapshot())
         if path == "/api/adsb":
             return self._send(200, app.adsb.snapshot())
+        if path == "/api/ais":
+            return self._send(200, app.ais.snapshot())
         if path == "/api/decoders":
             st = dec_mod.status()
             st["kinds"] = {k: v[0] for k, v in dec_mod.MULTIMON_KINDS.items()}
@@ -2366,7 +2390,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, ("\ufeff" + "\n".join(rows) + "\n").encode("utf-8"), "text/csv; charset=utf-8",
                               {"Content-Disposition": "attachment; filename=mensajes-%s.csv" % time.strftime("%Y-%m-%d")})
         if path == "/api/status":
-            return self._send(200, self.app.status())
+            return self._send(200, dict(self.app.status(), role=self._role()))
         if path == "/api/sweep":
             s = self.app.sweep
             return self._send(200, {"params": s.params, "info": s.info, "cal": s.cal})
@@ -2404,9 +2428,11 @@ class Handler(BaseHTTPRequestHandler):
                 err = '<div class="e" data-en="Too many attempts. Try again in a few minutes.">Demasiados intentos. Prueba de nuevo en unos minutos.</div>'
                 return self._send(429, LOGIN_HTML.replace("__ERR__", err), "text/html; charset=utf-8",
                                   headers={"Retry-After": str(wait)})
-            if app.password and hmac.compare_digest(pw.encode(), app.password.encode()):
+            role = "admin" if app.password and hmac.compare_digest(pw.encode(), app.password.encode()) else \
+                "viewer" if app.viewer_password and hmac.compare_digest(pw.encode(), app.viewer_password.encode()) else None
+            if role:
                 app.login_ok(ip)
-                cookie = "sdrkit_auth=%s; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax" % app.token()
+                cookie = "sdrkit_auth=%s; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax" % app.token(role)
                 return self._send(303, "", headers={"Location": "/", "Set-Cookie": cookie})
             app.login_failed(ip)
             time.sleep(1.0)
@@ -2414,10 +2440,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, LOGIN_HTML.replace("__ERR__", err), "text/html; charset=utf-8")
         if not self._authed():
             return self._send(401, {"error": "auth"})
+        if self._role() == "viewer":
+            return self._send(403, {"error": "Modo de solo escucha: no se puede cambiar nada."})
         try:
             if path == "/api/mode":
                 mode = body.get("mode")
-                if mode not in ("sweep", "radio", "sensors", "adsb", "receiver", "idle"):
+                if mode not in ("sweep", "radio", "sensors", "adsb", "ais", "receiver", "idle"):
                     raise ValueError("Modo inválido.")
                 freq = cfloat(body.get("freq"), 0.0) or None
                 if mode == "receiver" and not (app.receiver.installed() or app.demo):
@@ -2520,6 +2548,11 @@ class Handler(BaseHTTPRequestHandler):
                 prm = app.adsb.set_params(body) if "gain" in body else app.adsb.params
                 if body.get("activate") and app.modes.mode != "adsb" and not app.modes.busy:
                     app.modes.switch("adsb")
+                return self._send(200, {"ok": True, "params": prm})
+            if path == "/api/ais":
+                prm = app.ais.set_params(body) if "gain" in body else app.ais.params
+                if body.get("activate") and app.modes.mode != "ais" and not app.modes.busy:
+                    app.modes.switch("ais")
                 return self._send(200, {"ok": True, "params": prm})
             if path == "/api/location":
                 return self._send(200, {"ok": True, "location": app.adsb.set_location(body.get("lat"), body.get("lon"))})

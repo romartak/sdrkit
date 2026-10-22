@@ -953,6 +953,7 @@ const An = (() => {
       receiver: () => _t("El dongle lo está usando el receptor avanzado (OpenWebRX+). Puedes cambiar al analizador."),
       sensors: () => _t("El dongle lo está usando el decodificador de sensores (rtl_433). Puedes cambiar al analizador."),
       adsb: () => _t("El dongle lo está usando el radar de aviones (dump1090). Puedes cambiar al analizador."),
+      ais: () => _t("El dongle lo está usando el mapa de barcos (AIS). Puedes cambiar al analizador."),
     }[s.mode];
     let msg = busy ? busy() : _t("El SDR está en reposo.");
     if (s.radio && s.radio.monitoring && s.mode === "radio") msg += " " + _t("Ojo: el radio está grabando, escaneando o decodificando; se pausará.");

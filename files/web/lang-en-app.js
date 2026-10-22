@@ -14,6 +14,8 @@ I18N.add({
   "Radio": "Radio",
   "Sensores": "Sensors",
   "Aviones": "Aircraft",
+  "Barcos": "Ships",
+  "barcos": "ships",
   "Receptor avanzado": "Advanced receiver",
   "En reposo": "Idle",
   "Cambiando…": "Switching…",

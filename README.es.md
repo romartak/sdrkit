@@ -84,6 +84,8 @@ lugar entras con [Tailscale](https://tailscale.com).
 - **Buscapersonas** POCSAG / FLEX, **APRS** con posiciones, alertas **EAS** (multimon-ng)
 - **Sensores de 433/868/915 MHz**: estaciones meteorológicas, sensores de llantas, timbres… (rtl_433)
 - **Radar de aviones sin internet** en 1090 MHz (dump1090)
+- **Mapa de barcos sin internet** (AIS, 162 MHz) con nombre, tipo, velocidad y balizas de socorro
+- **Clave de solo escucha** para invitados: pueden ver y escuchar, nunca cambiar ni borrar
 - Más de 40 modos en el receptor avanzado (OpenWebRX+): FT8, WSPR, SSTV, fax HF, ACARS…
 - Los canales de cada servicio listos: PMR446, FRS/GMRS, marina VHF, aviación, CB, radioaficionados…
 
@@ -421,7 +423,7 @@ Sin nube, sin cuentas, sin telemetría.
 | [Guía completa en español](docs/es/GUIA.md) | Compras, montaje, instalación, cada pestaña, antenas, voz digital, actualizaciones y problemas |
 | [Documentación técnica (inglés)](docs/README.md) | Arquitectura, API HTTP, configuración, desarrollo |
 | [Historial de versiones](CHANGELOG.md) · [Cómo contribuir](CONTRIBUTING.md) · [Seguridad](SECURITY.md) | Proyecto |
-| [Plan diario de funciones](ROADMAP.md) | 34 funciones nuevas, una por día, y la visión a futuro (un servidor unificado para escuchar las Pi de todo el mundo): qué viene y qué ya está hecho |
+| [Plan diario de funciones](ROADMAP.md) | 31 funciones nuevas, una por día, y la visión a futuro (un servidor unificado para escuchar las Pi de todo el mundo): qué viene y qué ya está hecho |
 
 ## ⚖️ Legal
 

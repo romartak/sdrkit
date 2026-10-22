@@ -40,6 +40,8 @@ PI=http://sdrpi.local
 
 When `ADMIN_PASSWORD` is set, every route except `/login`, `/logout`, `/favicon.svg`, `/icon.svg` and `/manifest.webmanifest` needs the `sdrkit_auth` cookie. Without it, `/api/*` returns `401` and pages redirect to `/login`.
 
+If `VIEWER_PASSWORD` is also set, logging in with it gives a **listen-only** session: every `GET` works (including the live audio and the downloads) except `/api/wifi`, `/api/logs` and `/api/system/*`, and every `POST` other than `/login` answers `403 {"error":"Modo de solo escucha: …"}`. `GET /api/status` includes `"role": "admin" | "viewer"`.
+
 | Method | Path | Body | Response |
 |---|---|---|---|
 | `GET` | `/login` | — | Login page (HTML) |
