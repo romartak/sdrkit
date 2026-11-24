@@ -884,6 +884,21 @@
   </div>
 </div>
 
+<!-- Conmutador secreto de laboratorio (mantén pulsado el logo) · secret lab switch (long-press the logo) -->
+<div id="labSheet" class="sheet hidden" role="dialog" aria-modal="true" aria-labelledby="labTitle">
+  <div class="sheet-card">
+    <div class="sheet-head"><h2 id="labTitle">Cambiar de laboratorio</h2><button class="btn sm" id="labClose" aria-label="Cerrar">✕</button></div>
+    <div class="sheet-body" id="labBody"></div>
+  </div>
+</div>
+<div id="switching" class="switching hidden">
+  <div class="switching-card">
+    <div class="sw-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <h2>Cambiando de proyecto…</h2>
+    <p id="switchingMsg" class="muted"></p>
+  </div>
+</div>
+
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="busy" class="busy hidden"><div class="spinner"></div><div id="busyText">Un momento…</div><button class="btn sm" id="busyCancel">Cancelar</button></div>
 

@@ -6,7 +6,17 @@ Update an installed kit with `sudo sdrkit update`.
 
 ## [Unreleased]
 
-## [3.13.0] - 2026-10-22
+## [3.14.0] - 2026-11-24
+
+### Added
+- **Lab switch (SDR-Kit ⇄ Proxlafy)**: SDR-Kit and [Proxlafy](https://github.com/romartak/proxlafy) can live on the same
+  microSD. A new `labswitch` tool flips which one is active — instantly, offline, with no reinstall (they share the WiFi
+  hotspot and port 80, so only one runs at a time). A **secret button** in the panel (long-press ≈1 s or triple-tap the
+  SDR-Kit logo) hands control to Proxlafy, warning that the WiFi network changes (SSID + address to reconnect to); admin
+  only. If Proxlafy isn't installed yet, it offers to install it from GitHub (needs internet). CLI: `sudo sdrkit switch`
+  and `sdrkit labs`. The installer pauses the other project automatically so there's no port/hotspot clash. New API
+  `GET`/`POST /api/switch`; the switch runs detached (`systemd-run`) so it survives this panel stopping. See
+  `docs/conmutador.md`.
 
 ### Added
 - **Listen-only user**: an optional second password (`VIEWER_PASSWORD`, set or removed with `sudo sdrkit viewer`). Logging

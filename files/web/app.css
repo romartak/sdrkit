@@ -497,3 +497,18 @@ input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;bac
 /* escritorio: contenido centrado, más aire */
 @media (min-width:960px){main{padding-top:20px}.card{padding:18px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important}}
+
+/* ---- Conmutador de laboratorio · lab switch ---- */
+.warnbox{background:var(--warn-bg,rgba(255,176,32,.12));border:1px solid var(--warn,#ffb020);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;margin:10px 0}
+.warnbox b{color:var(--text)}
+.switching{position:fixed;inset:0;z-index:95;background:rgba(6,9,12,.92);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+.switching-card{background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:26px 22px;max-width:420px;width:100%}
+.switching-card h2{margin:6px 0 8px;font-size:18px}
+.switching-card p{margin:0;line-height:1.5}
+.sw-wave{display:inline-flex;gap:4px;align-items:flex-end;height:30px;margin-bottom:6px}
+.sw-wave i{width:5px;background:var(--accent);border-radius:2px;animation:swwave 1s ease-in-out infinite}
+.sw-wave i:nth-child(1){height:40%;animation-delay:0s}.sw-wave i:nth-child(2){height:80%;animation-delay:.12s}
+.sw-wave i:nth-child(3){height:55%;animation-delay:.24s}.sw-wave i:nth-child(4){height:100%;animation-delay:.36s}
+.sw-wave i:nth-child(5){height:65%;animation-delay:.48s}
+@keyframes swwave{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
+@media (prefers-reduced-motion:reduce){.sw-wave i{animation:none}}

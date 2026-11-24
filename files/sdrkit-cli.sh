@@ -38,6 +38,8 @@ sdrkit — atajos de SDR-Kit
   sudo sdrkit language en|es      idioma de estos mensajes y del instalador
   sdrkit logs                     registros en vivo (Ctrl+C para salir)
   sudo sdrkit restart             reinicia los servicios de SDR-Kit
+  sudo sdrkit switch              cambia al otro proyecto de laboratorio (Proxlafy)
+  sdrkit labs                     lista los proyectos instalados y cuál está activo
 Los comandos en español también valen, en el mismo orden: estado, diagnóstico, copia, restaurar, redes, clave, escucha, clave-hotspot,
   perfiles, probar-sdr, grabaciones, decodificadores, actualizar (--buscar), volver, versión,
   configurar, instalar-dsd, idioma, reiniciar, ayuda.
@@ -69,6 +71,8 @@ sdrkit — SDR-Kit shortcuts
   sudo sdrkit language en|es      language of these messages and of the installer
   sdrkit logs                     live logs (Ctrl+C to quit)
   sudo sdrkit restart             restart the SDR-Kit services
+  sudo sdrkit switch              switch to the other lab project (Proxlafy)
+  sdrkit labs                     list installed lab projects and which is active
 Spanish aliases work too, in the same order: estado, diagnóstico, copia, restaurar, redes, clave, escucha, clave-hotspot, perfiles,
   probar-sdr, grabaciones, decodificadores, actualizar (--buscar), volver, versión, configurar,
   instalar-dsd, idioma, reiniciar, ayuda.
@@ -324,6 +328,14 @@ PY
   restart|reiniciar)
     need_root "$@"
     systemctl restart sdrkit-netwatch sdrkit && L "Services restarted." "Servicios reiniciados."
+    ;;
+  switch|cambiar)
+    need_root "$@"
+    if [ -x /usr/local/sbin/labswitch ]; then exec /usr/local/sbin/labswitch "${2:-other}"
+    else L "labswitch not installed." "labswitch no está instalado."; exit 1; fi
+    ;;
+  labs|proyectos)
+    [ -x /usr/local/sbin/labswitch ] && exec /usr/local/sbin/labswitch status || { L "labswitch not installed." "labswitch no está instalado."; exit 1; }
     ;;
   help|ayuda|-h|--help)
     usage

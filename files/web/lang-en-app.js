@@ -219,4 +219,19 @@ I18N.add({
   "{n} estrellas": "{n} stars",
   "{n} de {total} funciones lista": "{n} of {total} features done",
   "{n} de {total} funciones listas": "{n} of {total} features done",
+
+  // ---------------------------------------------------------------- lab switch (SDR-Kit ⇄ Proxlafy)
+  "Cambiar de laboratorio": "Switch lab project",
+  "Cambiando de proyecto…": "Switching project…",
+  "Consultando…": "Checking…",
+  "El conmutador no está disponible (instala también Proxlafy para usarlo).": "The switcher isn't available (install Proxlafy too to use it).",
+  "Activo ahora": "Active now",
+  "Pasar el control a {o}. Este panel se apagará y el otro tomará su lugar.": "Hand control to {o}. This panel will shut down and the other takes over.",
+  "La red WiFi cambiará a {ssid}. Reconéctate a ella y abre {ip}.": "The WiFi network will change to {ssid}. Reconnect to it and open {ip}.",
+  "Cambiar a {o}": "Switch to {o}",
+  "{o} no está instalado en esta Pi todavía.": "{o} isn't installed on this Pi yet.",
+  "Para instalarlo ahora, la Pi necesita WiFi con internet (tu casa o el hotspot del celular).": "To install it now, the Pi needs WiFi with internet (your home or a phone hotspot).",
+  "Instalar {o} ahora": "Install {o} now",
+  "Conéctate a la red WiFi {ssid} y abre {ip}. Puede tardar hasta un minuto.": "Connect to the WiFi network {ssid} and open {ip}. This can take up to a minute.",
+  "Instalando {o}… Puede tardar varios minutos. No apagues la Pi.": "Installing {o}… This can take several minutes. Don't power off the Pi.",
 });

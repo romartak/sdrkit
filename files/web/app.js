@@ -401,3 +401,60 @@ $("#btnOff").addEventListener("click", async () => {
   if (!confirm(_t("¿Apagar la Raspberry? Para volver a encenderla tendrás que desconectar y conectar la batería."))) return;
   try { await SDR.api("/api/system/poweroff", {}); SDR.toast(_t("Apagando… espera 20 segundos antes de desconectar la batería.")); } catch (e) { SDR.toast(e.message, true); }
 });
+
+/* ---- Conmutador secreto de laboratorio (SDR-Kit ⇄ Proxlafy) ---- */
+(function () {
+  const sheet = $("#labSheet"), body = $("#labBody");
+  if (!sheet) return;
+  const canSwitch = () => !SDR.status || SDR.status.role !== "viewer";
+  const close = () => sheet.classList.add("hidden");
+  async function open() {
+    body.innerHTML = '<p class="muted">' + _t("Consultando…") + "</p>";
+    sheet.classList.remove("hidden");
+    let st = { enabled: false };
+    try { const j = await SDR.api("/api/switch"); st = (j && j.switch) || st; } catch (e) { /* sin red */ }
+    render(st);
+  }
+  function render(s) {
+    if (!s.enabled) { body.innerHTML = '<p class="muted">' + _t("El conmutador no está disponible (instala también Proxlafy para usarlo).") + "</p>"; return; }
+    const other = SDR.esc(s.other_label || "Proxlafy"), cur = SDR.esc(s.current_label || "SDR-Kit");
+    let h = '<p class="muted">' + _t("Activo ahora") + ": <b>" + cur + "</b></p>";
+    if (s.other_installed) {
+      h += "<p>" + _t("Pasar el control a {o}. Este panel se apagará y el otro tomará su lugar.", { o: "<b>" + other + "</b>" }) + "</p>";
+      h += '<div class="warnbox">' + _t("La red WiFi cambiará a {ssid}. Reconéctate a ella y abre {ip}.",
+            { ssid: "<b>" + SDR.esc(s.other_ssid || "") + "</b>", ip: "<b>http://" + SDR.esc(s.other_ip || "192.168.4.1") + "</b>" }) + "</div>";
+      h += '<button class="btn primary" id="labGo" style="width:100%;margin-top:8px">' + _t("Cambiar a {o}", { o: other }) + "</button>";
+    } else {
+      h += '<p class="muted">' + _t("{o} no está instalado en esta Pi todavía.", { o: "<b>" + other + "</b>" }) + "</p>";
+      h += '<div class="warnbox">' + _t("Para instalarlo ahora, la Pi necesita WiFi con internet (tu casa o el hotspot del celular).") + "</div>";
+      h += '<button class="btn primary" id="labInstall" style="width:100%;margin-top:8px">' + _t("Instalar {o} ahora", { o: other }) + "</button>";
+    }
+    body.innerHTML = h;
+    const go = $("#labGo"), inst = $("#labInstall");
+    if (go) go.addEventListener("click", () => doSwitch(false, s));
+    if (inst) inst.addEventListener("click", () => doSwitch(true, s));
+  }
+  async function doSwitch(install, s) {
+    close();
+    const other = SDR.esc(s.other_label || "Proxlafy");
+    $("#switchingMsg").innerHTML = install
+      ? _t("Instalando {o}… Puede tardar varios minutos. No apagues la Pi.", { o: other })
+      : _t("Conéctate a la red WiFi {ssid} y abre {ip}. Puede tardar hasta un minuto.",
+           { ssid: "<b>" + SDR.esc(s.other_ssid || "") + "</b>", ip: "<b>http://" + SDR.esc(s.other_ip || "192.168.4.1") + "</b>" });
+    $("#switching").classList.remove("hidden");
+    try {
+      const j = await SDR.api("/api/switch", { target: "other", install: !!install });
+      if (j && j.ok === false) { $("#switching").classList.add("hidden"); SDR.toast(j.error || "error", true); }
+    } catch (e) { /* esperado: este panel se apaga al arrancar el otro */ }
+  }
+  sheet.addEventListener("click", ev => { if (ev.target.id === "labSheet") close(); });
+  $("#labClose").addEventListener("click", close);
+  const brand = $(".brand");
+  if (brand) {
+    brand.style.userSelect = "none"; brand.style.webkitUserSelect = "none";
+    let timer = null, taps = 0, tapT = null;
+    brand.addEventListener("pointerdown", () => { timer = setTimeout(() => { timer = null; if (canSwitch()) open(); }, 1000); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(ev => brand.addEventListener(ev, () => { if (timer) { clearTimeout(timer); timer = null; } }));
+    brand.addEventListener("click", () => { taps++; clearTimeout(tapT); tapT = setTimeout(() => taps = 0, 600); if (taps >= 3) { taps = 0; if (canSwitch()) open(); } });
+  }
+})();

@@ -83,6 +83,10 @@ install_panel() {
   install -m 755 "$KIT/files/sdrkit-netwatch.sh" "$OPT/sdrkit-netwatch.sh"
   install -m 755 "$KIT/files/sdrkit-cli.sh" /usr/local/bin/sdrkit
   install -m 644 "$KIT/files/sdrkit-cli.sh" "$OPT/sdrkit-cli.sh"
+  if [ -f "$KIT/files/labswitch.sh" ]; then
+    install -m 755 "$KIT/files/labswitch.sh" "$OPT/labswitch.sh"
+    install -m 755 "$OPT/labswitch.sh" /usr/local/sbin/labswitch
+  fi
   install -m 644 "$KIT"/files/web/* "$OPT/web/"
   install -m 644 "$KIT/files/sdrkit.service" /etc/systemd/system/sdrkit.service
   install -m 644 "$KIT/files/sdrkit-netwatch.service" /etc/systemd/system/sdrkit-netwatch.service
@@ -104,6 +108,19 @@ EOF
   systemctl disable openwebrx >/dev/null 2>&1
   systemctl enable sdrkit >/dev/null 2>&1
   ok "Panel installed in $OPT (help: sdrkit)." "Panel instalado en $OPT (comando de ayuda: sdrkit)."
+}
+
+# If Proxlafy (the other lab project) is installed and running, pause it so SDR-Kit
+# can take the hotspot and port 80. It stays installed; switch back any time.
+# Si Proxlafy (el otro proyecto) está instalado y activo, lo pausamos para que SDR-Kit
+# tome el hotspot y el puerto 80. Queda instalado; puedes volver cuando quieras.
+pause_other_project() {
+  [ -f /etc/systemd/system/proxlafy.service ] || return 0
+  if systemctl is-active --quiet proxlafy 2>/dev/null || systemctl is-enabled --quiet proxlafy 2>/dev/null; then
+    systemctl disable --now proxlafy proxlafy-netwatch >/dev/null 2>&1
+    nmcli connection down proxlafy-hotspot >/dev/null 2>&1
+    ok "Proxlafy paused (switch back: sudo labswitch proxlafy)." "Proxlafy pausado (vuelve con: sudo labswitch proxlafy)."
+  fi
 }
 
 # Merges the configuration: keeps yours and adds this version's new options
@@ -547,6 +564,7 @@ fi
 
 # ---------------------------------------------------------------------
 step "Starting services" "Arrancando servicios"
+pause_other_project
 systemctl restart sdrkit && ok "Panel running." "Panel en marcha."
 sleep 2
 if curl -fs -o /dev/null "http://127.0.0.1:${PANEL_PORT:-80}/login"; then ok "The panel answers." "El panel responde."

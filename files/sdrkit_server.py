@@ -1964,6 +1964,37 @@ class App:
             return hmac.new(self.secret, ("viewer1:" + self.viewer_password).encode(), hashlib.sha256).hexdigest()
         return hmac.new(self.secret, ("v1:" + self.password).encode(), hashlib.sha256).hexdigest()
 
+    # -- conmutador de laboratorio (SDR-Kit <-> Proxlafy) -----------------------
+    LABSWITCH = "/usr/local/sbin/labswitch"
+
+    def switch_state(self):
+        """Estado del otro proyecto de laboratorio, vía `labswitch json`. {enabled:False} si no está."""
+        if not os.path.exists(self.LABSWITCH):
+            return {"enabled": False}
+        try:
+            out = subprocess.check_output([self.LABSWITCH, "json"], timeout=6).decode("utf-8", "replace")
+            data = json.loads(out.strip().splitlines()[-1])
+            data["enabled"] = True
+            return data
+        except Exception:
+            return {"enabled": False}
+
+    def start_switch(self, target, do_install=False):
+        """Lanza el cambio desprendido para que termine aunque este panel se apague."""
+        state = self.switch_state()
+        if not state.get("enabled"):
+            return None
+        if target not in ("other", "proxlafy", "sdrkit"):
+            target = "other"
+        tgt = state.get("other") if target == "other" else target
+        arg = ("install %s" % tgt) if do_install else tgt
+        cmd = "sleep 2; exec %s %s" % (self.LABSWITCH, arg)
+        if shutil.which("systemd-run"):
+            subprocess.Popen(["systemd-run", "--collect", "--unit=sdrkit-switch", "/bin/bash", "-c", cmd])
+        else:
+            subprocess.Popen(["setsid", "/bin/bash", "-c", cmd], start_new_session=True)
+        return state
+
     # -- actualizaciones desde GitHub ------------------------------------------
     def commit(self):
         try:
@@ -2391,6 +2422,8 @@ class Handler(BaseHTTPRequestHandler):
                               {"Content-Disposition": "attachment; filename=mensajes-%s.csv" % time.strftime("%Y-%m-%d")})
         if path == "/api/status":
             return self._send(200, dict(self.app.status(), role=self._role()))
+        if path == "/api/switch":
+            return self._send(200, {"ok": True, "switch": self.app.switch_state()})
         if path == "/api/sweep":
             s = self.app.sweep
             return self._send(200, {"params": s.params, "info": s.info, "cal": s.cal})
@@ -2454,6 +2487,13 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError("Ya hay un cambio de modo en curso.")
                 app.modes.switch(mode, freq, body.get("mod"))
                 return self._send(200, {"ok": True})
+            if path == "/api/switch":
+                state = app.start_switch(str(body.get("target", "other")) or "other", bool(body.get("install")))
+                if state is None:
+                    return self._send(400, {"ok": False, "error": "labswitch no disponible · not available"})
+                return self._send(200, {"ok": True, "target": state.get("other"), "label": state.get("other_label"),
+                                        "ssid": state.get("other_ssid"), "ip": state.get("other_ip"),
+                                        "install": bool(body.get("install"))})
             if path == "/api/sweep":
                 return self._send(200, {"ok": True, "params": app.sweep.set_params(body)})
             if path == "/api/radio":
